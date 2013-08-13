@@ -1,4 +1,19 @@
 {
+  "name": "snippets",
+  "version": "0.0.0",
   "main": "./lib/snippets",
-  "description": "Expand snippets matching the current prefix with `tab`."
+  "description": "Expand snippets matching the current prefix with `tab`.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/atom/snippets.git"
+  },
+  "bugs": {
+    "url": "https://github.com/atom/snippets/issues"
+  },
+  "engines": {
+    "atom": "*"
+  },
+  "publishConfig": {
+    "registry": "https://atom.iriscouch.com/registry/_design/app/_rewrite"
+  }
 }
