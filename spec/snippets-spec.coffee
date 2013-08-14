@@ -1,4 +1,4 @@
-Snippet = require 'snippets/lib/snippet'
+Snippet = require '../lib/snippet'
 RootView = require 'root-view'
 Buffer = require 'text-buffer'
 Editor = require 'editor'
