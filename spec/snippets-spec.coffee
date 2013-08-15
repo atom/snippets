@@ -1,4 +1,5 @@
 Snippet = require '../lib/snippet'
+Snippets = require '../lib/snippets'
 RootView = require 'root-view'
 Buffer = require 'text-buffer'
 Editor = require 'editor'
@@ -14,7 +15,7 @@ describe "Snippets extension", ->
 
     packageWithSnippets = atom.loadPackage("package-with-snippets")
 
-    spyOn(require("snippets/lib/snippets"), 'loadAll')
+    spyOn(Snippets, 'loadAll')
     atom.activatePackage("snippets")
 
     editor = rootView.getActiveView()
