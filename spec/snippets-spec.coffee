@@ -230,19 +230,6 @@ describe "Snippets extension", ->
         editor.trigger keydownEvent('tab', target: editor[0])
         expect(buffer.lineForRow(0)).toBe "first line"
 
-    describe "when a snippet expansion is undone and redone", ->
-      it "recreates the snippet's tab stops", ->
-        editor.insertText '    t6\n'
-        editor.setCursorBufferPosition [0, Infinity]
-        editor.trigger keydownEvent('tab', target: editor[0])
-        expect(buffer.lineForRow(0)).toBe "    first line"
-        expect(editor.getCursorBufferPosition()).toEqual [0, 14]
-        editor.undo()
-        editor.redo()
-        expect(editor.getCursorBufferPosition()).toEqual [0, 14]
-        editor.trigger keydownEvent('tab', target: editor[0])
-        expect(editor.getSelectedBufferRange()).toEqual [[1, 6], [1, 36]]
-
   describe "snippet loading", ->
     beforeEach ->
       atom.loadPackage('package-with-broken-snippets.tmbundle', sync: true)

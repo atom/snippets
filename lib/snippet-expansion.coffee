@@ -13,12 +13,9 @@ class SnippetExpansion
     @editSession.transact =>
       [newRange] = @editSession.insertText(snippet.body, autoIndent: false)
       if snippet.tabStops.length > 0
-        editSession.pushOperation
-          do: =>
-            @subscribe @editSession, 'cursor-moved.snippet-expansion', (e) => @cursorMoved(e)
-            @placeTabStopMarkers(startPosition, snippet.tabStops)
-            @editSession.snippetExpansion = this
-          undo: => @destroy()
+        @subscribe @editSession, 'cursor-moved.snippet-expansion', (e) => @cursorMoved(e)
+        @placeTabStopMarkers(startPosition, snippet.tabStops)
+        @editSession.snippetExpansion = this
         @editSession.normalizeTabsInBufferRange(newRange)
       @indentSubsequentLines(startPosition.row, snippet) if snippet.lineCount > 1
 
