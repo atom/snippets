@@ -1,4 +1,5 @@
-Snippet = require 'snippets/lib/snippet'
+Snippet = require '../lib/snippet'
+Snippets = require '../lib/snippets'
 RootView = require 'root-view'
 Buffer = require 'text-buffer'
 Editor = require 'editor'
@@ -14,7 +15,7 @@ describe "Snippets extension", ->
 
     packageWithSnippets = atom.loadPackage("package-with-snippets")
 
-    spyOn(require("snippets/lib/snippets"), 'loadAll')
+    spyOn(Snippets, 'loadAll')
     atom.activatePackage("snippets")
 
     editor = rootView.getActiveView()
@@ -168,7 +169,7 @@ describe "Snippets extension", ->
       describe "when the snippet contains hard tabs", ->
         describe "when the edit session is in soft-tabs mode", ->
           it "translates hard tabs in the snippet to the appropriate number of spaces", ->
-            expect(editSession.softTabs).toBeTruthy()
+            expect(editSession.getSoftTabs()).toBeTruthy()
             editor.insertText("t3")
             editor.trigger keydownEvent('tab', target: editor[0])
             expect(buffer.lineForRow(1)).toBe "  line 2"
@@ -192,7 +193,7 @@ describe "Snippets extension", ->
 
         describe "when the snippet spans multiple lines", ->
           it "indents the subsequent lines of the snippet to be even with the start of the first line", ->
-            expect(editSession.softTabs).toBeTruthy()
+            expect(editSession.getSoftTabs()).toBeTruthy()
             editor.setCursorScreenPosition([2, Infinity])
             editor.insertText ' t3'
             editor.trigger 'snippets:expand'
@@ -228,19 +229,6 @@ describe "Snippets extension", ->
         expect(buffer.lineForRow(0)).toBe "t6"
         editor.trigger keydownEvent('tab', target: editor[0])
         expect(buffer.lineForRow(0)).toBe "first line"
-
-    describe "when a snippet expansion is undone and redone", ->
-      it "recreates the snippet's tab stops", ->
-        editor.insertText '    t6\n'
-        editor.setCursorBufferPosition [0, Infinity]
-        editor.trigger keydownEvent('tab', target: editor[0])
-        expect(buffer.lineForRow(0)).toBe "    first line"
-        expect(editor.getCursorBufferPosition()).toEqual [0, 14]
-        editor.undo()
-        editor.redo()
-        expect(editor.getCursorBufferPosition()).toEqual [0, 14]
-        editor.trigger keydownEvent('tab', target: editor[0])
-        expect(editor.getSelectedBufferRange()).toEqual [[1, 6], [1, 36]]
 
   describe "snippet loading", ->
     beforeEach ->
