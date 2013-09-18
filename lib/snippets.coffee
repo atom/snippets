@@ -1,11 +1,7 @@
-AtomPackage = require 'atom-package'
-fs = require 'fs'
-fsUtils = require 'fs-utils'
+{_, fs} = require 'atom-api'
 path = require 'path'
-_ = require 'underscore'
 SnippetExpansion = require './snippet-expansion'
 Snippet = require './snippet'
-TextMatePackage = require 'text-mate-package'
 CSON = require 'season'
 async = require 'async'
 
@@ -30,7 +26,7 @@ module.exports =
     @loaded = true
 
   loadSnippetsFromPackage: (pack, done) ->
-    if pack instanceof TextMatePackage
+    if pack.getType() is 'textmate'
       @loadTextMateSnippets(pack.path, done)
     else
       @loadAtomSnippets(pack.path, done)

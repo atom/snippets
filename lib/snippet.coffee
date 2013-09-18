@@ -1,4 +1,4 @@
-_ = require 'underscore'
+{_} = require 'atom-api'
 {Range} = require 'telepath'
 
 module.exports =

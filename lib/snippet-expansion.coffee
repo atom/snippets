@@ -1,5 +1,4 @@
-Subscriber = require 'subscriber'
-_ = require 'underscore'
+{_, Subscriber} = require 'atom-api'
 
 module.exports =
 class SnippetExpansion
