@@ -26,7 +26,7 @@ module.exports =
     @loaded = true
 
   loadSnippetsFromPackage: (pack, done) ->
-    if pack.getType() is 'textmate'
+    if pack.getType?() is 'textmate'
       @loadTextMateSnippets(pack.path, done)
     else
       @loadAtomSnippets(pack.path, done)
