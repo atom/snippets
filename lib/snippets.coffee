@@ -33,7 +33,7 @@ module.exports =
 
   loadAtomSnippets: (packagePath, done) ->
     snippetsDirPath = path.join(packagePath, 'snippets')
-    return done() unless fsUtils.isDirectorySync(snippetsDirPath)
+    return done() unless fs.isDirectorySync(snippetsDirPath)
 
     loadSnippetFile = (filename, done) =>
       return done() if filename.indexOf('.') is 0
@@ -50,7 +50,7 @@ module.exports =
 
   loadTextMateSnippets: (bundlePath, done) ->
     snippetsDirPath = path.join(bundlePath, 'Snippets')
-    return done() unless fsUtils.isDirectorySync(snippetsDirPath)
+    return done() unless fs.isDirectorySync(snippetsDirPath)
 
     loadSnippetFile = (filename, done) =>
       return done() if filename.indexOf('.') is 0
@@ -61,7 +61,7 @@ module.exports =
         console.warn "Error reading snippets file '#{filepath}': #{err.stack ? err}"
 
       try
-        fsUtils.readObject filepath, (err, object) =>
+        fs.readObject filepath, (err, object) =>
           try
             if err
               logError(err)
