@@ -1,2 +1,2 @@
-'.editor':
+'.editor:not(.mini)':
   'tab': 'snippets:expand'
