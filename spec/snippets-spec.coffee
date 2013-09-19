@@ -1,6 +1,6 @@
 Snippet = require '../lib/snippet'
 Snippets = require '../lib/snippets'
-{_, RootView} = require 'atom-api'
+{_, RootView} = require 'atom'
 
 describe "Snippets extension", ->
   [buffer, editor, editSession] = []
