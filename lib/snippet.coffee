@@ -1,5 +1,4 @@
-{_} = require 'atom-api'
-{Range} = require 'telepath'
+{_, Range} = require 'atom-api'
 
 module.exports =
 class Snippet
