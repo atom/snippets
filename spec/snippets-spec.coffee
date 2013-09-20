@@ -1,10 +1,6 @@
 Snippet = require '../lib/snippet'
 Snippets = require '../lib/snippets'
-RootView = require 'root-view'
-Buffer = require 'text-buffer'
-Editor = require 'editor'
-_ = require 'underscore'
-Package = require 'package'
+{_, RootView} = require 'atom'
 
 describe "Snippets extension", ->
   [buffer, editor, editSession] = []

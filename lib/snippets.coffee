@@ -1,11 +1,7 @@
-AtomPackage = require 'atom-package'
-fs = require 'fs'
-fsUtils = require 'fs-utils'
+{_, fs} = require 'atom'
 path = require 'path'
-_ = require 'underscore'
 SnippetExpansion = require './snippet-expansion'
 Snippet = require './snippet'
-TextMatePackage = require 'text-mate-package'
 CSON = require 'season'
 async = require 'async'
 
@@ -30,14 +26,14 @@ module.exports =
     @loaded = true
 
   loadSnippetsFromPackage: (pack, done) ->
-    if pack instanceof TextMatePackage
+    if pack.getType?() is 'textmate'
       @loadTextMateSnippets(pack.path, done)
     else
       @loadAtomSnippets(pack.path, done)
 
   loadAtomSnippets: (packagePath, done) ->
     snippetsDirPath = path.join(packagePath, 'snippets')
-    return done() unless fsUtils.isDirectorySync(snippetsDirPath)
+    return done() unless fs.isDirectorySync(snippetsDirPath)
 
     loadSnippetFile = (filename, done) =>
       return done() if filename.indexOf('.') is 0
@@ -54,7 +50,7 @@ module.exports =
 
   loadTextMateSnippets: (bundlePath, done) ->
     snippetsDirPath = path.join(bundlePath, 'Snippets')
-    return done() unless fsUtils.isDirectorySync(snippetsDirPath)
+    return done() unless fs.isDirectorySync(snippetsDirPath)
 
     loadSnippetFile = (filename, done) =>
       return done() if filename.indexOf('.') is 0
@@ -65,7 +61,7 @@ module.exports =
         console.warn "Error reading snippets file '#{filepath}': #{err.stack ? err}"
 
       try
-        fsUtils.readObject filepath, (err, object) =>
+        fs.readObject filepath, (err, object) =>
           try
             if err
               logError(err)
