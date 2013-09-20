@@ -15,10 +15,5 @@
   },
   "publishConfig": {
     "registry": "https://atom.iriscouch.com/registry/_design/app/_rewrite"
-  },
-  "dependencies": {
-    "pegjs": "~0.7.0",
-    "async": "0.2.6",
-    "season": "~0.12.0"
   }
 }
