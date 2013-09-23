@@ -242,7 +242,7 @@ describe "Snippets extension", ->
       snippets.loaded = false
       snippets.loadAll()
 
-      waitsFor "all snippets to load", 5000, -> snippets.loaded
+      waitsFor "all snippets to load", 30000, -> snippets.loaded
 
       runs ->
         expect(syntax.getProperty(['.test'], 'snippets.test')?.constructor).toBe Snippet
@@ -257,7 +257,7 @@ describe "Snippets extension", ->
       snippets.loaded = false
       snippets.loadAll()
 
-      waitsFor "all snippets to load", 5000, -> snippets.loaded
+      waitsFor "all snippets to load", 30000, -> snippets.loaded
 
       runs ->
         snippet = syntax.getProperty(['.source.js'], 'snippets.fun')
