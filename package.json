@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "pegjs": "~0.7.0",
-    "async": "~0.2.6"
+    "async": "~0.2.6",
+    "season": "~0.13.0"
   }
 }
