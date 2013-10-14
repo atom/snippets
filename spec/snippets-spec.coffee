@@ -7,7 +7,7 @@ describe "Snippets extension", ->
   beforeEach ->
     atom.activatePackage('javascript-tmbundle', sync: true)
     window.rootView = new RootView
-    rootView.open('sample.js')
+    rootView.openSync('sample.js')
 
     packageWithSnippets = atom.loadPackage("package-with-snippets")
 
