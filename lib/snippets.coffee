@@ -50,6 +50,9 @@ module.exports =
 
   loadTextMateSnippets: (bundlePath, done) ->
     snippetsDirPath = path.join(bundlePath, 'Snippets')
+    if not fs.isDirectorySync(snippetsDirPath)
+      snippetsDirPath = path.join(bundlePath, "snippets")
+
     return done() unless fs.isDirectorySync(snippetsDirPath)
 
     loadSnippetFile = (filename, done) =>
