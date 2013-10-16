@@ -1,7 +1,10 @@
-{_, Subscriber} = require 'atom'
+{_} = require 'atom'
+{Subscriber} = require 'emissary'
 
 module.exports =
 class SnippetExpansion
+  Subscriber.includeInto(this)
+
   snippet: null
   tabStopMarkers: null
   settingTabStop: false
@@ -64,5 +67,3 @@ class SnippetExpansion
 
   restore: (@editSession) ->
     @editSession.snippetExpansion = this
-
-_.extend(SnippetExpansion.prototype, Subscriber)

@@ -1,6 +1,6 @@
 {
   "name": "snippets",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "main": "./lib/snippets",
   "description": "Expand snippets matching the current prefix with `tab`.",
   "repository": {
@@ -19,6 +19,7 @@
   "dependencies": {
     "pegjs": "~0.7.0",
     "async": "~0.2.6",
-    "season": "~0.13.0"
+    "season": "~0.13.0",
+    "emissary": "~0.6.0"
   }
 }
