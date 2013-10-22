@@ -5,7 +5,7 @@ Snippets = require '../lib/snippets'
 describe "Snippets extension", ->
   [buffer, editor, editSession] = []
   beforeEach ->
-    atom.activatePackage('javascript-tmbundle', sync: true)
+    atom.activatePackage('language-javascript', sync: true)
     window.rootView = new RootView
     rootView.openSync('sample.js')
 
