@@ -84,7 +84,13 @@ module.exports =
         return done()
       async.eachSeries(paths, loadSnippetFile, done)
 
-  translateTextmateSnippet: ({ scope, name, content, tabTrigger }) ->
+  translateTextmateSnippet: (snippet) ->
+    {scope, name, content, tabTrigger} = snippet
+
+    # Treat it as an Atom snippet if none of the TextMate snippet fields
+    # are present
+    return snippet unless scope or name or content or tabTrigger
+
     scope = syntax.cssSelectorFromScopeSelector(scope) if scope
     scope ?= '*'
     snippetsByScope = {}
