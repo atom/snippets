@@ -10,16 +10,15 @@ module.exports =
   loaded: false
 
   activate: ->
-    window.snippets = this
     @loadAll()
-    rootView.eachEditor (editor) =>
+    atom.rootView.eachEditor (editor) =>
       @enableSnippetsInEditor(editor) if editor.attached
 
   deactivate: ->
 
   loadAll: ->
-    packages = atom.getLoadedPackages()
-    packages.push(path: config.configDirPath)
+    packages = atom.packages.getLoadedPackages()
+    packages.push(path: atom.getConfigDirPath())
     async.eachSeries packages, @loadSnippetsFromPackage.bind(this), @doneLoading.bind(this)
 
   doneLoading: ->
@@ -91,7 +90,7 @@ module.exports =
     # are present
     return snippet unless scope or name or content or tabTrigger
 
-    scope = syntax.cssSelectorFromScopeSelector(scope) if scope
+    scope = atom.syntax.cssSelectorFromScopeSelector(scope) if scope
     scope ?= '*'
     snippetsByScope = {}
     snippetsByName = {}
@@ -108,7 +107,7 @@ module.exports =
         bodyTree ?= @getBodyParser().parse(body)
         snippet = new Snippet({name, prefix, bodyTree})
         snippetsByPrefix[snippet.prefix] = snippet
-      syntax.addProperties(selector, snippets: snippetsByPrefix)
+      atom.syntax.addProperties(selector, snippets: snippetsByPrefix)
 
   getBodyParser: ->
     require './snippet-body-parser'
@@ -121,7 +120,7 @@ module.exports =
 
       editSession = editor.activeEditSession
       prefix = editSession.getCursor().getCurrentWordPrefix()
-      if snippet = syntax.getProperty(editSession.getCursorScopes(), "snippets.#{prefix}")
+      if snippet = atom.syntax.getProperty(editSession.getCursorScopes(), "snippets.#{prefix}")
         editSession.transact ->
           new SnippetExpansion(snippet, editSession)
       else

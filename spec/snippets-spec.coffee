@@ -3,25 +3,22 @@ Snippets = require '../lib/snippets'
 {_, RootView} = require 'atom'
 
 describe "Snippets extension", ->
-  [buffer, editor, editSession] = []
+  [buffer, editor, editSession, snippets] = []
   beforeEach ->
-    atom.activatePackage('language-javascript', sync: true)
-    window.rootView = new RootView
-    rootView.openSync('sample.js')
+    atom.packages.activatePackage('language-javascript', sync: true)
+    atom.rootView = new RootView
+    atom.rootView.openSync('sample.js')
 
-    packageWithSnippets = atom.loadPackage("package-with-snippets")
+    packageWithSnippets = atom.packages.loadPackage("package-with-snippets")
 
     spyOn(Snippets, 'loadAll')
-    atom.activatePackage("snippets")
+    snippets = atom.packages.activatePackage("snippets").mainModule
 
-    editor = rootView.getActiveView()
-    editSession = rootView.getActivePaneItem()
+    editor = atom.rootView.getActiveView()
+    editSession = atom.rootView.getActivePaneItem()
     buffer = editor.getBuffer()
-    rootView.simulateDomAttachment()
-    rootView.enableKeymap()
-
-  afterEach ->
-    window.snippets = null
+    atom.rootView.simulateDomAttachment()
+    atom.rootView.enableKeymap()
 
   describe "when 'tab' is triggered on the editor", ->
     beforeEach ->
@@ -245,7 +242,7 @@ describe "Snippets extension", ->
       waitsFor "all snippets to load", 30000, -> snippets.loaded
 
       runs ->
-        expect(syntax.getProperty(['.test'], 'snippets.test')?.constructor).toBe Snippet
+        expect(atom.syntax.getProperty(['.test'], 'snippets.test')?.constructor).toBe Snippet
 
         # warn about junk-file, but don't even try to parse a hidden file
         expect(console.warn).toHaveBeenCalled()
@@ -260,7 +257,7 @@ describe "Snippets extension", ->
       waitsFor "all snippets to load", 30000, -> snippets.loaded
 
       runs ->
-        snippet = syntax.getProperty(['.source.js'], 'snippets.fun')
+        snippet = atom.syntax.getProperty(['.source.js'], 'snippets.fun')
         expect(snippet.constructor).toBe Snippet
         expect(snippet.prefix).toBe 'fun'
         expect(snippet.name).toBe 'Function'
