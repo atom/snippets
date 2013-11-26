@@ -9,16 +9,16 @@ class SnippetExpansion
   tabStopMarkers: null
   settingTabStop: false
 
-  constructor: (@snippet, @editSession) ->
-    @editSession.selectToBeginningOfWord()
-    startPosition = @editSession.getCursorBufferPosition()
-    @editSession.transact =>
-      [newRange] = @editSession.insertText(snippet.body, autoIndent: false)
+  constructor: (@snippet, @editor) ->
+    @editor.selectToBeginningOfWord()
+    startPosition = @editor.getCursorBufferPosition()
+    @editor.transact =>
+      [newRange] = @editor.insertText(snippet.body, autoIndent: false)
       if snippet.tabStops.length > 0
-        @subscribe @editSession, 'cursor-moved.snippet-expansion', (e) => @cursorMoved(e)
+        @subscribe @editor, 'cursor-moved.snippet-expansion', (e) => @cursorMoved(e)
         @placeTabStopMarkers(startPosition, snippet.tabStops)
-        @editSession.snippetExpansion = this
-        @editSession.normalizeTabsInBufferRange(newRange)
+        @editor.snippetExpansion = this
+        @editor.normalizeTabsInBufferRange(newRange)
       @indentSubsequentLines(startPosition.row, snippet) if snippet.lineCount > 1
 
   cursorMoved: ({oldBufferPosition, newBufferPosition, textChanged}) ->
@@ -29,13 +29,13 @@ class SnippetExpansion
 
   placeTabStopMarkers: (startPosition, tabStopRanges) ->
     @tabStopMarkers = tabStopRanges.map ({start, end}) =>
-      @editSession.markBufferRange([startPosition.add(start), startPosition.add(end)])
+      @editor.markBufferRange([startPosition.add(start), startPosition.add(end)])
     @setTabStopIndex(0)
 
   indentSubsequentLines: (startRow, snippet) ->
-    initialIndent = @editSession.lineForBufferRow(startRow).match(/^\s*/)[0]
+    initialIndent = @editor.lineForBufferRow(startRow).match(/^\s*/)[0]
     for row in [startRow + 1...startRow + snippet.lineCount]
-      @editSession.buffer.insert([row, 0], initialIndent)
+      @editor.buffer.insert([row, 0], initialIndent)
 
   goToNextTabStop: ->
     nextIndex = @tabStopIndex + 1
@@ -53,17 +53,17 @@ class SnippetExpansion
 
   setTabStopIndex: (@tabStopIndex) ->
     @settingTabStop = true
-    markerSelected = @editSession.selectMarker(@tabStopMarkers[@tabStopIndex])
+    markerSelected = @editor.selectMarker(@tabStopMarkers[@tabStopIndex])
     @settingTabStop = false
     markerSelected
 
   tabStopsForBufferPosition: (bufferPosition) ->
-    _.intersection(@tabStopMarkers, @editSession.findMarkers(containsBufferPosition: bufferPosition))
+    _.intersection(@tabStopMarkers, @editor.findMarkers(containsBufferPosition: bufferPosition))
 
   destroy: ->
     @unsubscribe()
     marker.destroy() for marker in @tabStopMarkers
-    @editSession.snippetExpansion = null
+    @editor.snippetExpansion = null
 
-  restore: (@editSession) ->
-    @editSession.snippetExpansion = this
+  restore: (@editor) ->
+    @editor.snippetExpansion = this

@@ -11,8 +11,8 @@ module.exports =
 
   activate: ->
     @loadAll()
-    atom.workspaceView.eachEditor (editor) =>
-      @enableSnippetsInEditor(editor) if editor.attached
+    atom.workspaceView.eachEditorView (editorView) =>
+      @enableSnippetsInEditor(editorView) if editorView.attached
 
   deactivate: ->
 
@@ -112,24 +112,24 @@ module.exports =
   getBodyParser: ->
     require './snippet-body-parser'
 
-  enableSnippetsInEditor: (editor) ->
-    editor.command 'snippets:expand', (e) =>
-      unless editor.getSelection().isEmpty()
+  enableSnippetsInEditor: (editorView) ->
+    editorView.command 'snippets:expand', (e) =>
+      unless editorView.getSelection().isEmpty()
         e.abortKeyBinding()
         return
 
-      editSession = editor.activeEditSession
-      prefix = editSession.getCursor().getCurrentWordPrefix()
-      if snippet = atom.syntax.getProperty(editSession.getCursorScopes(), "snippets.#{prefix}")
-        editSession.transact ->
-          new SnippetExpansion(snippet, editSession)
+      {editor} = editorView
+      prefix = editor.getCursor().getCurrentWordPrefix()
+      if snippet = atom.syntax.getProperty(editor.getCursorScopes(), "snippets.#{prefix}")
+        editor.transact ->
+          new SnippetExpansion(snippet, editor)
       else
         e.abortKeyBinding()
 
-    editor.command 'snippets:next-tab-stop', (e) ->
-      unless editor.activeEditSession.snippetExpansion?.goToNextTabStop()
+    editorView.command 'snippets:next-tab-stop', (e) ->
+      unless editorView.editor.snippetExpansion?.goToNextTabStop()
         e.abortKeyBinding()
 
-    editor.command 'snippets:previous-tab-stop', (e) ->
-      unless editor.activeEditSession.snippetExpansion?.goToPreviousTabStop()
+    editorView.command 'snippets:previous-tab-stop', (e) ->
+      unless editorView.editor.snippetExpansion?.goToPreviousTabStop()
         e.abortKeyBinding()
