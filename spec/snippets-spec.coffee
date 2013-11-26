@@ -1,24 +1,24 @@
 Snippet = require '../lib/snippet'
 Snippets = require '../lib/snippets'
-{_, RootView} = require 'atom'
+{_, WorkspaceView} = require 'atom'
 
 describe "Snippets extension", ->
   [buffer, editor, editSession, snippets] = []
   beforeEach ->
     atom.packages.activatePackage('language-javascript', sync: true)
-    atom.rootView = new RootView
-    atom.rootView.openSync('sample.js')
+    atom.workspaceView = new WorkspaceView
+    atom.workspaceView.openSync('sample.js')
 
     packageWithSnippets = atom.packages.loadPackage("package-with-snippets")
 
     spyOn(Snippets, 'loadAll')
     snippets = atom.packages.activatePackage("snippets").mainModule
 
-    editor = atom.rootView.getActiveView()
-    editSession = atom.rootView.getActivePaneItem()
+    editor = atom.workspaceView.getActiveView()
+    editSession = atom.workspaceView.getActivePaneItem()
     buffer = editor.getBuffer()
-    atom.rootView.simulateDomAttachment()
-    atom.rootView.enableKeymap()
+    atom.workspaceView.simulateDomAttachment()
+    atom.workspaceView.enableKeymap()
 
   describe "when 'tab' is triggered on the editor", ->
     beforeEach ->

@@ -11,7 +11,7 @@ module.exports =
 
   activate: ->
     @loadAll()
-    atom.rootView.eachEditor (editor) =>
+    atom.workspaceView.eachEditor (editor) =>
       @enableSnippetsInEditor(editor) if editor.attached
 
   deactivate: ->
