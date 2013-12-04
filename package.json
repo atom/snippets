@@ -3,18 +3,9 @@
   "version": "0.17.0",
   "main": "./lib/snippets",
   "description": "Expand snippets matching the current prefix with `tab`.",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/atom/snippets.git"
-  },
-  "bugs": {
-    "url": "https://github.com/atom/snippets/issues"
-  },
+  "repository": "https://github.com/atom/snippets",
   "engines": {
     "atom": "*"
-  },
-  "publishConfig": {
-    "registry": "https://atom.cloudant.com/registry/_design/app/_rewrite"
   },
   "dependencies": {
     "pegjs": "~0.7.0",
