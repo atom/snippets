@@ -1,4 +1,10 @@
-PEG = require 'pegjs'
-{fs} = require 'atom'
-grammarSrc = fs.readFileSync(require.resolve('./snippet-body.pegjs'), 'utf8')
-module.exports = PEG.buildParser(grammarSrc, trackLineAndColumn: true)
+try
+  parser = require './snippet-body'
+catch
+  {fs} = require 'atom'
+  PEG = require 'pegjs'
+
+  grammarSrc = fs.readFileSync(require.resolve('./snippet-body.pegjs'), 'utf8')
+  parser = PEG.buildParser(grammarSrc, trackLineAndColumn: true)
+
+module.exports = parser
