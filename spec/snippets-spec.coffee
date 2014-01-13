@@ -16,7 +16,7 @@ describe "Snippets extension", ->
 
     editorView = atom.workspaceView.getActiveView()
     editor = atom.workspaceView.getActivePaneItem()
-    buffer = editorView.getBuffer()
+    buffer = editor.getBuffer()
     atom.workspaceView.simulateDomAttachment()
     atom.workspaceView.enableKeymap()
 
@@ -67,15 +67,15 @@ describe "Snippets extension", ->
     describe "when the letters preceding the cursor trigger a snippet", ->
       describe "when the snippet contains no tab stops", ->
         it "replaces the prefix with the snippet text and places the cursor at its end", ->
-          editorView.insertText("t1")
-          expect(editorView.getCursorScreenPosition()).toEqual [0, 2]
+          editor.insertText("t1")
+          expect(editor.getCursorScreenPosition()).toEqual [0, 2]
 
           editorView.trigger keydownEvent('tab', target: editorView[0])
           expect(buffer.lineForRow(0)).toBe "this is a testvar quicksort = function () {"
-          expect(editorView.getCursorScreenPosition()).toEqual [0, 14]
+          expect(editor.getCursorScreenPosition()).toEqual [0, 14]
 
         it "inserts a real tab the next time a tab is pressed after the snippet is expanded", ->
-          editorView.insertText("t1")
+          editor.insertText("t1")
           editorView.trigger keydownEvent('tab', target: editorView[0])
           expect(buffer.lineForRow(0)).toBe "this is a testvar quicksort = function () {"
           editorView.trigger keydownEvent('tab', target: editorView[0])
@@ -83,87 +83,87 @@ describe "Snippets extension", ->
 
       describe "when the snippet contains tab stops", ->
         it "places the cursor at the first tab-stop, and moves the cursor in response to 'next-tab-stop' events", ->
-          markerCountBefore = editorView.editor.getMarkerCount()
-          editorView.setCursorScreenPosition([2, 0])
-          editorView.insertText('t2')
+          markerCountBefore = editor.getMarkerCount()
+          editor.setCursorScreenPosition([2, 0])
+          editor.insertText('t2')
           editorView.trigger keydownEvent('tab', target: editorView[0])
           expect(buffer.lineForRow(2)).toBe "go here next:() and finally go here:()"
           expect(buffer.lineForRow(3)).toBe "go here first:()"
           expect(buffer.lineForRow(4)).toBe "    if (items.length <= 1) return items;"
-          expect(editorView.getSelectedBufferRange()).toEqual [[3, 15], [3, 15]]
+          expect(editor.getSelectedBufferRange()).toEqual [[3, 15], [3, 15]]
 
           editorView.trigger keydownEvent('tab', target: editorView[0])
-          expect(editorView.getSelectedBufferRange()).toEqual [[2, 14], [2, 14]]
-          editorView.insertText 'abc'
+          expect(editor.getSelectedBufferRange()).toEqual [[2, 14], [2, 14]]
+          editor.insertText 'abc'
 
           editorView.trigger keydownEvent('tab', target: editorView[0])
-          expect(editorView.getSelectedBufferRange()).toEqual [[2, 40], [2, 40]]
+          expect(editor.getSelectedBufferRange()).toEqual [[2, 40], [2, 40]]
 
           # tab backwards
           editorView.trigger keydownEvent('tab', shiftKey: true, target: editorView[0])
-          expect(editorView.getSelectedBufferRange()).toEqual [[2, 14], [2, 17]] # should highlight text typed at tab stop
+          expect(editor.getSelectedBufferRange()).toEqual [[2, 14], [2, 17]] # should highlight text typed at tab stop
 
           editorView.trigger keydownEvent('tab', shiftKey: true, target: editorView[0])
-          expect(editorView.getSelectedBufferRange()).toEqual [[3, 15], [3, 15]]
+          expect(editor.getSelectedBufferRange()).toEqual [[3, 15], [3, 15]]
 
           # shift-tab on first tab-stop does nothing
           editorView.trigger keydownEvent('tab', shiftKey: true, target: editorView[0])
-          expect(editorView.getCursorScreenPosition()).toEqual [3, 15]
+          expect(editor.getCursorScreenPosition()).toEqual [3, 15]
 
           # tab through all tab stops, then tab on last stop to terminate snippet
           editorView.trigger keydownEvent('tab', target: editorView[0])
           editorView.trigger keydownEvent('tab', target: editorView[0])
           editorView.trigger keydownEvent('tab', target: editorView[0])
           expect(buffer.lineForRow(2)).toBe "go here next:(abc) and finally go here:(  )"
-          expect(editorView.editor.getMarkerCount()).toBe markerCountBefore
+          expect(editor.getMarkerCount()).toBe markerCountBefore
 
         describe "when tab stops are nested", ->
           it "destroys the inner tab stop if the outer tab stop is modified", ->
             buffer.setText('')
-            editorView.insertText 't5'
+            editor.insertText 't5'
             editorView.trigger 'snippets:expand'
             expect(buffer.lineForRow(0)).toBe '"key": value'
-            expect(editorView.getSelectedBufferRange()).toEqual [[0, 0], [0, 5]]
-            editorView.insertText("foo")
+            expect(editor.getSelectedBufferRange()).toEqual [[0, 0], [0, 5]]
+            editor.insertText("foo")
             editorView.trigger keydownEvent('tab', target: editorView[0])
-            expect(editorView.getSelectedBufferRange()).toEqual [[0, 5], [0, 10]]
+            expect(editor.getSelectedBufferRange()).toEqual [[0, 5], [0, 10]]
 
         describe "when tab stops are separated by blank lines", ->
           it "correctly places the tab stops (regression)", ->
             buffer.setText('')
-            editorView.insertText 't7'
+            editor.insertText 't7'
             editorView.trigger 'snippets:expand'
             editorView.trigger 'snippets:next-tab-stop'
             expect(editor.getCursorBufferPosition()).toEqual [3, 25]
 
         describe "when the cursor is moved beyond the bounds of the current tab stop", ->
           it "terminates the snippet", ->
-            editorView.setCursorScreenPosition([2, 0])
-            editorView.insertText('t2')
+            editor.setCursorScreenPosition([2, 0])
+            editor.insertText('t2')
             editorView.trigger keydownEvent('tab', target: editorView[0])
 
-            editorView.moveCursorUp()
-            editorView.moveCursorLeft()
+            editor.moveCursorUp()
+            editor.moveCursorLeft()
             editorView.trigger keydownEvent('tab', target: editorView[0])
 
             expect(buffer.lineForRow(2)).toBe "go here next:(  ) and finally go here:()"
-            expect(editorView.getCursorBufferPosition()).toEqual [2, 16]
+            expect(editor.getCursorBufferPosition()).toEqual [2, 16]
 
             # test we can terminate with shift-tab
-            editorView.setCursorScreenPosition([4, 0])
-            editorView.insertText('t2')
+            editor.setCursorScreenPosition([4, 0])
+            editor.insertText('t2')
             editorView.trigger keydownEvent('tab', target: editorView[0])
             editorView.trigger keydownEvent('tab', target: editorView[0])
 
-            editorView.moveCursorRight()
+            editor.moveCursorRight()
             editorView.trigger keydownEvent('tab', shiftKey: true, target: editorView[0])
-            expect(editorView.getCursorBufferPosition()).toEqual [4, 15]
+            expect(editor.getCursorBufferPosition()).toEqual [4, 15]
 
       describe "when the snippet contains hard tabs", ->
         describe "when the edit session is in soft-tabs mode", ->
           it "translates hard tabs in the snippet to the appropriate number of spaces", ->
             expect(editor.getSoftTabs()).toBeTruthy()
-            editorView.insertText("t3")
+            editor.insertText("t3")
             editorView.trigger keydownEvent('tab', target: editorView[0])
             expect(buffer.lineForRow(1)).toBe "  line 2"
             expect(editor.getCursorBufferPosition()).toEqual [1, 8]
@@ -171,7 +171,7 @@ describe "Snippets extension", ->
         describe "when the edit session is in hard-tabs mode", ->
           it "inserts hard tabs in the snippet directly", ->
             editor.setSoftTabs(false)
-            editorView.insertText("t3")
+            editor.insertText("t3")
             editorView.trigger keydownEvent('tab', target: editorView[0])
             expect(buffer.lineForRow(1)).toBe "\tline 2"
             expect(editor.getCursorBufferPosition()).toEqual [1, 7]
@@ -179,46 +179,46 @@ describe "Snippets extension", ->
       describe "when the snippet prefix is indented", ->
         describe "when the snippet spans a single line", ->
           it "does not indent the next line", ->
-            editorView.setCursorScreenPosition([2, Infinity])
-            editorView.insertText ' t1'
+            editor.setCursorScreenPosition([2, Infinity])
+            editor.insertText ' t1'
             editorView.trigger 'snippets:expand'
             expect(buffer.lineForRow(3)).toBe "    var pivot = items.shift(), current, left = [], right = [];"
 
         describe "when the snippet spans multiple lines", ->
           it "indents the subsequent lines of the snippet to be even with the start of the first line", ->
             expect(editor.getSoftTabs()).toBeTruthy()
-            editorView.setCursorScreenPosition([2, Infinity])
-            editorView.insertText ' t3'
+            editor.setCursorScreenPosition([2, Infinity])
+            editor.insertText ' t3'
             editorView.trigger 'snippets:expand'
             expect(buffer.lineForRow(2)).toBe "    if (items.length <= 1) return items; line 1"
             expect(buffer.lineForRow(3)).toBe "      line 2"
-            expect(editorView.getCursorBufferPosition()).toEqual [3, 12]
+            expect(editor.getCursorBufferPosition()).toEqual [3, 12]
 
     describe "when the letters preceding the cursor don't match a snippet", ->
       it "inserts a tab as normal", ->
-        editorView.insertText("xte")
-        expect(editorView.getCursorScreenPosition()).toEqual [0, 3]
+        editor.insertText("xte")
+        expect(editor.getCursorScreenPosition()).toEqual [0, 3]
 
         editorView.trigger keydownEvent('tab', target: editorView[0])
         expect(buffer.lineForRow(0)).toBe "xte  var quicksort = function () {"
-        expect(editorView.getCursorScreenPosition()).toEqual [0, 5]
+        expect(editor.getCursorScreenPosition()).toEqual [0, 5]
 
     describe "when text is selected", ->
       it "inserts a tab as normal", ->
-        editorView.insertText("t1")
-        editorView.setSelectedBufferRange([[0, 0], [0, 2]])
+        editor.insertText("t1")
+        editor.setSelectedBufferRange([[0, 0], [0, 2]])
 
         editorView.trigger keydownEvent('tab', target: editorView[0])
         expect(buffer.lineForRow(0)).toBe "  t1var quicksort = function () {"
-        expect(editorView.getSelectedBufferRange()).toEqual [[0, 0], [0, 4]]
+        expect(editor.getSelectedBufferRange()).toEqual [[0, 0], [0, 4]]
 
     describe "when a previous snippet expansion has just been undone", ->
       it "expands the snippet based on the current prefix rather than jumping to the old snippet's tab stop", ->
-        editorView.insertText 't6\n'
-        editorView.setCursorBufferPosition [0, 2]
+        editor.insertText 't6\n'
+        editor.setCursorBufferPosition [0, 2]
         editorView.trigger keydownEvent('tab', target: editorView[0])
         expect(buffer.lineForRow(0)).toBe "first line"
-        editorView.undo()
+        editor.undo()
         expect(buffer.lineForRow(0)).toBe "t6"
         editorView.trigger keydownEvent('tab', target: editorView[0])
         expect(buffer.lineForRow(0)).toBe "first line"

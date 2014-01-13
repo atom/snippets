@@ -113,12 +113,12 @@ module.exports =
     require './snippet-body-parser'
 
   enableSnippetsInEditor: (editorView) ->
+    editor = editorView.getEditor()
     editorView.command 'snippets:expand', (e) =>
-      unless editorView.getSelection().isEmpty()
+      unless editor.getSelection().isEmpty()
         e.abortKeyBinding()
         return
 
-      {editor} = editorView
       prefix = editor.getCursor().getCurrentWordPrefix()
       if snippet = atom.syntax.getProperty(editor.getCursorScopes(), "snippets.#{prefix}")
         editor.transact ->
@@ -127,9 +127,9 @@ module.exports =
         e.abortKeyBinding()
 
     editorView.command 'snippets:next-tab-stop', (e) ->
-      unless editorView.editor.snippetExpansion?.goToNextTabStop()
+      unless editor.snippetExpansion?.goToNextTabStop()
         e.abortKeyBinding()
 
     editorView.command 'snippets:previous-tab-stop', (e) ->
-      unless editorView.editor.snippetExpansion?.goToPreviousTabStop()
+      unless editor.snippetExpansion?.goToPreviousTabStop()
         e.abortKeyBinding()
