@@ -11,6 +11,6 @@
     "pegjs": "~0.8.0",
     "async": "~0.2.6",
     "season": "~0.13.0",
-    "emissary": "~0.9.0"
+    "emissary": "1.x"
   }
 }
