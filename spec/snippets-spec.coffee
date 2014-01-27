@@ -338,3 +338,16 @@ describe "Snippets extension", ->
           "content": ["ActiveRecord::", ""]
         }
       ]
+
+  describe "when atom://.atom/snippets is opened", ->
+    it "opens ~/.atom/snippets.cson", ->
+      atom.workspaceView.destroyActivePaneItem()
+      configDirPath = temp.mkdirSync('atom-config-dir-')
+      spyOn(atom, 'getConfigDirPath').andReturn configDirPath
+      atom.workspaceView.open('atom://.atom/snippets')
+
+      waitsFor ->
+        atom.workspaceView.getActivePaneItem()?
+
+      runs ->
+        expect(atom.workspaceView.getActivePaneItem().getUri()).toBe path.join(configDirPath, 'snippets.cson')

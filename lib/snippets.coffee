@@ -11,9 +11,17 @@ module.exports =
   loaded: false
 
   activate: ->
+    atom.project.registerOpener (uri) =>
+      if uri is 'atom://.atom/snippets'
+        atom.workspaceView.open(@getUserSnippetsPath())
+
     @loadAll()
     atom.workspaceView.eachEditorView (editorView) =>
       @enableSnippetsInEditor(editorView) if editorView.attached
+
+  getUserSnippetsPath: ->
+    userSnippetsPath = CSON.resolve(path.join(atom.getConfigDirPath(), 'snippets'))
+    userSnippetsPath ? path.join(atom.getConfigDirPath(), 'snippets.cson')
 
   loadAll: ->
     @loadBundledSnippets => @loadUserSnippets => @loadPackageSnippets()
@@ -23,8 +31,12 @@ module.exports =
     @loadSnippetsFile(bundledSnippetsPath, callback)
 
   loadUserSnippets: (callback) ->
-    userSnippetsPath = CSON.resolve(path.join(atom.getConfigDirPath(), 'snippets'))
-    @loadSnippetsFile(userSnippetsPath, callback)
+    userSnippetsPath = @getUserSnippetsPath()
+    fs.stat userSnippetsPath, (error, stat) =>
+      if stat?.isFile()
+        @loadSnippetsFile(userSnippetsPath, callback)
+      else
+        callback()
 
   loadPackageSnippets: ->
     packages = atom.packages.getLoadedPackages()
