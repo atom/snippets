@@ -8,9 +8,11 @@
     "atom": "*"
   },
   "dependencies": {
-    "pegjs": "~0.8.0",
     "async": "~0.2.6",
+    "emissary": "1.x",
+    "fs-plus": "1.x",
+    "pegjs": "~0.8.0",
     "season": "~0.13.0",
-    "emissary": "1.x"
+    "temp": "~0.6.0"
   }
 }

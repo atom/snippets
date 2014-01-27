@@ -1,6 +1,11 @@
+path = require 'path'
+
+{WorkspaceView} = require 'atom'
+fs = require 'fs-plus'
+temp = require 'temp'
+
 Snippet = require '../lib/snippet'
 Snippets = require '../lib/snippets'
-{_, WorkspaceView} = require 'atom'
 
 describe "Snippets extension", ->
   [buffer, editorView, editor, snippets] = []
@@ -9,7 +14,7 @@ describe "Snippets extension", ->
     atom.workspaceView = new WorkspaceView
     atom.workspaceView.openSync('sample.js')
 
-    packageWithSnippets = atom.packages.loadPackage("package-with-snippets")
+    packageWithSnippets = atom.packages.loadPackage(path.join(__dirname, 'fixtures', 'package-with-snippets'))
 
     spyOn(Snippets, 'loadAll')
     snippets = atom.packages.activatePackage("snippets").mainModule
@@ -224,17 +229,19 @@ describe "Snippets extension", ->
         expect(buffer.lineForRow(0)).toBe "first line"
 
   describe "snippet loading", ->
+    [configDirPath, packageWithSnippets, packageWithBrokenSnippets] = []
+
     beforeEach ->
-      atom.packages.loadPackage('package-with-broken-snippets.tmbundle', sync: true)
-      atom.packages.loadPackage('package-with-snippets')
+      packageWithBrokenSnippets = atom.packages.loadPackage(path.join(__dirname, 'fixtures', 'package-with-broken-snippets'))
+      packageWithSnippets =  atom.packages.loadPackage(path.join(__dirname, 'fixtures', 'package-with-snippets'))
+      configDirPath = temp.mkdirSync('atom-config-dir-')
 
       jasmine.unspy(window, "setTimeout")
       jasmine.unspy(snippets, 'loadAll')
-      spyOn(snippets, 'loadAtomSnippets').andCallFake (path, done) -> done()
-      spyOn(snippets, 'loadTextMateSnippets').andCallFake (path, done) -> done()
+      spyOn(atom.packages, 'getLoadedPackages').andReturn [packageWithSnippets, packageWithBrokenSnippets]
+      spyOn(atom, 'getConfigDirPath').andReturn configDirPath
 
     it "loads non-hidden snippet files from all atom packages with snippets directories, logging a warning if a file can't be parsed", ->
-      jasmine.unspy(snippets, 'loadAtomSnippets')
       spyOn(console, 'warn')
       snippets.loaded = false
       snippets.loadAll()
@@ -248,8 +255,17 @@ describe "Snippets extension", ->
         expect(console.warn).toHaveBeenCalled()
         expect(console.warn.calls.length).toBe 1
 
-    it "loads snippets from all TextMate packages with snippets", ->
-      jasmine.unspy(snippets, 'loadTextMateSnippets')
+    it "loads ~/.atom/snippets.json when it exists", ->
+      fs.writeFileSync path.join(configDirPath, 'snippets.json'), """
+        {
+          ".foo": {
+            "foo snippet": {
+              "prefix": "foo",
+              "body": "bar"
+            }
+          }
+        }
+      """
       spyOn(console, 'warn')
       snippets.loaded = false
       snippets.loadAll()
@@ -257,19 +273,23 @@ describe "Snippets extension", ->
       waitsFor "all snippets to load", 30000, -> snippets.loaded
 
       runs ->
-        snippet = atom.syntax.getProperty(['.source.js'], 'snippets.fun')
-        expect(snippet.constructor).toBe Snippet
-        expect(snippet.prefix).toBe 'fun'
-        expect(snippet.name).toBe 'Function'
-        expect(snippet.body).toBe """
-          function function_name(argument) {
-          \t// body...
-          }
-        """
+        expect(atom.syntax.getProperty(['.foo'], 'snippets.foo')?.constructor).toBe Snippet
 
-        # warn about invalid.plist
-        expect(console.warn).toHaveBeenCalled()
-        expect(console.warn.calls.length).toBe 1
+    it "loads ~/.atom/snippets.cson when it exists", ->
+      fs.writeFileSync path.join(configDirPath, 'snippets.cson'), """
+        ".foo":
+          "foo snippet":
+            "prefix": "foo"
+            "body": "bar"
+      """
+      spyOn(console, 'warn')
+      snippets.loaded = false
+      snippets.loadAll()
+
+      waitsFor "all snippets to load", 30000, -> snippets.loaded
+
+      runs ->
+        expect(atom.syntax.getProperty(['.foo'], 'snippets.foo')?.constructor).toBe Snippet
 
   describe "snippet body parser", ->
     it "breaks a snippet body into lines, with each line containing tab stops at the appropriate position", ->
