@@ -4,11 +4,10 @@ async = require 'async'
 CSON = require 'season'
 fs = require 'fs-plus'
 
-SnippetExpansion = require './snippet-expansion'
 Snippet = require './snippet'
+SnippetExpansion = require './snippet-expansion'
 
 module.exports =
-  snippetsByExtension: {}
   loaded: false
 
   activate: ->
@@ -17,71 +16,41 @@ module.exports =
       @enableSnippetsInEditor(editorView) if editorView.attached
 
   loadAll: ->
+    userSnippetsPath = CSON.resolve(path.join(atom.getConfigDirPath(), 'snippets'))
+    if userSnippetsPath
+      @loadSnippetsFile userSnippetsPath, => @loadPackageSnippets()
+    else
+      @loadPackageSnippets()
+
+  loadPackageSnippets: ->
     packages = atom.packages.getLoadedPackages()
-    packages.push(path: atom.getConfigDirPath())
-    async.eachSeries packages, @loadSnippetsFromPackage.bind(this), @doneLoading.bind(this)
+    snippetsDirPaths = []
+    snippetsDirPaths.push(path.join(pack.path, 'snippets')) for pack in packages
+    async.eachSeries snippetsDirPaths, @loadSnippetsDirectory.bind(this), @doneLoading.bind(this)
 
   doneLoading: ->
     @loaded = true
 
-  loadSnippetsFromPackage: (pack, done) ->
-    if pack.getType?() is 'textmate'
-      @loadTextMateSnippets(pack.path, done)
-    else
-      @loadAtomSnippets(pack.path, done)
+  loadSnippetsDirectory: (snippetsDirPath, callback) ->
+    return callback() unless fs.isDirectorySync(snippetsDirPath)
 
-  loadAtomSnippets: (packagePath, done) ->
-    snippetsDirPath = path.join(packagePath, 'snippets')
-    return done() unless fs.isDirectorySync(snippetsDirPath)
-
-    loadSnippetFile = (filename, done) =>
-      return done() if filename.indexOf('.') is 0
-      filepath = path.join(snippetsDirPath, filename)
-      CSON.readFile filepath, (error, object) =>
-        if error?
-          console.warn "Error reading snippets file '#{filepath}': #{error.stack ? error}"
-        else
-          @add(object)
-        done()
-
-    fs.readdir snippetsDirPath, (error, paths) ->
-      async.eachSeries(paths, loadSnippetFile, done)
-
-  loadTextMateSnippets: (bundlePath, done) ->
-    snippetsDirPath = path.join(bundlePath, 'Snippets')
-    unless fs.isDirectorySync(snippetsDirPath)
-      snippetsDirPath = path.join(bundlePath, 'snippets')
-
-    return done() unless fs.isDirectorySync(snippetsDirPath)
-
-    loadSnippetFile = (filename, done) =>
-      return done() if filename.indexOf('.') is 0
-
-      filepath = path.join(snippetsDirPath, filename)
-
-      logError = (error) ->
-        console.warn "Error reading snippets file '#{filepath}': #{error.stack ? error}"
-
-      try
-        fs.readObject filepath, (error, object) =>
-          try
-            if error?
-              logError(error)
-            else
-              @add(@translateTextmateSnippet(object))
-          catch error
-            logError(error)
-          finally
-            done()
-      catch error
-        logError(error)
-        done()
-
-    fs.readdir snippetsDirPath, (error, paths) ->
+    fs.readdir snippetsDirPath, (error, entries) =>
       if error?
-        console.warn error
-        return done()
-      async.eachSeries(paths, loadSnippetFile, done)
+        console.warn(error)
+        callback()
+      else
+        paths = entries.map (file) -> path.join(snippetsDirPath, file)
+        async.eachSeries(paths, @loadSnippetsFile.bind(this), callback)
+
+  loadSnippetsFile: (filePath, callback) ->
+    return callback() unless CSON.isObjectPath(filePath)
+
+    CSON.readFile filePath, (error, object) =>
+      if error?
+        console.warn "Error reading snippets file '#{filePath}': #{error.stack ? error}"
+      else
+        @add(@translateTextmateSnippet(object))
+      callback()
 
   translateTextmateSnippet: (snippet) ->
     {scope, name, content, tabTrigger} = snippet
