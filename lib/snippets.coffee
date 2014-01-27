@@ -14,8 +14,6 @@ module.exports =
     atom.workspaceView.eachEditorView (editorView) =>
       @enableSnippetsInEditor(editorView) if editorView.attached
 
-  deactivate: ->
-
   loadAll: ->
     packages = atom.packages.getLoadedPackages()
     packages.push(path: atom.getConfigDirPath())
