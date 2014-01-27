@@ -1,6 +1,6 @@
 path = require 'path'
 
-{_, WorkspaceView} = require 'atom'
+{WorkspaceView} = require 'atom'
 fs = require 'fs-plus'
 temp = require 'temp'
 
