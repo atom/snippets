@@ -37,14 +37,14 @@ module.exports =
     loadSnippetFile = (filename, done) =>
       return done() if filename.indexOf('.') is 0
       filepath = path.join(snippetsDirPath, filename)
-      CSON.readFile filepath, (err, object) =>
-        if err
-          console.warn "Error reading snippets file '#{filepath}': #{err.stack}"
+      CSON.readFile filepath, (error, object) =>
+        if error?
+          console.warn "Error reading snippets file '#{filepath}': #{error.stack ? error}"
         else
           @add(object)
         done()
 
-    fs.readdir snippetsDirPath, (err, paths) ->
+    fs.readdir snippetsDirPath, (error, paths) ->
       async.eachSeries(paths, loadSnippetFile, done)
 
   loadTextMateSnippets: (bundlePath, done) ->
@@ -59,27 +59,27 @@ module.exports =
 
       filepath = path.join(snippetsDirPath, filename)
 
-      logError = (err) ->
-        console.warn "Error reading snippets file '#{filepath}': #{err.stack ? err}"
+      logError = (error) ->
+        console.warn "Error reading snippets file '#{filepath}': #{error.stack ? error}"
 
       try
-        fs.readObject filepath, (err, object) =>
+        fs.readObject filepath, (error, object) =>
           try
-            if err
-              logError(err)
+            if error?
+              logError(error)
             else
               @add(@translateTextmateSnippet(object))
-          catch err
-            logError(err)
+          catch error
+            logError(error)
           finally
             done()
-      catch err
-        logError(err)
+      catch error
+        logError(error)
         done()
 
-    fs.readdir snippetsDirPath, (err, paths) ->
-      if err
-        console.warn err
+    fs.readdir snippetsDirPath, (error, paths) ->
+      if error?
+        console.warn error
         return done()
       async.eachSeries(paths, loadSnippetFile, done)
 
