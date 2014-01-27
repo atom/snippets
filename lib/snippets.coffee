@@ -16,9 +16,9 @@ module.exports =
       @enableSnippetsInEditor(editorView) if editorView.attached
 
   loadAll: ->
-    @loadBundleSnippets => @loadUserSnippets => @loadPackageSnippets()
+    @loadBundledSnippets => @loadUserSnippets => @loadPackageSnippets()
 
-  loadBundleSnippets: (callback) ->
+  loadBundledSnippets: (callback) ->
     bundledSnippetsPath = CSON.resolve(path.join(__dirname, 'snippets'))
     @loadSnippetsFile(bundledSnippetsPath, callback)
 
