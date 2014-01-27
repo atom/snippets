@@ -110,7 +110,7 @@ module.exports =
       atom.syntax.addProperties(selector, snippets: snippetsByPrefix)
 
   getBodyParser: ->
-    require './snippet-body-parser'
+    @bodyParser ?= require './snippet-body-parser'
 
   enableSnippetsInEditor: (editorView) ->
     editor = editorView.getEditor()
