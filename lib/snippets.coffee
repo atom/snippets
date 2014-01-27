@@ -1,9 +1,11 @@
-{_, fs} = require 'atom'
 path = require 'path'
+
+async = require 'async'
+CSON = require 'season'
+fs = require 'fs-plus'
+
 SnippetExpansion = require './snippet-expansion'
 Snippet = require './snippet'
-CSON = require 'season'
-async = require 'async'
 
 module.exports =
   snippetsByExtension: {}
