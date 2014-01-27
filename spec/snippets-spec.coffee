@@ -291,6 +291,17 @@ describe "Snippets extension", ->
       runs ->
         expect(atom.syntax.getProperty(['.foo'], 'snippets.foo')?.constructor).toBe Snippet
 
+    it "loads the bundled snippet template snippets", ->
+      spyOn(console, 'warn')
+      snippets.loaded = false
+      snippets.loadAll()
+
+      waitsFor "all snippets to load", 30000, -> snippets.loaded
+
+      runs ->
+        expect(atom.syntax.getProperty(['.source.json'], 'snippets.snip')?.constructor).toBe Snippet
+        expect(atom.syntax.getProperty(['.source.coffee'], 'snippets.snip')?.constructor).toBe Snippet
+
   describe "snippet body parser", ->
     it "breaks a snippet body into lines, with each line containing tab stops at the appropriate position", ->
       bodyTree = snippets.getBodyParser().parse """

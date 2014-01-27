@@ -16,11 +16,15 @@ module.exports =
       @enableSnippetsInEditor(editorView) if editorView.attached
 
   loadAll: ->
+    @loadBundleSnippets => @loadUserSnippets => @loadPackageSnippets()
+
+  loadBundleSnippets: (callback) ->
+    bundledSnippetsPath = CSON.resolve(path.join(__dirname, 'snippets'))
+    @loadSnippetsFile(bundledSnippetsPath, callback)
+
+  loadUserSnippets: (callback) ->
     userSnippetsPath = CSON.resolve(path.join(atom.getConfigDirPath(), 'snippets'))
-    if userSnippetsPath
-      @loadSnippetsFile userSnippetsPath, => @loadPackageSnippets()
-    else
-      @loadPackageSnippets()
+    @loadSnippetsFile(userSnippetsPath, callback)
 
   loadPackageSnippets: ->
     packages = atom.packages.getLoadedPackages()

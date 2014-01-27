@@ -1,0 +1,23 @@
+'.source.json':
+  'Atom Snippet':
+    prefix: 'snip'
+    body: """
+      {
+        "${1:.source.js}": {
+          "${2:Snippet Name}": {
+            "prefix": "${3:hello}",
+            "body": "${4:Hello World!}"
+          }
+        }
+      }
+    """
+
+'.source.coffee':
+  'Atom Snippet':
+    prefix: 'snip'
+    body: """
+      '${1:.source.js}':
+        '${2:Snippet Name}':
+          'prefix': '${3:hello}'
+          'body': '${4:Hello World!}'
+    """
