@@ -65,7 +65,7 @@ module.exports =
       if error?
         console.warn "Error reading snippets file '#{filePath}': #{error.stack ? error}"
       else
-        @add(@translateTextmateSnippet(object))
+        @add(filePath, @translateTextmateSnippet(object))
       callback()
 
   translateTextmateSnippet: (snippet) ->
@@ -83,7 +83,7 @@ module.exports =
     snippetsByName[name] = { prefix: tabTrigger, body: content }
     snippetsByScope
 
-  add: (snippetsBySelector) ->
+  add: (filePath, snippetsBySelector) ->
     for selector, snippetsByName of snippetsBySelector
       snippetsByPrefix = {}
       for name, attributes of snippetsByName
@@ -92,7 +92,7 @@ module.exports =
         bodyTree ?= @getBodyParser().parse(body)
         snippet = new Snippet({name, prefix, bodyTree})
         snippetsByPrefix[snippet.prefix] = snippet
-      atom.syntax.addProperties(selector, snippets: snippetsByPrefix)
+      atom.syntax.addProperties(filePath, selector, snippets: snippetsByPrefix)
 
   getBodyParser: ->
     @bodyParser ?= require './snippet-body-parser'

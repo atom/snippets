@@ -27,7 +27,7 @@ describe "Snippets extension", ->
 
   describe "when 'tab' is triggered on the editorView", ->
     beforeEach ->
-      snippets.add
+      snippets.add __filename,
         ".source.js":
           "without tab stops":
             prefix: "t1"
