@@ -2,6 +2,7 @@ path = require 'path'
 
 async = require 'async'
 CSON = require 'season'
+{File} = require 'atom'
 fs = require 'fs-plus'
 
 Snippet = require './snippet'
@@ -19,6 +20,9 @@ module.exports =
     atom.workspaceView.eachEditorView (editorView) =>
       @enableSnippetsInEditor(editorView) if editorView.attached
 
+  deactivate: ->
+    @userSnippetsFile?.off()
+
   getUserSnippetsPath: ->
     userSnippetsPath = CSON.resolve(path.join(atom.getConfigDirPath(), 'snippets'))
     userSnippetsPath ? path.join(atom.getConfigDirPath(), 'snippets.cson')
@@ -31,12 +35,17 @@ module.exports =
     @loadSnippetsFile(bundledSnippetsPath, callback)
 
   loadUserSnippets: (callback) ->
+    @userSnippetsFile?.off()
     userSnippetsPath = @getUserSnippetsPath()
     fs.stat userSnippetsPath, (error, stat) =>
       if stat?.isFile()
+        @userSnippetsFile = new File(userSnippetsPath)
+        @userSnippetsFile.on 'moved removed contents-changed', =>
+          atom.syntax.removeProperties(userSnippetsPath)
+          @loadUserSnippets()
         @loadSnippetsFile(userSnippetsPath, callback)
       else
-        callback()
+        callback?()
 
   loadPackageSnippets: ->
     packages = atom.packages.getLoadedPackages()
@@ -48,27 +57,27 @@ module.exports =
     @loaded = true
 
   loadSnippetsDirectory: (snippetsDirPath, callback) ->
-    return callback() unless fs.isDirectorySync(snippetsDirPath)
+    return callback?() unless fs.isDirectorySync(snippetsDirPath)
 
     fs.readdir snippetsDirPath, (error, entries) =>
       if error?
         console.warn(error)
-        callback()
+        callback?()
       else
         paths = entries.map (file) -> path.join(snippetsDirPath, file)
         async.eachSeries(paths, @loadSnippetsFile.bind(this), callback)
 
   loadSnippetsFile: (filePath, callback) ->
-    return callback() unless CSON.isObjectPath(filePath)
+    return callback?() unless CSON.isObjectPath(filePath)
 
     CSON.readFile filePath, (error, object) =>
       if error?
         console.warn "Error reading snippets file '#{filePath}': #{error.stack ? error}"
       else
-        @add(@translateTextmateSnippet(object))
-      callback()
+        @add(filePath, @translateTextmateSnippet(object))
+      callback?()
 
-  translateTextmateSnippet: (snippet) ->
+  translateTextmateSnippet: (snippet={}) ->
     {scope, name, content, tabTrigger} = snippet
 
     # Treat it as an Atom snippet if none of the TextMate snippet fields
@@ -83,7 +92,7 @@ module.exports =
     snippetsByName[name] = { prefix: tabTrigger, body: content }
     snippetsByScope
 
-  add: (snippetsBySelector) ->
+  add: (filePath, snippetsBySelector) ->
     for selector, snippetsByName of snippetsBySelector
       snippetsByPrefix = {}
       for name, attributes of snippetsByName
@@ -92,7 +101,7 @@ module.exports =
         bodyTree ?= @getBodyParser().parse(body)
         snippet = new Snippet({name, prefix, bodyTree})
         snippetsByPrefix[snippet.prefix] = snippet
-      atom.syntax.addProperties(selector, snippets: snippetsByPrefix)
+      atom.syntax.addProperties(filePath, selector, snippets: snippetsByPrefix)
 
   getBodyParser: ->
     @bodyParser ?= require './snippet-body-parser'
