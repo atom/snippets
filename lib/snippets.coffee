@@ -42,10 +42,10 @@ module.exports =
         @userSnippetsFile = new File(userSnippetsPath)
         @userSnippetsFile.on 'moved removed contents-changed', =>
           atom.syntax.removeProperties(userSnippetsPath)
-          @loadUserSnippets ->
+          @loadUserSnippets()
         @loadSnippetsFile(userSnippetsPath, callback)
       else
-        callback()
+        callback?()
 
   loadPackageSnippets: ->
     packages = atom.packages.getLoadedPackages()
@@ -57,25 +57,25 @@ module.exports =
     @loaded = true
 
   loadSnippetsDirectory: (snippetsDirPath, callback) ->
-    return callback() unless fs.isDirectorySync(snippetsDirPath)
+    return callback?() unless fs.isDirectorySync(snippetsDirPath)
 
     fs.readdir snippetsDirPath, (error, entries) =>
       if error?
         console.warn(error)
-        callback()
+        callback?()
       else
         paths = entries.map (file) -> path.join(snippetsDirPath, file)
         async.eachSeries(paths, @loadSnippetsFile.bind(this), callback)
 
   loadSnippetsFile: (filePath, callback) ->
-    return callback() unless CSON.isObjectPath(filePath)
+    return callback?() unless CSON.isObjectPath(filePath)
 
     CSON.readFile filePath, (error, object) =>
       if error?
         console.warn "Error reading snippets file '#{filePath}': #{error.stack ? error}"
       else
         @add(filePath, @translateTextmateSnippet(object))
-      callback()
+      callback?()
 
   translateTextmateSnippet: (snippet={}) ->
     {scope, name, content, tabTrigger} = snippet
