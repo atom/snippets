@@ -2,6 +2,7 @@ path = require 'path'
 
 async = require 'async'
 CSON = require 'season'
+{File} = require 'atom'
 fs = require 'fs-plus'
 
 Snippet = require './snippet'
@@ -19,6 +20,9 @@ module.exports =
     atom.workspaceView.eachEditorView (editorView) =>
       @enableSnippetsInEditor(editorView) if editorView.attached
 
+  deactivate: ->
+    @userSnippetsFile?.off()
+
   getUserSnippetsPath: ->
     userSnippetsPath = CSON.resolve(path.join(atom.getConfigDirPath(), 'snippets'))
     userSnippetsPath ? path.join(atom.getConfigDirPath(), 'snippets.cson')
@@ -31,9 +35,14 @@ module.exports =
     @loadSnippetsFile(bundledSnippetsPath, callback)
 
   loadUserSnippets: (callback) ->
+    @userSnippetsFile?.off()
     userSnippetsPath = @getUserSnippetsPath()
     fs.stat userSnippetsPath, (error, stat) =>
       if stat?.isFile()
+        @userSnippetsFile = new File(userSnippetsPath)
+        @userSnippetsFile.on 'moved removed contents-changed', =>
+          atom.syntax.removeProperties(userSnippetsPath)
+          @loadUserSnippets ->
         @loadSnippetsFile(userSnippetsPath, callback)
       else
         callback()
@@ -68,7 +77,7 @@ module.exports =
         @add(filePath, @translateTextmateSnippet(object))
       callback()
 
-  translateTextmateSnippet: (snippet) ->
+  translateTextmateSnippet: (snippet={}) ->
     {scope, name, content, tabTrigger} = snippet
 
     # Treat it as an Atom snippet if none of the TextMate snippet fields

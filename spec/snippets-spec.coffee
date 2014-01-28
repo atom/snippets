@@ -351,3 +351,37 @@ describe "Snippets extension", ->
 
       runs ->
         expect(atom.workspaceView.getActivePaneItem().getUri()).toBe path.join(configDirPath, 'snippets.cson')
+
+  describe "when ~/.atom/snippets.cson changes", ->
+    it "reloads the snippets", ->
+      jasmine.unspy(window, "setTimeout")
+      jasmine.unspy(snippets, 'loadAll')
+      spyOn(atom.packages, 'getLoadedPackages').andReturn []
+      configDirPath = temp.mkdirSync('atom-config-dir-')
+      spyOn(atom, 'getConfigDirPath').andReturn configDirPath
+      snippetsPath = path.join(configDirPath, 'snippets.cson')
+      fs.writeFileSync(snippetsPath, '')
+
+      snippets.loaded = false
+      snippets.loadAll()
+
+      waitsFor "all snippets to load", 30000, -> snippets.loaded
+
+      runs ->
+        expect(atom.syntax.getProperty(['.test'], 'snippets.test')).toBeUndefined()
+        fs.writeFileSync snippetsPath, """
+          ".test":
+            "Test Snippet":
+              prefix: "test"
+              body: "testing 123"
+        """
+
+      waitsFor "snippets to be added", ->
+        atom.syntax.getProperty(['.test'], 'snippets.test')?
+
+      runs ->
+        expect(atom.syntax.getProperty(['.test'], 'snippets.test')?.constructor).toBe Snippet
+        fs.removeSync(snippetsPath)
+
+      waitsFor "snippets to be removed", ->
+        atom.syntax.getProperty(['.test'], 'snippets.test')?
