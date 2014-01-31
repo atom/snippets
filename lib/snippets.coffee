@@ -54,6 +54,7 @@ module.exports =
     async.eachSeries snippetsDirPaths, @loadSnippetsDirectory.bind(this), @doneLoading.bind(this)
 
   doneLoading: ->
+    atom.packages.emit 'snippets:loaded'
     @loaded = true
 
   loadSnippetsDirectory: (snippetsDirPath, callback) ->
