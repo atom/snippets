@@ -8,7 +8,7 @@ class Snippet
   lineCount: null
   tabStops: null
 
-  constructor: ({@name, @prefix, bodyTree}) ->
+  constructor: ({@name, @prefix, @bodyText, bodyTree}) ->
     @body = @extractTabStops(bodyTree)
 
   extractTabStops: (bodyTree) ->

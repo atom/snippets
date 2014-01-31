@@ -100,7 +100,7 @@ module.exports =
         { prefix, body, bodyTree } = attributes
         # if `add` isn't called by the loader task (in specs for example), we need to parse the body
         bodyTree ?= @getBodyParser().parse(body)
-        snippet = new Snippet({name, prefix, bodyTree})
+        snippet = new Snippet({name, prefix, bodyTree, bodyText: body})
         snippetsByPrefix[snippet.prefix] = snippet
       atom.syntax.addProperties(filePath, selector, snippets: snippetsByPrefix)
 
