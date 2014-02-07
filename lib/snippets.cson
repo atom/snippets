@@ -9,7 +9,7 @@
             "body": "${4:Hello World!}"
           }
         }
-      }
+      }$5
     """
 
   'Atom Keymap':
@@ -29,7 +29,7 @@
       '${1:.source.js}':
         '${2:Snippet Name}':
           'prefix': '${3:hello}'
-          'body': '${4:Hello World!}'
+          'body': '${4:Hello World!}'$5
     """
 
   'Atom Keymap':
