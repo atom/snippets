@@ -12,6 +12,16 @@
       }
     """
 
+  'Atom Keymap':
+    prefix: 'key'
+    body: """
+      {
+        "${1:body}": {
+          "${2:cmd}-${3:i}": "${4:namespace}:${5:event}"
+        }
+      }$6
+    """
+
 '.source.coffee':
   'Atom Snippet':
     prefix: 'snip'
@@ -20,4 +30,11 @@
         '${2:Snippet Name}':
           'prefix': '${3:hello}'
           'body': '${4:Hello World!}'
+    """
+
+  'Atom Keymap':
+    prefix: 'key'
+    body: """
+      '${1:body}':
+        '${2:cmd}-${3:i}': '${4:namespace}:${5:event}'$6
     """
