@@ -9,22 +9,20 @@ Snippets = require '../lib/snippets'
 
 describe "Snippets extension", ->
   [buffer, editorView, editor, snippets] = []
+
   beforeEach ->
+    atom.workspaceView = new WorkspaceView
+    atom.workspaceView.openSync('sample.js')
+    spyOn(Snippets, 'loadAll')
+
     waitsForPromise ->
       atom.packages.activatePackage('language-javascript')
 
-    runs ->
-      atom.workspaceView = new WorkspaceView
-      atom.workspaceView.openSync('sample.js')
-      packageWithSnippets = atom.packages.loadPackage(path.join(__dirname, 'fixtures', 'package-with-snippets'))
-      spyOn(Snippets, 'loadAll')
-
     waitsForPromise ->
-      atom.packages.activatePackage("snippets")
+      atom.packages.activatePackage("snippets").then ({mainModule}) ->
+        snippets = mainModule
 
     runs ->
-      snippets = atom.packages.getActivePackage("snippets").mainModule
-
       editorView = atom.workspaceView.getActiveView()
       editor = atom.workspaceView.getActivePaneItem()
       buffer = editor.getBuffer()
@@ -247,6 +245,10 @@ describe "Snippets extension", ->
       spyOn(atom.packages, 'getLoadedPackages').andReturn [packageWithSnippets, packageWithBrokenSnippets]
       spyOn(atom, 'getConfigDirPath').andReturn configDirPath
 
+    afterEach ->
+      # Unspy here so other afterEach blocks don't run with this spy active
+      jasmine.unspy(atom.packages, 'getLoadedPackages')
+
     it "loads non-hidden snippet files from all atom packages with snippets directories, logging a warning if a file can't be parsed", ->
       spyOn(console, 'warn')
       snippets.loaded = false
@@ -362,7 +364,8 @@ describe "Snippets extension", ->
     it "reloads the snippets", ->
       jasmine.unspy(window, "setTimeout")
       jasmine.unspy(snippets, 'loadAll')
-      spyOn(atom.packages, 'getLoadedPackages').andReturn []
+      spyOn(snippets, 'loadPackageSnippets').andCallFake ->
+        process.nextTick -> snippets.doneLoading()
       configDirPath = temp.mkdirSync('atom-config-dir-')
       spyOn(atom, 'getConfigDirPath').andReturn configDirPath
       snippetsPath = path.join(configDirPath, 'snippets.cson')
