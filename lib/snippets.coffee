@@ -2,7 +2,7 @@ path = require 'path'
 
 async = require 'async'
 CSON = require 'season'
-{File} = require 'atom'
+{File} = require 'pathwatcher'
 fs = require 'fs-plus'
 
 Snippet = require './snippet'
