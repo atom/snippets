@@ -1,7 +1,7 @@
 try
   parser = require './snippet-body'
 catch
-  {fs} = require 'atom'
+  fs = require 'fs-plus'
   PEG = require 'pegjs'
 
   grammarSrc = fs.readFileSync(require.resolve('./snippet-body.pegjs'), 'utf8')
