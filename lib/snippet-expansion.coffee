@@ -1,4 +1,4 @@
-{_} = require 'atom'
+_ = require 'underscore-plus'
 {Subscriber} = require 'emissary'
 
 module.exports =
