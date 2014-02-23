@@ -71,27 +71,12 @@ module.exports =
   loadSnippetsFile: (filePath, callback) ->
     return callback?() unless CSON.isObjectPath(filePath)
 
-    CSON.readFile filePath, (error, object) =>
+    CSON.readFile filePath, (error, object={}) =>
       if error?
         console.warn "Error reading snippets file '#{filePath}': #{error.stack ? error}"
       else
-        @add(filePath, @translateTextmateSnippet(object))
+        @add(filePath, object)
       callback?()
-
-  translateTextmateSnippet: (snippet={}) ->
-    {scope, name, content, tabTrigger} = snippet
-
-    # Treat it as an Atom snippet if none of the TextMate snippet fields
-    # are present
-    return snippet unless scope or name or content or tabTrigger
-
-    scope = atom.syntax.cssSelectorFromScopeSelector(scope) if scope
-    scope ?= '*'
-    snippetsByScope = {}
-    snippetsByName = {}
-    snippetsByScope[scope] = snippetsByName
-    snippetsByName[name] = { prefix: tabTrigger, body: content }
-    snippetsByScope
 
   add: (filePath, snippetsBySelector) ->
     for selector, snippetsByName of snippetsBySelector
