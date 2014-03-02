@@ -10,6 +10,7 @@ SnippetExpansion = require './snippet-expansion'
 
 module.exports =
   loaded: false
+  prefixBoundary: /\s/
 
   activate: ->
     atom.project.registerOpener (uri) =>
@@ -92,14 +93,24 @@ module.exports =
   getBodyParser: ->
     @bodyParser ?= require './snippet-body-parser'
 
+  getPrefixText: (cursor) ->
+    line = cursor.getCurrentBufferLine()
+    i = cursor.getBufferColumn() - 1
+    prefix = []
+    while i >= 0
+      break if @prefixBoundary.test line[i]
+      prefix.push line[i]
+      i--
+
+    prefix.reverse().join ''
+
   enableSnippetsInEditor: (editorView) ->
     editor = editorView.getEditor()
     editorView.command 'snippets:expand', (e) =>
       unless editor.getSelection().isEmpty()
         e.abortKeyBinding()
         return
-
-      prefix = editor.getCursor().getCurrentWordPrefix()
+      prefix = @getPrefixText editor.getCursor()
       if snippet = atom.syntax.getProperty(editor.getCursorScopes(), "snippets.#{prefix}")
         editor.transact ->
           new SnippetExpansion(snippet, editor)

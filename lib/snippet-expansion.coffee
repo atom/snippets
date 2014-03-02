@@ -1,5 +1,6 @@
 _ = require 'underscore-plus'
 {Subscriber} = require 'emissary'
+{Point, Range} = require 'atom'
 
 module.exports =
 class SnippetExpansion
@@ -8,10 +9,12 @@ class SnippetExpansion
   snippet: null
   tabStopMarkers: null
   settingTabStop: false
+  prefixBoundary: /\s/
+
 
   constructor: (@snippet, @editor) ->
-    @editor.selectToBeginningOfWord()
-    startPosition = @editor.getCursorBufferPosition()
+    startPosition = @selectToBoundaryPosition()
+
     @editor.transact =>
       [newRange] = @editor.insertText(snippet.body, autoIndent: false)
       if snippet.tabStops.length > 0
@@ -20,6 +23,21 @@ class SnippetExpansion
         @editor.snippetExpansion = this
         @editor.normalizeTabsInBufferRange(newRange)
       @indentSubsequentLines(startPosition.row, snippet) if snippet.lineCount > 1
+
+  selectToBoundaryPosition: ->
+    cursor = @editor.getCursor()
+    line = cursor.getCurrentBufferLine()
+    newColumn = cursor.getBufferColumn()
+    column = newColumn
+    row = cursor.getBufferRow();
+    while newColumn >= 0
+      break if @prefixBoundary.test line[newColumn - 1]
+      newColumn--
+    if newColumn < 0 then newColumn = 0
+    startPoint = new Point(row, newColumn)
+    endPoint = new Point(row, column)
+    @editor.setSelectedBufferRange new Range(startPoint, endPoint)
+    startPoint
 
   cursorMoved: ({oldBufferPosition, newBufferPosition, textChanged}) ->
     return if @settingTabStop or textChanged
