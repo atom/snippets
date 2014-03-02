@@ -10,7 +10,6 @@ SnippetExpansion = require './snippet-expansion'
 
 module.exports =
   loaded: false
-  prefixBoundary: /\s/
 
   activate: ->
     atom.project.registerOpener (uri) =>
@@ -98,7 +97,7 @@ module.exports =
     i = cursor.getBufferColumn() - 1
     prefix = []
     while i >= 0
-      break if @prefixBoundary.test line[i]
+      break if Snippet.prefixBoundary.test line[i]
       prefix.push line[i]
       i--
 

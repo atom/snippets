@@ -1,6 +1,7 @@
 _ = require 'underscore-plus'
 {Subscriber} = require 'emissary'
 {Point, Range} = require 'atom'
+Snippet = require './snippet'
 
 module.exports =
 class SnippetExpansion
@@ -9,7 +10,6 @@ class SnippetExpansion
   snippet: null
   tabStopMarkers: null
   settingTabStop: false
-  prefixBoundary: /\s/
 
 
   constructor: (@snippet, @editor) ->
@@ -31,7 +31,7 @@ class SnippetExpansion
     column = newColumn
     row = cursor.getBufferRow();
     while newColumn >= 0
-      break if @prefixBoundary.test line[newColumn - 1]
+      break if Snippet.prefixBoundary.test line[newColumn - 1]
       newColumn--
     if newColumn < 0 then newColumn = 0
     startPoint = new Point(row, newColumn)
