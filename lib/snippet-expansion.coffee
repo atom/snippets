@@ -29,7 +29,7 @@ class SnippetExpansion
     line = cursor.getCurrentBufferLine()
     newColumn = cursor.getBufferColumn()
     column = newColumn
-    row = cursor.getBufferRow();
+    row = cursor.getBufferRow()
     while newColumn >= 0
       break if Snippet.prefixBoundary.test line[newColumn - 1]
       newColumn--

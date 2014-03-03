@@ -98,10 +98,10 @@ module.exports =
     prefix = []
     while i >= 0
       break if Snippet.prefixBoundary.test line[i]
-      prefix.push line[i]
+      prefix.unshift line[i]
       i--
 
-    prefix.reverse().join ''
+    prefix.join ''
 
   enableSnippetsInEditor: (editorView) ->
     editor = editorView.getEditor()
