@@ -94,12 +94,12 @@ module.exports =
 
   getPrefixText: (cursor) ->
     line = cursor.getCurrentBufferLine()
-    i = cursor.getBufferColumn() - 1
+    column = cursor.getBufferColumn() - 1
     prefix = []
-    while i >= 0
-      break if Snippet.prefixBoundary.test line[i]
-      prefix.unshift line[i]
-      i--
+    while column >= 0
+      break if Snippet.prefixBoundary.test line[column]
+      prefix.unshift line[column]
+      column--
 
     prefix.join ''
 
