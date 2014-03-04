@@ -3,7 +3,8 @@ _ = require 'underscore-plus'
 
 module.exports =
 class Snippet
-  @prefixBoundary: /\s/
+  @prefixBoundary: /\s|['"<>;]/
+
   name: null
   prefix: null
   body: null

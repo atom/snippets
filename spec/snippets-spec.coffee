@@ -236,15 +236,23 @@ describe "Snippets extension", ->
         editorView.trigger keydownEvent('tab', target: editorView[0])
         expect(buffer.lineForRow(0)).toBe "first line"
 
-    describe "when text contains special characters", ->
-      it "should see the special character as part of the tab boundary", ->
+    describe "when the prefix contains non-word characters", ->
+      fit "selects the non-word characters as part of the prefix", ->
         editor.insertText("@unique")
         expect(editor.getCursorScreenPosition()).toEqual [0, 7]
 
         editorView.trigger keydownEvent('tab', target: editorView[0])
         expect(buffer.lineForRow(0)).toBe "@unique seevar quicksort = function () {"
         expect(editor.getCursorScreenPosition()).toEqual [0, 11]
-      it "should see the special character as part of the tab boundary and select only the prefix", ->
+
+        editor.setCursorBufferPosition [10, 0]
+        editor.insertText("'@unique")
+
+        editorView.trigger keydownEvent('tab', target: editorView[0])
+        expect(buffer.lineForRow(10)).toBe "'@unique see"
+        expect(editor.getCursorScreenPosition()).toEqual [10, 12]
+
+      it "does not select the whitespace before the prefix", ->
         editor.insertText("a; @unique")
         expect(editor.getCursorScreenPosition()).toEqual [0, 10]
 
