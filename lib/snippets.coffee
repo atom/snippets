@@ -4,6 +4,7 @@ async = require 'async'
 CSON = require 'season'
 {File} = require 'pathwatcher'
 fs = require 'fs-plus'
+{Point, Range} = require 'atom'
 
 Snippet = require './snippet'
 SnippetExpansion = require './snippet-expansion'
@@ -111,8 +112,9 @@ module.exports =
         return
       prefix = @getPrefixText editor.getCursor()
       if snippet = atom.syntax.getProperty(editor.getCursorScopes(), "snippets.#{prefix}")
-        editor.transact ->
-          new SnippetExpansion(snippet, editor)
+        editor.transact =>
+          @selectToBoundaryPosition(editor)
+          @insert(snippet, editor)
       else
         e.abortKeyBinding()
 
@@ -123,3 +125,27 @@ module.exports =
     editorView.command 'snippets:previous-tab-stop', (e) ->
       unless editor.snippetExpansion?.goToPreviousTabStop()
         e.abortKeyBinding()
+
+  selectToBoundaryPosition: (editor) ->
+    cursor = editor.getCursor()
+    line = cursor.getCurrentBufferLine()
+    newColumn = cursor.getBufferColumn()
+    column = newColumn
+    row = cursor.getBufferRow()
+    while newColumn >= 0
+      break if Snippet.prefixBoundary.test line[newColumn - 1]
+      newColumn--
+    if newColumn < 0 then newColumn = 0
+    startPoint = new Point(row, newColumn)
+    endPoint = new Point(row, column)
+    editor.setSelectedBufferRange new Range(startPoint, endPoint)
+    startPoint
+
+  insert: (snippet, editor = atom.workspace.getActiveEditor()) ->
+    if typeof snippet is 'string'
+      bodyTree = @getBodyParser().parse(snippet)
+      snippet = new Snippet({name: '__anonymous', prefix: '', bodyTree: bodyTree, bodyText: snippet})
+
+    new SnippetExpansion(snippet, editor)
+
+
