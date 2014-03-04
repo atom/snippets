@@ -435,3 +435,13 @@ describe "Snippets extension", ->
 
       waitsFor "snippets to be removed", ->
         atom.syntax.getProperty(['.test'], 'snippets.test')?
+
+  describe "snippet insertion API", ->
+    it "will automatically parse snippet definition and replace selection", ->
+      editor.setSelectedBufferRange([[0, 4], [0, 13]])
+      Snippets.insert("hello ${1:world}", editor)
+      
+      expect(buffer.lineForRow(0)).toBe "var hello world = function () {"
+      expect(editor.getMarkerCount()).toBe 2
+      expect(editor.getSelectedBufferRange()).toEqual [[0, 10], [0, 15]]
+
