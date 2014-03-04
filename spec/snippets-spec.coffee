@@ -237,7 +237,7 @@ describe "Snippets extension", ->
         expect(buffer.lineForRow(0)).toBe "first line"
 
     describe "when the prefix contains non-word characters", ->
-      fit "selects the non-word characters as part of the prefix", ->
+      it "selects the non-word characters as part of the prefix", ->
         editor.insertText("@unique")
         expect(editor.getCursorScreenPosition()).toEqual [0, 7]
 
