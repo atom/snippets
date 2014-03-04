@@ -6,7 +6,7 @@ Select the _Atom > Open Your Snippets_ menu to add your own snippets.
 
 ## Snippet Format
 
-Snippets files are stored in a package `snippets/` folder and also loaded
+Snippets files are stored in a package's `snippets/` folder and also loaded
 from `~/.atom/snippet.cson`.
 
 Snippet files can be either `.json` or `.cson`.
