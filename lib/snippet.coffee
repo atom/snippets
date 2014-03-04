@@ -5,9 +5,6 @@ module.exports =
 class Snippet
   @wordRegex: /[^\s'"<>;]+/
 
-  name: null
-  prefix: null
-  body: null
   lineCount: null
   tabStops: null
 
