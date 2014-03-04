@@ -11,7 +11,6 @@ class SnippetExpansion
   tabStopMarkers: null
   settingTabStop: false
 
-
   constructor: (@snippet, @editor) ->
     startPosition = @selectToBoundaryPosition()
 
