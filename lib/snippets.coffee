@@ -4,6 +4,7 @@ async = require 'async'
 CSON = require 'season'
 {File} = require 'pathwatcher'
 fs = require 'fs-plus'
+
 {Point, Range} = require 'atom'
 
 Snippet = require './snippet'
@@ -141,7 +142,7 @@ module.exports =
     editor.setSelectedBufferRange new Range(startPoint, endPoint)
     startPoint
 
-  insert: (snippet, editor = atom.workspace.getActiveEditor()) ->
+  insert: (snippet, editor=atom.workspace.getActiveEditor()) ->
     if typeof snippet is 'string'
       bodyTree = @getBodyParser().parse(snippet)
       snippet = new Snippet({name: '__anonymous', prefix: '', bodyTree: bodyTree, bodyText: snippet})
