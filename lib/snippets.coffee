@@ -92,16 +92,10 @@ module.exports =
   getBodyParser: ->
     @bodyParser ?= require './snippet-body-parser'
 
-  getPrefixText: (cursor) ->
-    line = cursor.getCurrentBufferLine()
-    i = cursor.getBufferColumn() - 1
-    prefix = []
-    while i >= 0
-      break if Snippet.prefixBoundary.test line[i]
-      prefix.unshift line[i]
-      i--
-
-    prefix.join ''
+  getPrefixText: (editor) ->
+    cursor = editor.getCursor()
+    startPoint = cursor.getBeginningOfCurrentWordBufferPosition(wordRegex: Snippet.wordRegex)
+    editor.getTextInRange([startPoint, cursor.getBufferPosition()])
 
   enableSnippetsInEditor: (editorView) ->
     editor = editorView.getEditor()
@@ -109,7 +103,7 @@ module.exports =
       unless editor.getSelection().isEmpty()
         e.abortKeyBinding()
         return
-      prefix = @getPrefixText editor.getCursor()
+      prefix = @getPrefixText(editor)
       if snippet = atom.syntax.getProperty(editor.getCursorScopes(), "snippets.#{prefix}")
         editor.transact ->
           new SnippetExpansion(snippet, editor)
