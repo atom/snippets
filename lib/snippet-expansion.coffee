@@ -33,7 +33,7 @@ class SnippetExpansion
     while newColumn >= 0
       break if Snippet.prefixBoundary.test line[newColumn - 1]
       newColumn--
-    if newColumn < 0 then newColumn = 0
+    newColumn = 0 if newColumn < 0
     startPoint = new Point(row, newColumn)
     endPoint = new Point(row, column)
     @editor.setSelectedBufferRange new Range(startPoint, endPoint)
