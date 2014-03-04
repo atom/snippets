@@ -37,6 +37,10 @@ describe "Snippets extension", ->
             prefix: "t1"
             body: "this is a test"
 
+          "special chars":
+            prefix: "@unique"
+            body: "@unique see"
+
           "tab stops":
             prefix: "t2"
             body: """
@@ -231,6 +235,22 @@ describe "Snippets extension", ->
         expect(buffer.lineForRow(0)).toBe "t6"
         editorView.trigger keydownEvent('tab', target: editorView[0])
         expect(buffer.lineForRow(0)).toBe "first line"
+
+    describe "when text contains special characters", ->
+      it "should see the special character as part of the tab boundary", ->
+        editor.insertText("@unique")
+        expect(editor.getCursorScreenPosition()).toEqual [0, 7]
+
+        editorView.trigger keydownEvent('tab', target: editorView[0])
+        expect(buffer.lineForRow(0)).toBe "@unique seevar quicksort = function () {"
+        expect(editor.getCursorScreenPosition()).toEqual [0, 11]
+      it "should see the special character as part of the tab boundary and select only the prefix", ->
+        editor.insertText("a; @unique")
+        expect(editor.getCursorScreenPosition()).toEqual [0, 10]
+
+        editorView.trigger keydownEvent('tab', target: editorView[0])
+        expect(buffer.lineForRow(0)).toBe "a; @unique seevar quicksort = function () {"
+        expect(editor.getCursorScreenPosition()).toEqual [0, 14]
 
   describe "snippet loading", ->
     [configDirPath, packageWithSnippets, packageWithBrokenSnippets] = []
