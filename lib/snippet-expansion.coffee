@@ -24,17 +24,8 @@ class SnippetExpansion
 
   selectToBoundaryPosition: ->
     cursor = @editor.getCursor()
-    line = cursor.getCurrentBufferLine()
-    newColumn = cursor.getBufferColumn()
-    column = newColumn
-    row = cursor.getBufferRow()
-    while newColumn >= 0
-      break if Snippet.prefixBoundary.test line[newColumn - 1]
-      newColumn--
-    newColumn = 0 if newColumn < 0
-    startPoint = new Point(row, newColumn)
-    endPoint = new Point(row, column)
-    @editor.setSelectedBufferRange new Range(startPoint, endPoint)
+    startPoint = cursor.getBeginningOfCurrentWordBufferPosition(wordRegex: Snippet.wordRegex)
+    @editor.setSelectedBufferRange new Range(startPoint, cursor.getBufferPosition())
     startPoint
 
   cursorMoved: ({oldBufferPosition, newBufferPosition, textChanged}) ->
