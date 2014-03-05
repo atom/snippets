@@ -5,10 +5,8 @@ module.exports =
 class SnippetExpansion
   Subscriber.includeInto(this)
 
-  snippet: null
   tabStopMarkers: null
   settingTabStop: false
-
 
   constructor: (@snippet, @editor) ->
     startPosition = @editor.getSelectedBufferRange().start
