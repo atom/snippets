@@ -3,7 +3,7 @@ _ = require 'underscore-plus'
 
 module.exports =
 class Snippet
-  @wordRegex: /[^\s'"<>;()]+/
+  @wordRegex: /[^\s'"<>;([{]+/
 
   lineCount: null
   tabStops: null
