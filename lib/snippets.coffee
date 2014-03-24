@@ -139,8 +139,17 @@ module.exports =
 
     longestPrefixMatch
 
+  getSnippets: (editor) ->
+    scope = editor.getCursorScopes()
+    snippets = {}
+    for properties in atom.syntax.propertiesForScope(scope, 'snippets')
+      snippetProperties = _.valueForKeyPath(properties, 'snippets') ? {}
+      for snippetPrefix, snippet of snippetProperties
+        snippets[snippetPrefix] ?= snippet
+    snippets
+
   expandSnippetUnderCursor: (editor) ->
-    snippets = atom.syntax.getProperty(editor.getCursorScopes(), 'snippets')
+    snippets = @getSnippets(editor)
     return false if _.isEmpty(snippets)
 
     prefix = @getPrefixText(snippets, editor)
