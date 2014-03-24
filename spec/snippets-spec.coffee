@@ -76,6 +76,12 @@ describe "Snippets extension", ->
 
               fourth line after blanks $2
             """
+          "with/without placeholder":
+            prefix: "t8"
+            body: """
+              with placeholder ${1:test}
+              without placeholder ${2}
+            """
 
     describe "when the letters preceding the cursor trigger a snippet", ->
       describe "when the snippet contains no tab stops", ->
@@ -260,6 +266,21 @@ describe "Snippets extension", ->
         expect(buffer.lineForRow(0)).toBe "a; @unique seevar quicksort = function () {"
         expect(editor.getCursorScreenPosition()).toEqual [0, 14]
 
+    describe "when snippet contains tabstops with or without placeholder", ->
+      it "should create two markers", ->
+        markerCountBefore = editor.getMarkerCount()
+        editor.setCursorScreenPosition([0, 0])
+        editor.insertText('t8')
+        editorView.trigger keydownEvent('tab', target: editorView[0])
+        expect(buffer.lineForRow(0)).toBe "with placeholder test"
+        expect(buffer.lineForRow(1)).toBe "without placeholder var quicksort = function () {"
+        expect(editor.getMarkerCount()).toBe 3
+
+        expect(editor.getSelectedBufferRange()).toEqual [[0, 17], [0, 21]]
+
+        editorView.trigger keydownEvent('tab', target: editorView[0])
+        expect(editor.getSelectedBufferRange()).toEqual [[1, 20], [1, 20]]
+
   describe "snippet loading", ->
     [configDirPath, packageWithSnippets, packageWithBrokenSnippets] = []
 
@@ -422,3 +443,13 @@ describe "Snippets extension", ->
 
       waitsFor "snippets to be removed", ->
         atom.syntax.getProperty(['.test'], 'snippets.test')?
+
+  describe "snippet insertion API", ->
+    it "will automatically parse snippet definition and replace selection", ->
+      editor.setSelectedBufferRange([[0, 4], [0, 13]])
+      Snippets.insert("hello ${1:world}", editor)
+      
+      expect(buffer.lineForRow(0)).toBe "var hello world = function () {"
+      expect(editor.getMarkerCount()).toBe 2
+      expect(editor.getSelectedBufferRange()).toEqual [[0, 10], [0, 15]]
+
