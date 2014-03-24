@@ -95,19 +95,19 @@ module.exports =
 
   enableSnippetsInEditor: (editorView) ->
     editor = editorView.getEditor()
-    editorView.command 'snippets:expand', (e) =>
+    editorView.command 'snippets:expand', (event) =>
       if editor.getSelection().isEmpty()
-        e.abortKeyBinding() unless @expandSnippetUnderCursor(editor)
+        event.abortKeyBinding() unless @expandSnippetUnderCursor(editor)
       else
-        e.abortKeyBinding()
+        event.abortKeyBinding()
 
-    editorView.command 'snippets:next-tab-stop', (e) ->
+    editorView.command 'snippets:next-tab-stop', (event) ->
       unless editor.snippetExpansion?.goToNextTabStop()
-        e.abortKeyBinding()
+        event.abortKeyBinding()
 
-    editorView.command 'snippets:previous-tab-stop', (e) ->
+    editorView.command 'snippets:previous-tab-stop', (event) ->
       unless editor.snippetExpansion?.goToPreviousTabStop()
-        e.abortKeyBinding()
+        event.abortKeyBinding()
 
   # Get a RegExp of all the characters used in the snippet prefixes
   getWordRegex: (snippets) ->
