@@ -102,10 +102,7 @@ module.exports =
   enableSnippetsInEditor: (editorView) ->
     editor = editorView.getEditor()
     editorView.command 'snippets:expand', (event) =>
-      if editor.getSelection().isEmpty()
-        event.abortKeyBinding() unless @expandSnippetUnderCursor(editor)
-      else
-        event.abortKeyBinding()
+      event.abortKeyBinding() unless @expandSnippetUnderCursor(editor)
 
     editorView.command 'snippets:next-tab-stop', (event) ->
       unless editor.snippetExpansion?.goToNextTabStop()
@@ -149,6 +146,8 @@ module.exports =
     snippets
 
   expandSnippetUnderCursor: (editor) ->
+    return false unless editor.getSelection().isEmpty()
+
     snippets = @getSnippets(editor)
     return false if _.isEmpty(snippets)
 
