@@ -161,7 +161,7 @@ module.exports =
 
     editor.transact =>
       cursorPosition = editor.getCursorBufferPosition()
-      startPoint = cursorPosition.translate([0, -snippet.prefix.length], [])
+      startPoint = cursorPosition.translate([0, -snippet.prefix.length], [0, 0])
       editor.setSelectedBufferRange([startPoint, cursorPosition])
       @insert(snippet, editor)
     true
