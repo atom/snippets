@@ -132,7 +132,7 @@ module.exports =
       if snippetPrefix is prefix
         longestPrefixMatch = snippet
         break
-      else if prefix.indexOf(snippetPrefix) isnt -1
+      else if _.endsWith(prefix, snippetPrefix)
         longestPrefixMatch ?= snippet
         if snippetPrefix.length > longestPrefixMatch.prefix.length
           longestPrefixMatch = snippet

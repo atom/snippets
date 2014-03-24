@@ -219,6 +219,16 @@ describe "Snippets extension", ->
 
       describe "when multiple snippets match the prefix", ->
         it "expands the snippet that is the longest match for the prefix", ->
+          editor.insertText('t13')
+          expect(editor.getCursorScreenPosition()).toEqual [0, 3]
+
+          editorView.trigger keydownEvent('tab', target: editorView[0])
+          expect(buffer.lineForRow(0)).toBe "t13  var quicksort = function () {"
+          expect(editor.getCursorScreenPosition()).toEqual [0, 5]
+
+          editor.undo()
+          editor.undo()
+
           editor.insertText("tt1")
           expect(editor.getCursorScreenPosition()).toEqual [0, 3]
 
