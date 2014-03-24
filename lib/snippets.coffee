@@ -93,6 +93,12 @@ module.exports =
   getBodyParser: ->
     @bodyParser ?= require './snippet-body-parser'
 
+  getPrefixText: (snippets, editor) ->
+    wordRegex = @getWordRegex(snippets)
+    cursor = editor.getCursor()
+    prefixStart = cursor.getBeginningOfCurrentWordBufferPosition({wordRegex})
+    editor.getTextInRange([prefixStart, cursor.getBufferPosition()])
+
   enableSnippetsInEditor: (editorView) ->
     editor = editorView.getEditor()
     editorView.command 'snippets:expand', (event) =>
@@ -116,12 +122,6 @@ module.exports =
       prefixes[character] = true for character in prefix
     prefixCharacters = Object.keys(prefixes).join('')
     new RegExp("[#{_.escapeRegExp(prefixCharacters)}]+")
-
-  getPrefixText: (snippets, editor) ->
-    wordRegex = @getWordRegex(snippets)
-    cursor = editor.getCursor()
-    prefixStart = cursor.getBeginningOfCurrentWordBufferPosition({wordRegex})
-    editor.getTextInRange([prefixStart, cursor.getBufferPosition()])
 
   # Get the best match snippet for the given prefix text.  This will return
   # the longest match where there is no exact match to the prefix text.
