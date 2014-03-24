@@ -94,7 +94,7 @@ module.exports =
     @bodyParser ?= require './snippet-body-parser'
 
   getPrefixText: (snippets, editor) ->
-    wordRegex = @getWordRegex(snippets)
+    wordRegex = @wordRegexForSnippets(snippets)
     cursor = editor.getCursor()
     prefixStart = cursor.getBeginningOfCurrentWordBufferPosition({wordRegex})
     editor.getTextInRange([prefixStart, cursor.getBufferPosition()])
@@ -116,7 +116,7 @@ module.exports =
         event.abortKeyBinding()
 
   # Get a RegExp of all the characters used in the snippet prefixes
-  getWordRegex: (snippets) ->
+  wordRegexForSnippets: (snippets) ->
     prefixes = {}
     for prefix of snippets
       prefixes[character] = true for character in prefix
