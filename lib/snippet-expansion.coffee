@@ -14,7 +14,7 @@ class SnippetExpansion
     @editor.transact =>
       [newRange] = @editor.insertText(snippet.body, autoIndent: false)
       if snippet.tabStops.length > 0
-        @subscribe @editor, 'cursor-moved.snippet-expansion', (e) => @cursorMoved(e)
+        @subscribe @editor, 'cursor-moved', (event) => @cursorMoved(event)
         @placeTabStopMarkers(startPosition, snippet.tabStops)
         @editor.snippetExpansion = this
         @editor.normalizeTabsInBufferRange(newRange)
