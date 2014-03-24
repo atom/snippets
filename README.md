@@ -23,8 +23,7 @@ The outermost keys are the selectors where this snippets should be active.
 The next level of keys are the snippet names.
 
 Under each snippet name is a `prefix` that should trigger the snippet and a
-`body` to insert when the snippet is triggered. The `prefix` cannot start with
-a whitespace character or the following characters `"'<>;({[`.
+`body` to insert when the snippet is triggered.
 
 `$` followed by a number are the tabs stops which can be cycled between by
 pressing `tab` once a snippet has been triggered.
