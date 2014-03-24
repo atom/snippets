@@ -37,6 +37,10 @@ describe "Snippets extension", ->
             prefix: "t1"
             body: "this is a test"
 
+          "overlapping prefix":
+            prefix: "tt1"
+            body: "this is another test"
+
           "special chars":
             prefix: "@unique"
             body: "@unique see"
@@ -212,6 +216,25 @@ describe "Snippets extension", ->
             expect(buffer.lineForRow(2)).toBe "    if (items.length <= 1) return items; line 1"
             expect(buffer.lineForRow(3)).toBe "      line 2"
             expect(editor.getCursorBufferPosition()).toEqual [3, 12]
+
+      describe "when multiple snippets match the prefix", ->
+        it "expands the snippet that is the longest match for the prefix", ->
+          editor.insertText("tt1")
+          expect(editor.getCursorScreenPosition()).toEqual [0, 3]
+
+          editorView.trigger keydownEvent('tab', target: editorView[0])
+          expect(buffer.lineForRow(0)).toBe "this is another testvar quicksort = function () {"
+          expect(editor.getCursorScreenPosition()).toEqual [0, 20]
+
+          editor.undo()
+          editor.undo()
+
+          editor.insertText("@t1")
+          expect(editor.getCursorScreenPosition()).toEqual [0, 3]
+
+          editorView.trigger keydownEvent('tab', target: editorView[0])
+          expect(buffer.lineForRow(0)).toBe "@this is a testvar quicksort = function () {"
+          expect(editor.getCursorScreenPosition()).toEqual [0, 15]
 
     describe "when the letters preceding the cursor don't match a snippet", ->
       it "inserts a tab as normal", ->
@@ -448,8 +471,7 @@ describe "Snippets extension", ->
     it "will automatically parse snippet definition and replace selection", ->
       editor.setSelectedBufferRange([[0, 4], [0, 13]])
       Snippets.insert("hello ${1:world}", editor)
-      
+
       expect(buffer.lineForRow(0)).toBe "var hello world = function () {"
       expect(editor.getMarkerCount()).toBe 2
       expect(editor.getSelectedBufferRange()).toEqual [[0, 10], [0, 15]]
-

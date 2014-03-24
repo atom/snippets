@@ -1,10 +1,10 @@
 path = require 'path'
 
+_ = require 'underscore-plus'
 async = require 'async'
 CSON = require 'season'
 {File} = require 'pathwatcher'
 fs = require 'fs-plus'
-{Point, Range} = require 'atom'
 
 Snippet = require './snippet'
 SnippetExpansion = require './snippet-expansion'
@@ -93,22 +93,11 @@ module.exports =
   getBodyParser: ->
     @bodyParser ?= require './snippet-body-parser'
 
-  getPrefixText: (editor) ->
-    cursor = editor.getCursor()
-    startPoint = cursor.getBeginningOfCurrentWordBufferPosition(wordRegex: Snippet.wordRegex)
-    editor.getTextInRange([startPoint, cursor.getBufferPosition()])
-
   enableSnippetsInEditor: (editorView) ->
     editor = editorView.getEditor()
     editorView.command 'snippets:expand', (e) =>
-      unless editor.getSelection().isEmpty()
-        e.abortKeyBinding()
-        return
-      prefix = @getPrefixText(editor)
-      if snippet = atom.syntax.getProperty(editor.getCursorScopes(), "snippets.#{prefix}")
-        editor.transact =>
-          @selectToBoundaryPosition(editor)
-          @insert(snippet, editor)
+      if editor.getSelection().isEmpty()
+        e.abortKeyBinding() unless @expandSnippetUnderCursor(editor)
       else
         e.abortKeyBinding()
 
@@ -120,11 +109,52 @@ module.exports =
       unless editor.snippetExpansion?.goToPreviousTabStop()
         e.abortKeyBinding()
 
-  selectToBoundaryPosition: (editor) ->
+  # Get a RegExp of all the characters used in the snippet prefixes
+  getWordRegex: (snippets) ->
+    prefixes = {}
+    for prefix of snippets
+      prefixes[character] = true for character in prefix
+    prefixCharacters = Object.keys(prefixes).join('')
+    new RegExp("[#{_.escapeRegExp(prefixCharacters)}]+")
+
+  getPrefixText: (snippets, editor) ->
+    wordRegex = @getWordRegex(snippets)
     cursor = editor.getCursor()
-    startPoint = cursor.getBeginningOfCurrentWordBufferPosition(wordRegex: Snippet.wordRegex)
-    editor.setSelectedBufferRange new Range(startPoint, cursor.getBufferPosition())
-    startPoint
+    prefixStart = cursor.getBeginningOfCurrentWordBufferPosition({wordRegex})
+    editor.getTextInRange([prefixStart, cursor.getBufferPosition()])
+
+  # Get the best match snippet for the given prefix text.  This will return
+  # the longest match where there is no exact match to the prefix text.
+  snippetForPrefix: (snippets, prefix) ->
+    longestPrefixMatch = null
+
+    for snippetPrefix, snippet of snippets
+      if snippetPrefix is prefix
+        longestPrefixMatch = snippet
+        break
+      else if prefix.indexOf(snippetPrefix) isnt -1
+        longestPrefixMatch ?= snippet
+        if snippetPrefix.length > longestPrefixMatch.prefix.length
+          longestPrefixMatch = snippet
+
+    longestPrefixMatch
+
+  expandSnippetUnderCursor: (editor) ->
+    snippets = atom.syntax.getProperty(editor.getCursorScopes(), 'snippets')
+    return false if _.isEmpty(snippets)
+
+    prefix = @getPrefixText(snippets, editor)
+    return false unless prefix
+
+    snippet = @snippetForPrefix(snippets, prefix)
+    return false unless snippet?
+
+    editor.transact =>
+      cursorPosition = editor.getCursorBufferPosition()
+      startPoint = cursorPosition.translate([0, -snippet.prefix.length], [])
+      editor.setSelectedBufferRange([startPoint, cursorPosition])
+      @insert(snippet, editor)
+    true
 
   insert: (snippet, editor=atom.workspace.getActiveEditor()) ->
     if typeof snippet is 'string'
