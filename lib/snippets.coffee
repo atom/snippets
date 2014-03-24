@@ -4,7 +4,6 @@ async = require 'async'
 CSON = require 'season'
 {File} = require 'pathwatcher'
 fs = require 'fs-plus'
-
 {Point, Range} = require 'atom'
 
 Snippet = require './snippet'
@@ -133,5 +132,3 @@ module.exports =
       snippet = new Snippet({name: '__anonymous', prefix: '', bodyTree: bodyTree, bodyText: snippet})
 
     new SnippetExpansion(snippet, editor)
-
-
