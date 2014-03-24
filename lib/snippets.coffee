@@ -1,10 +1,10 @@
 path = require 'path'
 
+_ = require 'underscore-plus'
 async = require 'async'
 CSON = require 'season'
 {File} = require 'pathwatcher'
 fs = require 'fs-plus'
-{Point, Range} = require 'atom'
 
 Snippet = require './snippet'
 SnippetExpansion = require './snippet-expansion'
@@ -93,38 +93,78 @@ module.exports =
   getBodyParser: ->
     @bodyParser ?= require './snippet-body-parser'
 
-  getPrefixText: (editor) ->
+  getPrefixText: (snippets, editor) ->
+    wordRegex = @wordRegexForSnippets(snippets)
     cursor = editor.getCursor()
-    startPoint = cursor.getBeginningOfCurrentWordBufferPosition(wordRegex: Snippet.wordRegex)
-    editor.getTextInRange([startPoint, cursor.getBufferPosition()])
+    prefixStart = cursor.getBeginningOfCurrentWordBufferPosition({wordRegex})
+    editor.getTextInRange([prefixStart, cursor.getBufferPosition()])
 
   enableSnippetsInEditor: (editorView) ->
     editor = editorView.getEditor()
-    editorView.command 'snippets:expand', (e) =>
-      unless editor.getSelection().isEmpty()
-        e.abortKeyBinding()
-        return
-      prefix = @getPrefixText(editor)
-      if snippet = atom.syntax.getProperty(editor.getCursorScopes(), "snippets.#{prefix}")
-        editor.transact =>
-          @selectToBoundaryPosition(editor)
-          @insert(snippet, editor)
-      else
-        e.abortKeyBinding()
 
-    editorView.command 'snippets:next-tab-stop', (e) ->
+    editorView.command 'snippets:expand', (event) =>
+      unless @expandSnippetUnderCursor(editor)
+        event.abortKeyBinding()
+
+    editorView.command 'snippets:next-tab-stop', (event) ->
       unless editor.snippetExpansion?.goToNextTabStop()
-        e.abortKeyBinding()
+        event.abortKeyBinding()
 
-    editorView.command 'snippets:previous-tab-stop', (e) ->
+    editorView.command 'snippets:previous-tab-stop', (event) ->
       unless editor.snippetExpansion?.goToPreviousTabStop()
-        e.abortKeyBinding()
+        event.abortKeyBinding()
 
-  selectToBoundaryPosition: (editor) ->
-    cursor = editor.getCursor()
-    startPoint = cursor.getBeginningOfCurrentWordBufferPosition(wordRegex: Snippet.wordRegex)
-    editor.setSelectedBufferRange new Range(startPoint, cursor.getBufferPosition())
-    startPoint
+  # Get a RegExp of all the characters used in the snippet prefixes
+  wordRegexForSnippets: (snippets) ->
+    prefixes = {}
+    for prefix of snippets
+      prefixes[character] = true for character in prefix
+    prefixCharacters = Object.keys(prefixes).join('')
+    new RegExp("[#{_.escapeRegExp(prefixCharacters)}]+")
+
+  # Get the best match snippet for the given prefix text.  This will return
+  # the longest match where there is no exact match to the prefix text.
+  snippetForPrefix: (snippets, prefix) ->
+    longestPrefixMatch = null
+
+    for snippetPrefix, snippet of snippets
+      if snippetPrefix is prefix
+        longestPrefixMatch = snippet
+        break
+      else if _.endsWith(prefix, snippetPrefix)
+        longestPrefixMatch ?= snippet
+        if snippetPrefix.length > longestPrefixMatch.prefix.length
+          longestPrefixMatch = snippet
+
+    longestPrefixMatch
+
+  getSnippets: (editor) ->
+    scope = editor.getCursorScopes()
+    snippets = {}
+    for properties in atom.syntax.propertiesForScope(scope, 'snippets')
+      snippetProperties = _.valueForKeyPath(properties, 'snippets') ? {}
+      for snippetPrefix, snippet of snippetProperties
+        snippets[snippetPrefix] ?= snippet
+    snippets
+
+  expandSnippetUnderCursor: (editor) ->
+    return false unless editor.getSelection().isEmpty()
+
+    snippets = @getSnippets(editor)
+    return false if _.isEmpty(snippets)
+
+    prefix = @getPrefixText(snippets, editor)
+    return false unless prefix
+
+    snippet = @snippetForPrefix(snippets, prefix)
+    return false unless snippet?
+
+    editor.transact =>
+      cursorPosition = editor.getCursorBufferPosition()
+      startPoint = cursorPosition.translate([0, -snippet.prefix.length], [])
+      editor.setSelectedBufferRange([startPoint, cursorPosition])
+      @insert(snippet, editor)
+    true
 
   insert: (snippet, editor=atom.workspace.getActiveEditor()) ->
     if typeof snippet is 'string'

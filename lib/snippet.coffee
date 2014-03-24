@@ -3,11 +3,6 @@ _ = require 'underscore-plus'
 
 module.exports =
 class Snippet
-  @wordRegex: /[^\s'"<>;([{]+/
-
-  lineCount: null
-  tabStops: null
-
   constructor: ({@name, @prefix, @bodyText, bodyTree}) ->
     @body = @extractTabStops(bodyTree)
 
