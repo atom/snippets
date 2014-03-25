@@ -13,7 +13,7 @@
     "emissary": "1.x",
     "fs-plus": "2.x",
     "loophole": "^0.1.0",
-    "pathwatcher": "0.19.0",
+    "pathwatcher": "^1.0",
     "pegjs": "~0.8.0",
     "season": "1.x",
     "temp": "~0.6.0",
