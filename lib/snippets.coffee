@@ -13,7 +13,7 @@ module.exports =
   loaded: false
 
   activate: ->
-    atom.project.registerOpener (uri) =>
+    atom.workspace.registerOpener (uri) =>
       if uri is 'atom://.atom/snippets'
         atom.workspaceView.open(@getUserSnippetsPath())
 
