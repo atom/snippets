@@ -53,11 +53,19 @@ class SnippetExpansion
 
   setTabStopIndex: (@tabStopIndex) ->
     @settingTabStop = true
-    @editor.setSelectedBufferRanges(
-      @tabStopMarkers[@tabStopIndex].map (marker) =>
-        @editor.selectMarker(marker))
+    markerSelected = false
+
+    selections = []
+    for marker in @tabStopMarkers[@tabStopIndex]
+      if selection = @editor.selectMarker(marker)
+        selections.push(selection)
+
+    if selections.length > 0
+      @editor.setSelectedBufferRanges(selections)
+      markerSelected = true
+
     @settingTabStop = false
-    true
+    markerSelected
 
   tabStopsForBufferPosition: (bufferPosition) ->
     _.intersection(@tabStopMarkers, @editor.findMarkers(containsBufferPosition: bufferPosition))
