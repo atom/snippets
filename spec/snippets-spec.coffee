@@ -323,7 +323,6 @@ describe "Snippets extension", ->
 
     describe "when snippet contains multi-caret tabstops with or without placeholder", ->
       it "should create two markers", ->
-        markerCountBefore = editor.getMarkerCount()
         editor.setCursorScreenPosition([0, 0])
         editor.insertText('t9')
         editorView.trigger keydownEvent('tab', target: editorView[0])
@@ -332,7 +331,7 @@ describe "Snippets extension", ->
         editor.insertText('hello')
         expect(buffer.lineForRow(0)).toBe "with placeholder hello"
         expect(buffer.lineForRow(1)).toBe "without placeholder hellovar quicksort = function () {"
-        expect(editor.getMarkerCount()).toBe markerCountBefore + 2
+        expect(editor.getMarkerCount()).toBe 3
 
   describe "snippet loading", ->
     [configDirPath, packageWithSnippets, packageWithBrokenSnippets] = []
