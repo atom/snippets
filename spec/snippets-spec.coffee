@@ -87,6 +87,13 @@ describe "Snippets extension", ->
               without placeholder ${2}
             """
 
+          "multi-caret":
+            prefix: "t9"
+            body: """
+              with placeholder ${1:test}
+              without placeholder $1
+            """
+
     describe "when the letters preceding the cursor trigger a snippet", ->
       describe "when the snippet contains no tab stops", ->
         it "replaces the prefix with the snippet text and places the cursor at its end", ->
@@ -313,6 +320,17 @@ describe "Snippets extension", ->
 
         editorView.trigger keydownEvent('tab', target: editorView[0])
         expect(editor.getSelectedBufferRange()).toEqual [[1, 20], [1, 20]]
+
+    describe "when snippet contains multi-caret tabstops with or without placeholder", ->
+      it "should create two markers", ->
+        editor.setCursorScreenPosition([0, 0])
+        editor.insertText('t9')
+        editorView.trigger keydownEvent('tab', target: editorView[0])
+        expect(buffer.lineForRow(0)).toBe "with placeholder test"
+        expect(buffer.lineForRow(1)).toBe "without placeholder var quicksort = function () {"
+        editor.insertText('hello')
+        expect(buffer.lineForRow(0)).toBe "with placeholder hello"
+        expect(buffer.lineForRow(1)).toBe "without placeholder hellovar quicksort = function () {"
 
   describe "snippet loading", ->
     [configDirPath, packageWithSnippets, packageWithBrokenSnippets] = []

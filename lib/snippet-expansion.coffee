@@ -5,10 +5,10 @@ module.exports =
 class SnippetExpansion
   Subscriber.includeInto(this)
 
-  tabStopMarkers: null
   settingTabStop: false
 
   constructor: (@snippet, @editor) ->
+    @tabStopMarkers = []
     startPosition = @editor.getSelectedBufferRange().start
 
     @editor.transact =>
@@ -27,8 +27,9 @@ class SnippetExpansion
     @destroy() unless _.intersection(oldTabStops, newTabStops).length
 
   placeTabStopMarkers: (startPosition, tabStopRanges) ->
-    @tabStopMarkers = tabStopRanges.map ({start, end}) =>
-      @editor.markBufferRange([startPosition.add(start), startPosition.add(end)])
+    for ranges in tabStopRanges
+      @tabStopMarkers.push ranges.map ({start, end}) =>
+        @editor.markBufferRange([startPosition.add(start), startPosition.add(end)])
     @setTabStopIndex(0)
 
   indentSubsequentLines: (startRow, snippet) ->
@@ -52,7 +53,16 @@ class SnippetExpansion
 
   setTabStopIndex: (@tabStopIndex) ->
     @settingTabStop = true
-    markerSelected = @editor.selectMarker(@tabStopMarkers[@tabStopIndex])
+    markerSelected = false
+
+    ranges = []
+    for marker in @tabStopMarkers[@tabStopIndex] when marker.isValid()
+      ranges.push(marker.getBufferRange())
+
+    if ranges.length > 0
+      @editor.setSelectedBufferRanges(ranges)
+      markerSelected = true
+
     @settingTabStop = false
     markerSelected
 
@@ -61,7 +71,9 @@ class SnippetExpansion
 
   destroy: ->
     @unsubscribe()
-    marker.destroy() for marker in @tabStopMarkers
+    for markers in @tabStopMarkers
+      marker.destroy() for marker in markers
+    @tabStopMarkers = []
     @editor.snippetExpansion = null
 
   restore: (@editor) ->
