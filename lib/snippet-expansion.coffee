@@ -5,10 +5,10 @@ module.exports =
 class SnippetExpansion
   Subscriber.includeInto(this)
 
-  tabStopMarkers: []
   settingTabStop: false
 
   constructor: (@snippet, @editor) ->
+    @tabStopMarkers = []
     startPosition = @editor.getSelectedBufferRange().start
 
     @editor.transact =>
@@ -66,7 +66,7 @@ class SnippetExpansion
     @unsubscribe()
     for markers in @tabStopMarkers
         marker.destroy() for marker in markers
-    @tabStopMarkers.length = 0
+    @tabStopMarkers = []
     @editor.snippetExpansion = null
 
   restore: (@editor) ->

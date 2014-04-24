@@ -19,7 +19,7 @@ class Snippet
           index = Infinity if index == 0
           start = [row, column]
           extractTabStops(content)
-          tabStopsByIndex[index] = [] if tabStopsByIndex[index] is undefined
+          tabStopsByIndex[index] ?= []
           tabStopsByIndex[index].push new Range(start, [row, column])
         else if _.isString(segment)
           bodyText.push(segment)
