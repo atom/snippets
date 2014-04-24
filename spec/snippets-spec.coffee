@@ -330,11 +330,11 @@ describe "Snippets extension", ->
         editorView.trigger keydownEvent('tab', target: editorView[0])
         expect(buffer.lineForRow(0)).toBe "with placeholder test"
         expect(buffer.lineForRow(1)).toBe "and again test"
-        expect(buffer.lineForRow(1)).toBe "without placeholder "
+        expect(buffer.lineForRow(2)).toBe "without placeholder "
         editor.insertText('hello')
         expect(buffer.lineForRow(0)).toBe "with placeholder hello"
         expect(buffer.lineForRow(1)).toBe "and again hello"
-        expect(buffer.lineForRow(1)).toBe "without placeholder hello"
+        expect(buffer.lineForRow(2)).toBe "without placeholder hello"
         expect(editor.getMarkerCount()).toBe 3
 
   describe "snippet loading", ->
