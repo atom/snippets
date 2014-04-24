@@ -331,7 +331,6 @@ describe "Snippets extension", ->
         editor.insertText('hello')
         expect(buffer.lineForRow(0)).toBe "with placeholder hello"
         expect(buffer.lineForRow(1)).toBe "without placeholder hellovar quicksort = function () {"
-        expect(editor.getMarkerCount()).toBe 3
 
   describe "snippet loading", ->
     [configDirPath, packageWithSnippets, packageWithBrokenSnippets] = []
