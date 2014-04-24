@@ -1,4 +1,4 @@
-# Snippets package
+# Snippets package [![Build Status](https://travis-ci.org/atom/snippets.svg?branch=master)](https://travis-ci.org/atom/snippets)
 
 Expand snippets matching the current prefix with `tab` in Atom.
 
