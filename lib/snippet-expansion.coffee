@@ -65,7 +65,7 @@ class SnippetExpansion
   destroy: ->
     @unsubscribe()
     for markers in @tabStopMarkers
-        marker.destroy() for marker in markers
+      marker.destroy() for marker in markers
     @tabStopMarkers = []
     @editor.snippetExpansion = null
 
