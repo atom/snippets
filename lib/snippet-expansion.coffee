@@ -29,7 +29,7 @@ class SnippetExpansion
   placeTabStopMarkers: (startPosition, tabStopRanges) ->
     for ranges in tabStopRanges
       @tabStopMarkers.push ranges.map ({start, end}) =>
-        [startPosition.add(start), startPosition.add(end)]
+        @editor.markBufferRange([startPosition.add(start), startPosition.add(end)])
     @setTabStopIndex(0)
 
   indentSubsequentLines: (startRow, snippet) ->
@@ -53,7 +53,9 @@ class SnippetExpansion
 
   setTabStopIndex: (@tabStopIndex) ->
     @settingTabStop = true
-    @editor.setSelectedBufferRanges @tabStopMarkers[@tabStopIndex]
+    @editor.setSelectedBufferRanges(
+      @tabStopMarkers[@tabStopIndex].map (marker) =>
+        @editor.selectMarker(marker))
     @settingTabStop = false
     true
 
@@ -62,6 +64,8 @@ class SnippetExpansion
 
   destroy: ->
     @unsubscribe()
+    for markers in @tabStopMarkers
+        marker.destroy() for marker in markers
     @tabStopMarkers.length = 0
     @editor.snippetExpansion = null
 
