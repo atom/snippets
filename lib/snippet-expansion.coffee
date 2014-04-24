@@ -55,13 +55,12 @@ class SnippetExpansion
     @settingTabStop = true
     markerSelected = false
 
-    selections = []
-    for marker in @tabStopMarkers[@tabStopIndex]
-      if selection = @editor.selectMarker(marker)
-        selections.push(selection)
+    ranges = []
+    for marker in @tabStopMarkers[@tabStopIndex] when marker.isValid()
+      ranges.push(marker.getBufferRange())
 
-    if selections.length > 0
-      @editor.setSelectedBufferRanges(selections)
+    if ranges.length > 0
+      @editor.setSelectedBufferRanges(ranges)
       markerSelected = true
 
     @settingTabStop = false
