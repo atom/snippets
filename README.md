@@ -28,7 +28,7 @@ Under each snippet name is a `prefix` that should trigger the snippet and a
 `$` followed by a number are the tabs stops which can be cycled between by
 pressing `tab` once a snippet has been triggered.
 
-The above example adds a `log` snippet to JavaScript files that would expad
+The above example adds a `log` snippet to JavaScript files that would expand
 to.
 
 ```js
