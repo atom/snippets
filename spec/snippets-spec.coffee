@@ -189,6 +189,46 @@ describe "Snippets extension", ->
             editorView.trigger keydownEvent('tab', shiftKey: true, target: editorView[0])
             expect(editor.getCursorBufferPosition()).toEqual [4, 15]
 
+        describe "when the cursor is moved within the bounds of the current tab stop", ->
+          it "should not terminate the snippet", ->
+            editor.setCursorScreenPosition([0, 0])
+            editor.insertText('t8')
+            editorView.trigger keydownEvent('tab', target: editorView[0])
+
+            expect(buffer.lineForRow(0)).toBe "with placeholder test"
+            editor.moveCursorRight()
+            editor.moveCursorLeft()
+            editor.insertText("foo")
+            expect(buffer.lineForRow(0)).toBe "with placeholder tesfoot"
+
+            editorView.trigger keydownEvent('tab', target: editorView[0])
+            expect(buffer.lineForRow(1)).toBe "without placeholder var quicksort = function () {"
+            editor.insertText("test")
+            expect(buffer.lineForRow(1)).toBe "without placeholder testvar quicksort = function () {"
+            editor.moveCursorLeft()
+            editor.insertText("foo")
+            expect(buffer.lineForRow(1)).toBe "without placeholder tesfootvar quicksort = function () {"
+
+        describe "when the backspace is press within the bounds of the current tab stop", ->
+          it "show not terminate the snippet", ->
+            editor.setCursorScreenPosition([0, 0])
+            editor.insertText('t8')
+            editorView.trigger keydownEvent('tab', target: editorView[0])
+
+            expect(buffer.lineForRow(0)).toBe "with placeholder test"
+            editor.moveCursorRight()
+            editor.backspace()
+            editor.insertText("foo")
+            expect(buffer.lineForRow(0)).toBe "with placeholder tesfoo"
+
+            editorView.trigger keydownEvent('tab', target: editorView[0])
+            expect(buffer.lineForRow(1)).toBe "without placeholder var quicksort = function () {"
+            editor.insertText("test")
+            expect(buffer.lineForRow(1)).toBe "without placeholder testvar quicksort = function () {"
+            editor.backspace()
+            editor.insertText("foo")
+            expect(buffer.lineForRow(1)).toBe "without placeholder tesfoovar quicksort = function () {"
+
       describe "when the snippet contains hard tabs", ->
         describe "when the edit session is in soft-tabs mode", ->
           it "translates hard tabs in the snippet to the appropriate number of spaces", ->

@@ -67,7 +67,8 @@ class SnippetExpansion
     markerSelected
 
   tabStopsForBufferPosition: (bufferPosition) ->
-    _.intersection(@tabStopMarkers, @editor.findMarkers(containsBufferPosition: bufferPosition))
+    _.intersection(@tabStopMarkers[@tabStopIndex],
+      @editor.findMarkers(containsBufferPosition: bufferPosition))
 
   destroy: ->
     @unsubscribe()
