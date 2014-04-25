@@ -210,7 +210,7 @@ describe "Snippets extension", ->
             expect(buffer.lineForRow(1)).toBe "without placeholder tesfootvar quicksort = function () {"
 
         describe "when the backspace is press within the bounds of the current tab stop", ->
-          it "show not terminate the snippet", ->
+          it "should not terminate the snippet", ->
             editor.setCursorScreenPosition([0, 0])
             editor.insertText('t8')
             editorView.trigger keydownEvent('tab', target: editorView[0])
