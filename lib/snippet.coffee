@@ -32,7 +32,7 @@ class Snippet
     extractTabStops(bodyTree)
     @lineCount = row + 1
     @tabStops = []
-    for index in _.keys(tabStopsByIndex).sort()
+    for index in _.keys(tabStopsByIndex).sort(((arg1, arg2) -> arg1-arg2))
       @tabStops.push tabStopsByIndex[index]
 
     bodyText.join('')
