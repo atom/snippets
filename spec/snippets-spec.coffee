@@ -94,6 +94,12 @@ describe "Snippets extension", ->
               without placeholder $1
             """
 
+          "large indices":
+            prefix: "t10"
+            body: """
+              hello${10} ${11:large} indices${1}
+            """
+
     describe "when the letters preceding the cursor trigger a snippet", ->
       describe "when the snippet contains no tab stops", ->
         it "replaces the prefix with the snippet text and places the cursor at its end", ->
@@ -371,6 +377,18 @@ describe "Snippets extension", ->
         editor.insertText('hello')
         expect(buffer.lineForRow(0)).toBe "with placeholder hello"
         expect(buffer.lineForRow(1)).toBe "without placeholder hellovar quicksort = function () {"
+
+    describe "when the snippet contains tab stops with an index >= 10", ->
+      it "parses and orders the indices correctly", ->
+        editor.setText('t10')
+        editor.setCursorScreenPosition([0, 3])
+        editorView.trigger keydownEvent('tab', target: editorView[0])
+        expect(editor.getText()).toBe "hello large indices"
+        expect(editor.getCursorBufferPosition()).toEqual [0, 19]
+        editorView.trigger keydownEvent('tab', target: editorView[0])
+        expect(editor.getCursorBufferPosition()).toEqual [0, 5]
+        editorView.trigger keydownEvent('tab', target: editorView[0])
+        expect(editor.getSelectedBufferRange()).toEqual [[0, 6], [0, 11]]
 
   describe "snippet loading", ->
     [configDirPath, packageWithSnippets, packageWithBrokenSnippets] = []
