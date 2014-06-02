@@ -32,30 +32,13 @@ class SnippetsAvailable extends SelectListView
     super
     @addClass('overlay from-top')
 
-    snippets = @getSnippets @editor()
-    items = []
-    for prefix, snippet of snippets
-      items.push {'prefix': prefix, 'snippet': snippet}
+    Snippets = require './snippets'
+    snippets = Snippets.getSnippets @editor()
+    items = ({'prefix': prefix, 'snippet': snippet} for prefix, snippet of snippets)
 
     @setItems(items)
     atom.workspaceView.append(this)
     @focusFilterEditor()
-
-  # Public: Collect all available snippets.
-  #
-  # editor - The {Object} representing the editor to check the scope.
-  #
-  # Returns an array with {Object}:
-  #    :prefix - The snippet prefix as {String}.
-  #    :snippet - The snippet-{Object}.
-  getSnippets: (editor) ->
-    scope = editor.getCursorScopes()
-    snippets = {}
-    for properties in atom.syntax.propertiesForScope(scope, 'snippets')
-      snippetProperties = _.valueForKeyPath(properties, 'snippets') ? {}
-      for snippetPrefix, snippet of snippetProperties
-        snippets[snippetPrefix] ?= snippet
-    snippets
 
   # Public: Implement SelectListView method to generate the view for each item.
   #
@@ -74,4 +57,6 @@ class SnippetsAvailable extends SelectListView
   #
   # Returns: `undefined`
   confirmed: (item) ->
-    @snippets()?.insert item.snippet.bodyText
+    Snippets = require './snippets'
+    Snippets.insert item.snippet.bodyText
+    @detach()
