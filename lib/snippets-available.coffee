@@ -10,11 +10,6 @@ class SnippetsAvailable extends SelectListView
   # Returns: The active Editor as {Object}.
   editor: -> atom.workspace.getActiveEditor()
 
-  # Public: Retrieve the active EditorView as {Object}.
-  #
-  # Returns: The active EditorView as {Object}.
-  editorView: -> atom.workspaceView.getActiveView()
-
   # Public: Filter the fuzzy-search for the prefix.
   #
   # Returns: {String}
