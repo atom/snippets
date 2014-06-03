@@ -23,10 +23,10 @@ class SnippetsAvailable extends SelectListView
   # Public: Initialize object.
   #
   # Returns: `undefined`
-  initialize: (snippets) ->
+  initialize: (@snippets) ->
     super
     @addClass('overlay from-top')
-    items = ({prefix, snippet} for prefix, snippet of snippets)
+    items = ({prefix, snippet} for prefix, snippet of snippets.getSnippets(@editor()))
 
     @setItems(items)
     atom.workspaceView.append(this)
@@ -49,6 +49,5 @@ class SnippetsAvailable extends SelectListView
   #
   # Returns: `undefined`
   confirmed: (item) ->
-    Snippets = require './snippets'
-    Snippets.insert item.snippet.bodyText
+    @snippets.insert item.snippet.bodyText
     @detach()

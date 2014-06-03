@@ -565,17 +565,27 @@ describe "Snippets extension", ->
 
   describe "snippet available selector", ->
     beforeEach ->
-      snippets = {}
-      snippets['test'] = {name: 'test', bodyText: '${1:Test pass you will}, young '}
-      snippets['chal'] = {name: 'challenge', bodyText: '$1: ${2:To pass this challenge}'}
+      snippets.add __filename,
+        ".source.js":
+          "test":
+            prefix: "test"
+            body: "${1:Test pass you will}, young "
+
+          "challenge":
+            prefix: "chal"
+            body: "$1: ${2:To pass this challenge}"
+
       {@list, @filterEditorView} = @snippetsAvailable = new SnippetsAvailable(snippets)
 
     it "will draw a SelectListView to select a snippet from the snippets passed to the constructor", ->
       expect(@snippetsAvailable.getSelectedItem().prefix).toBe 'test'
-      expect(@snippetsAvailable.getSelectedItem().snippet).toEqual {name: 'test', bodyText: '${1:Test pass you will}, young '}
+      expect(@snippetsAvailable.getSelectedItem().snippet.name).toBe 'test'
+      expect(@snippetsAvailable.getSelectedItem().snippet.bodyText).toBe '${1:Test pass you will}, young '
+
       @filterEditorView.trigger 'core:move-down'
       expect(@snippetsAvailable.getSelectedItem().prefix).toBe 'chal'
-      expect(@snippetsAvailable.getSelectedItem().snippet).toEqual {name: 'challenge', bodyText: '$1: ${2:To pass this challenge}'}
+      expect(@snippetsAvailable.getSelectedItem().snippet.name).toBe 'challenge'
+      expect(@snippetsAvailable.getSelectedItem().snippet.bodyText).toBe '$1: ${2:To pass this challenge}'
 
     it "will write the selected snippet to the editor as snippet", ->
       @filterEditorView.trigger 'core:confirm'
