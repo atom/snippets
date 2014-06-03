@@ -15,11 +15,6 @@ class SnippetsAvailable extends SelectListView
   # Returns: The active EditorView as {Object}.
   editorView: -> atom.workspaceView.getActiveView()
 
-  # Public: Retrieve the active snippets package mainModule.
-  #
-  # Returns: The active snippet package mainModule as {Object}.
-  snippets: -> atom.packages.activePackages.snippets.mainModule
-
   # Public: Filter the fuzzy-search for the prefix.
   #
   # Returns: {String}
@@ -28,13 +23,10 @@ class SnippetsAvailable extends SelectListView
   # Public: Initialize object.
   #
   # Returns: `undefined`
-  initialize: (@Snippets) ->
+  initialize: (snippets) ->
     super
     @addClass('overlay from-top')
-
-    Snippets = require './snippets'
-    snippets = Snippets.getSnippets @editor()
-    items = ({'prefix': prefix, 'snippet': snippet} for prefix, snippet of snippets)
+    items = ({prefix, snippet} for prefix, snippet of snippets)
 
     @setItems(items)
     atom.workspaceView.append(this)
