@@ -40,8 +40,8 @@ class SnippetsAvailable extends SelectListView
   viewForItem: (snippet) ->
     $$ ->
       @li class: 'two-lines', =>
-        @div class: 'primary-line', "#{snippet.prefix}"
-        @div class: 'secondary-line', "#{snippet.name}"
+        @div class: 'primary-line', snippet.prefix
+        @div class: 'secondary-line', snippet.name
 
   # Public: Implement SelectListView method to process the user selection.
   #
