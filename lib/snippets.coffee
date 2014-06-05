@@ -8,7 +8,7 @@ fs = require 'fs-plus'
 
 Snippet = require './snippet'
 SnippetExpansion = require './snippet-expansion'
-SnippetsAvailable = require "./snippets-available"
+SnippetsAvailable = null # Defer until actually rendered
 
 module.exports =
   loaded: false
@@ -116,6 +116,7 @@ module.exports =
         event.abortKeyBinding()
 
     editorView.command 'snippets:available', (event) =>
+      SnippetsAvailable ?= require './snippets-available'
       @availableSnippetsView ?= new SnippetsAvailable(this)
       @availableSnippetsView.toggle()
 
