@@ -6,7 +6,7 @@ class SnippetsAvailable extends SelectListView
   # Public: Initialize object.
   #
   # Returns: `undefined`
-  initialize: (@snippets) ->
+  initialize: (@snippets, @editor) ->
     super
     @addClass('overlay from-top available-snippets')
     @command 'snippets:available', => @toggle()
@@ -24,8 +24,7 @@ class SnippetsAvailable extends SelectListView
       @attach()
 
   populate: ->
-    editor = atom.workspace.getActiveEditor()
-    snippets = _.values(@snippets.getSnippets(editor))
+    snippets = _.values(@snippets.getSnippets(@editor))
     @setItems(snippets)
 
   attach: ->
