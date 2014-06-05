@@ -1,5 +1,3 @@
-_ = require 'underscore-plus'
-
 {SelectListView, View} = require 'atom'
 
 module.exports =
