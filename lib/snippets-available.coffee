@@ -42,5 +42,5 @@ class SnippetsAvailable extends SelectListView
   #
   # Returns: `undefined`
   confirmed: (item) ->
+    @cancel()
     @snippets.insert item.snippet.bodyText
-    @detach()
