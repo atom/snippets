@@ -5,3 +5,6 @@
   'tab': 'snippets:next-tab-stop'
   'shift-tab': 'snippets:previous-tab-stop'
   'alt-shift-s': 'snippets:available'
+
+'.available-snippets .mini.editor input':
+  'alt-shift-s': 'snippets:available'

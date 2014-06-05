@@ -1,8 +1,8 @@
-{SelectListView, View} = require 'atom'
+_ = require 'underscore-plus'
+{$$, SelectListView, View} = require 'atom'
 
 module.exports =
 class SnippetsAvailable extends SelectListView
-
   # Public: Retrieve the active Editor.
   #
   # Returns: The active Editor as {Object}.
@@ -18,29 +18,41 @@ class SnippetsAvailable extends SelectListView
   # Returns: `undefined`
   initialize: (@snippets) ->
     super
-    @addClass('overlay from-top')
-    items = ({prefix, snippet} for prefix, snippet of snippets.getSnippets(@editor()))
+    @addClass('overlay from-top available-snippets')
+    @command 'snippets:available', => @toggle()
 
-    @setItems(items)
+  toggle: ->
+    if @hasParent()
+      @cancel()
+    else
+      @populate()
+      @attach()
+
+  populate: ->
+    snippets = _.values(@snippets.getSnippets(@editor()))
+    @setItems(snippets)
+
+  attach: ->
+    @storeFocusedElement()
     atom.workspaceView.append(this)
     @focusFilterEditor()
 
   # Public: Implement SelectListView method to generate the view for each item.
   #
-  # item - The {Object} containing the snippet information.
+  # snippet - The snippet {Object} to render a view for.
   #
   # Returns: `undefined`
-  viewForItem: (item) ->
-    View.render ->
+  viewForItem: (snippet) ->
+    $$ ->
       @li class: 'two-lines', =>
-        @div class: 'primary-line', "#{item.prefix}"
-        @div class: 'secondary-line', "#{item.snippet.name}"
+        @div class: 'primary-line', "#{snippet.prefix}"
+        @div class: 'secondary-line', "#{snippet.name}"
 
   # Public: Implement SelectListView method to process the user selection.
   #
-  # item - The {Object} to insert the snippet.
+  # snippet - The snippet {Object} to insert.
   #
   # Returns: `undefined`
-  confirmed: (item) ->
+  confirmed: (snippet) ->
     @cancel()
-    @snippets.insert item.snippet.bodyText
+    @snippets.insert snippet.bodyText

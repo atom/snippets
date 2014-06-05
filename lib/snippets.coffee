@@ -116,7 +116,8 @@ module.exports =
         event.abortKeyBinding()
 
     editorView.command 'snippets:available', (event) =>
-      new SnippetsAvailable(this)
+      @availableSnippetsView ?= new SnippetsAvailable(this)
+      @availableSnippetsView.toggle()
 
   # Get a RegExp of all the characters used in the snippet prefixes
   wordRegexForSnippets: (snippets) ->

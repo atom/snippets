@@ -564,6 +564,8 @@ describe "Snippets extension", ->
       expect(editor.getSelectedBufferRange()).toEqual [[0, 10], [0, 15]]
 
   describe "snippet available selector", ->
+    availableSnippetsView = null
+
     beforeEach ->
       snippets.add __filename,
         ".source.js":
@@ -575,20 +577,21 @@ describe "Snippets extension", ->
             prefix: "chal"
             body: "$1: ${2:To pass this challenge}"
 
-      {@list, @filterEditorView} = @snippetsAvailable = new SnippetsAvailable(snippets)
+      availableSnippetsView = new SnippetsAvailable(snippets)
+      availableSnippetsView.toggle()
 
     it "will draw a SelectListView to select a snippet from the snippets passed to the constructor", ->
-      expect(@snippetsAvailable.getSelectedItem().prefix).toBe 'test'
-      expect(@snippetsAvailable.getSelectedItem().snippet.name).toBe 'test'
-      expect(@snippetsAvailable.getSelectedItem().snippet.bodyText).toBe '${1:Test pass you will}, young '
+      expect(availableSnippetsView.getSelectedItem().prefix).toBe 'test'
+      expect(availableSnippetsView.getSelectedItem().name).toBe 'test'
+      expect(availableSnippetsView.getSelectedItem().bodyText).toBe '${1:Test pass you will}, young '
 
-      @filterEditorView.trigger 'core:move-down'
-      expect(@snippetsAvailable.getSelectedItem().prefix).toBe 'chal'
-      expect(@snippetsAvailable.getSelectedItem().snippet.name).toBe 'challenge'
-      expect(@snippetsAvailable.getSelectedItem().snippet.bodyText).toBe '$1: ${2:To pass this challenge}'
+      availableSnippetsView.filterEditorView.trigger 'core:move-down'
+      expect(availableSnippetsView.getSelectedItem().prefix).toBe 'chal'
+      expect(availableSnippetsView.getSelectedItem().name).toBe 'challenge'
+      expect(availableSnippetsView.getSelectedItem().bodyText).toBe '$1: ${2:To pass this challenge}'
 
     it "will write the selected snippet to the editor as snippet", ->
-      @filterEditorView.trigger 'core:confirm'
+      availableSnippetsView.filterEditorView.trigger 'core:confirm'
       expect(editor.getCursorScreenPosition()).toEqual [0, 18]
       expect(editor.getSelectedText()).toBe 'Test pass you will'
       expect(buffer.lineForRow(0)).toBe 'Test pass you will, young var quicksort = function () {'
