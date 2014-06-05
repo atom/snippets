@@ -6,6 +6,7 @@ temp = require 'temp'
 
 Snippet = require '../lib/snippet'
 Snippets = require '../lib/snippets'
+SnippetsAvailable = require '../lib/snippets-available'
 
 describe "Snippets extension", ->
   [buffer, editorView, editor, snippets] = []
@@ -561,3 +562,33 @@ describe "Snippets extension", ->
       expect(buffer.lineForRow(0)).toBe "var hello world = function () {"
       expect(editor.getMarkerCount()).toBe 2
       expect(editor.getSelectedBufferRange()).toEqual [[0, 10], [0, 15]]
+
+  describe "snippet available selector", ->
+    beforeEach ->
+      snippets.add __filename,
+        ".source.js":
+          "test":
+            prefix: "test"
+            body: "${1:Test pass you will}, young "
+
+          "challenge":
+            prefix: "chal"
+            body: "$1: ${2:To pass this challenge}"
+
+      {@list, @filterEditorView} = @snippetsAvailable = new SnippetsAvailable(snippets)
+
+    it "will draw a SelectListView to select a snippet from the snippets passed to the constructor", ->
+      expect(@snippetsAvailable.getSelectedItem().prefix).toBe 'test'
+      expect(@snippetsAvailable.getSelectedItem().snippet.name).toBe 'test'
+      expect(@snippetsAvailable.getSelectedItem().snippet.bodyText).toBe '${1:Test pass you will}, young '
+
+      @filterEditorView.trigger 'core:move-down'
+      expect(@snippetsAvailable.getSelectedItem().prefix).toBe 'chal'
+      expect(@snippetsAvailable.getSelectedItem().snippet.name).toBe 'challenge'
+      expect(@snippetsAvailable.getSelectedItem().snippet.bodyText).toBe '$1: ${2:To pass this challenge}'
+
+    it "will write the selected snippet to the editor as snippet", ->
+      @filterEditorView.trigger 'core:confirm'
+      expect(editor.getCursorScreenPosition()).toEqual [0, 18]
+      expect(editor.getSelectedText()).toBe 'Test pass you will'
+      expect(buffer.lineForRow(0)).toBe 'Test pass you will, young var quicksort = function () {'

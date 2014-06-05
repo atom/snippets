@@ -8,6 +8,7 @@ fs = require 'fs-plus'
 
 Snippet = require './snippet'
 SnippetExpansion = require './snippet-expansion'
+SnippetsAvailable = require "./snippets-available"
 
 module.exports =
   loaded: false
@@ -113,6 +114,9 @@ module.exports =
     editorView.command 'snippets:previous-tab-stop', (event) ->
       unless editor.snippetExpansion?.goToPreviousTabStop()
         event.abortKeyBinding()
+
+    editorView.command 'snippets:available', (event) =>
+      new SnippetsAvailable(this)
 
   # Get a RegExp of all the characters used in the snippet prefixes
   wordRegexForSnippets: (snippets) ->
