@@ -1,18 +1,8 @@
 _ = require 'underscore-plus'
-{$$, SelectListView, View} = require 'atom'
+{$$, SelectListView} = require 'atom'
 
 module.exports =
 class SnippetsAvailable extends SelectListView
-  # Public: Retrieve the active Editor.
-  #
-  # Returns: The active Editor as {Object}.
-  editor: -> atom.workspace.getActiveEditor()
-
-  # Public: Filter the fuzzy-search for the prefix.
-  #
-  # Returns: {String}
-  getFilterKey: -> 'prefix'
-
   # Public: Initialize object.
   #
   # Returns: `undefined`
@@ -20,6 +10,11 @@ class SnippetsAvailable extends SelectListView
     super
     @addClass('overlay from-top available-snippets')
     @command 'snippets:available', => @toggle()
+
+  # Public: Filter the fuzzy-search for the prefix.
+  #
+  # Returns: {String}
+  getFilterKey: -> 'prefix'
 
   toggle: ->
     if @hasParent()
@@ -29,7 +24,8 @@ class SnippetsAvailable extends SelectListView
       @attach()
 
   populate: ->
-    snippets = _.values(@snippets.getSnippets(@editor()))
+    editor = atom.workspace.getActiveEditor()
+    snippets = _.values(@snippets.getSnippets(editor))
     @setItems(snippets)
 
   attach: ->
