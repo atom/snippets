@@ -13,8 +13,10 @@ describe "Snippets extension", ->
 
   beforeEach ->
     atom.workspaceView = new WorkspaceView
-    atom.workspaceView.openSync('sample.js')
     spyOn(Snippets, 'loadAll')
+
+    waitsForPromise ->
+      atom.workspace.open('sample.js')
 
     waitsForPromise ->
       atom.packages.activatePackage('language-javascript')
@@ -25,7 +27,7 @@ describe "Snippets extension", ->
 
     runs ->
       editorView = atom.workspaceView.getActiveView()
-      editor = atom.workspaceView.getActivePaneItem()
+      editor = atom.workspace.getActiveEditor()
       buffer = editor.getBuffer()
       atom.workspaceView.simulateDomAttachment()
       atom.workspaceView.enableKeymap()
@@ -514,10 +516,10 @@ describe "Snippets extension", ->
       atom.workspaceView.open('atom://.atom/snippets')
 
       waitsFor ->
-        atom.workspaceView.getActivePaneItem()?
+        atom.workspace.getActiveEditor()?
 
       runs ->
-        expect(atom.workspaceView.getActivePaneItem().getUri()).toBe path.join(configDirPath, 'snippets.cson')
+        expect(atom.workspace.getActiveEditor().getUri()).toBe path.join(configDirPath, 'snippets.cson')
 
   describe "when ~/.atom/snippets.cson changes", ->
     it "reloads the snippets", ->
