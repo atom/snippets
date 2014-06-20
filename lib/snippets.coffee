@@ -96,9 +96,10 @@ module.exports =
 
   getPrefixText: (snippets, editor) ->
     wordRegex = @wordRegexForSnippets(snippets)
-    cursor = editor.getCursor()
-    prefixStart = cursor.getBeginningOfCurrentWordBufferPosition({wordRegex})
-    editor.getTextInRange([prefixStart, cursor.getBufferPosition()])
+    cursors = editor.getCursors()
+    for cursor in cursors
+      prefixStart = cursor.getBeginningOfCurrentWordBufferPosition({wordRegex})
+      editor.getTextInRange([prefixStart, cursor.getBufferPosition()])
 
   enableSnippetsInEditor: (editorView) ->
     editor = editorView.getEditor()
@@ -160,16 +161,19 @@ module.exports =
     return false if _.isEmpty(snippets)
 
     prefix = @getPrefixText(snippets, editor)
-    return false unless prefix
+    return false unless prefix and _.uniq(prefix).length is 1
 
+    prefix = prefix[0]
     snippet = @snippetForPrefix(snippets, prefix)
     return false unless snippet?
 
     editor.transact =>
-      cursorPosition = editor.getCursorBufferPosition()
-      startPoint = cursorPosition.translate([0, -snippet.prefix.length], [0, 0])
-      editor.setSelectedBufferRange([startPoint, cursorPosition])
-      @insert(snippet, editor)
+      cursors = editor.getCursors()
+      for cursor in cursors
+        cursorPosition = cursor.getBufferPosition()
+        startPoint = cursorPosition.translate([0, -snippet.prefix.length], [0, 0])
+        editor.setSelectedBufferRange([startPoint, cursorPosition])
+        @insert(snippet, editor)
     true
 
   insert: (snippet, editor=atom.workspace.getActiveEditor()) ->
