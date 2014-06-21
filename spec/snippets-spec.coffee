@@ -153,7 +153,6 @@ describe "Snippets extension", ->
           editorView.trigger keydownEvent('tab', target: editorView[0])
           editorView.trigger keydownEvent('tab', target: editorView[0])
           editorView.trigger keydownEvent('tab', target: editorView[0])
-          editorView.trigger keydownEvent('tab', target: editorView[0])
           expect(buffer.lineForRow(2)).toBe "go here next:(abc) and finally go here:(  )"
           expect(editor.getMarkerCount()).toBe markerCountBefore
 
