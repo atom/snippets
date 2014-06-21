@@ -7,10 +7,9 @@ class SnippetExpansion
 
   settingTabStop: false
 
-  constructor: (@snippet, @editor, @cursor) ->
+  constructor: (@snippet, @editor, @cursor=@editor.getCursor()) ->
     @tabStopMarkers = []
     @editor.snippetExpansion ?= []
-    @cursor ?= @editor.getCursor()
     @selections = [@cursor.selection]
 
     startPosition = @cursor.selection.getBufferRange().start

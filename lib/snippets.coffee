@@ -180,7 +180,7 @@ module.exports =
         @insert(snippet, editor, cursor)
     true
 
-  insert: (snippet, editor=atom.workspace.getActiveEditor(), cursor) ->
+  insert: (snippet, editor=atom.workspace.getActiveEditor(), cursor=editor.getCursor()) ->
     if typeof snippet is 'string'
       bodyTree = @getBodyParser().parse(snippet)
       snippet = new Snippet({name: '__anonymous', prefix: '', bodyTree, bodyText: snippet})
