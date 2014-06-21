@@ -109,11 +109,15 @@ module.exports =
         event.abortKeyBinding()
 
     editorView.command 'snippets:next-tab-stop', (event) ->
-      unless editor.snippetExpansion?.goToNextTabStop()
+      if editor.snippetExpansion?.length > 0
+        el.goToNextTabStop() for el in editor.snippetExpansion
+      else
         event.abortKeyBinding()
 
     editorView.command 'snippets:previous-tab-stop', (event) ->
-      unless editor.snippetExpansion?.goToPreviousTabStop()
+      if editor.snippetExpansion?.length > 0
+        el.goToPreviousTabStop() for el in editor.snippetExpansion
+      else
         event.abortKeyBinding()
 
     editorView.command 'snippets:available', (event) =>
@@ -172,13 +176,13 @@ module.exports =
       for cursor in cursors
         cursorPosition = cursor.getBufferPosition()
         startPoint = cursorPosition.translate([0, -snippet.prefix.length], [0, 0])
-        editor.setSelectedBufferRange([startPoint, cursorPosition])
-        @insert(snippet, editor)
+        cursor.selection.setBufferRange([startPoint, cursorPosition])
+        @insert(snippet, editor, cursor)
     true
 
-  insert: (snippet, editor=atom.workspace.getActiveEditor()) ->
+  insert: (snippet, editor=atom.workspace.getActiveEditor(), cursor) ->
     if typeof snippet is 'string'
       bodyTree = @getBodyParser().parse(snippet)
       snippet = new Snippet({name: '__anonymous', prefix: '', bodyTree, bodyText: snippet})
 
-    new SnippetExpansion(snippet, editor)
+    new SnippetExpansion(snippet, editor, cursor)
