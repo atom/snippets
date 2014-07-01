@@ -103,20 +103,21 @@ module.exports =
 
   enableSnippetsInEditor: (editorView) ->
     editor = editorView.getEditor()
+    editor.snippetExpansions ?= []
 
     editorView.command 'snippets:expand', (event) =>
-      unless @expandSnippetUnderCursor(editor)
+      unless @expandSnippetsUnderCursor(editor)
         event.abortKeyBinding()
 
     editorView.command 'snippets:next-tab-stop', (event) ->
-      if editor.snippetExpansion?.length > 0
-        el.goToNextTabStop() for el in editor.snippetExpansion
+      if editor.snippetExpansions?.length > 0
+        expansion.goToNextTabStop() for expansion in editor.snippetExpansions
       else
         event.abortKeyBinding()
 
     editorView.command 'snippets:previous-tab-stop', (event) ->
-      if editor.snippetExpansion?.length > 0
-        el.goToPreviousTabStop() for el in editor.snippetExpansion
+      if editor.snippetExpansions?.length > 0
+        expansion.goToPreviousTabStop() for expansion in editor.snippetExpansions
       else
         event.abortKeyBinding()
 
@@ -158,7 +159,7 @@ module.exports =
         snippets[snippetPrefix] ?= snippet
     snippets
 
-  expandSnippetUnderCursor: (editor) ->
+  expandSnippetsUnderCursor: (editor) ->
     return false unless editor.getSelection().isEmpty()
 
     snippets = @getSnippets(editor)

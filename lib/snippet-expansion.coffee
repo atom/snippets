@@ -9,7 +9,6 @@ class SnippetExpansion
 
   constructor: (@snippet, @editor, @cursor=@editor.getCursor()) ->
     @tabStopMarkers = []
-    @editor.snippetExpansion ?= []
     @selections = [@cursor.selection]
 
     startPosition = @cursor.selection.getBufferRange().start
@@ -20,7 +19,7 @@ class SnippetExpansion
       if snippet.tabStops.length > 0
         @subscribe @cursor, 'moved', (event) => @cursorMoved(event)
         @placeTabStopMarkers(startPosition, snippet.tabStops)
-        @editor.snippetExpansion.push this
+        @editor.snippetExpansions.push this
         @editor.normalizeTabsInBufferRange(newRange)
       @indentSubsequentLines(startPosition.row, snippet) if snippet.lineCount > 1
 
@@ -65,6 +64,7 @@ class SnippetExpansion
 
     if ranges.length > 0
       selection.destroy() for selection in @selections[ranges.length...]
+      @selections = @selections[...ranges.length]
       for range, i in ranges
         if @selections[i]
           @selections[i].setBufferRange(range)
@@ -84,7 +84,7 @@ class SnippetExpansion
     for markers in @tabStopMarkers
       marker.destroy() for marker in markers
     @tabStopMarkers = []
-    @editor.snippetExpansion = _.remove @editor.snippetExpansion, this
+    @editor.snippetExpansions = _.remove @editor.snippetExpansions, this
 
   restore: (@editor) ->
-    @editor.snippetExpansion.push this
+    @editor.snippetExpansions.push this
