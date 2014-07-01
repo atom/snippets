@@ -2,7 +2,7 @@ path = require 'path'
 
 {WorkspaceView} = require 'atom'
 fs = require 'fs-plus'
-temp = require('temp').track()
+temp = require 'temp'
 
 Snippet = require '../lib/snippet'
 Snippets = require '../lib/snippets'
