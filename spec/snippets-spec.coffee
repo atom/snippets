@@ -275,12 +275,12 @@ describe "Snippets extension", ->
 
       describe "when multiple snippets match the prefix", ->
         it "expands the snippet that is the longest match for the prefix", ->
-          editor.insertText('t13')
-          expect(editor.getCursorScreenPosition()).toEqual [0, 3]
+          editor.insertText('t113')
+          expect(editor.getCursorScreenPosition()).toEqual [0, 4]
 
           editorView.trigger keydownEvent('tab', target: editorView[0])
-          expect(buffer.lineForRow(0)).toBe "t13  var quicksort = function () {"
-          expect(editor.getCursorScreenPosition()).toEqual [0, 5]
+          expect(buffer.lineForRow(0)).toBe "t113  var quicksort = function () {"
+          expect(editor.getCursorScreenPosition()).toEqual [0, 6]
 
           editor.undo()
           editor.undo()
@@ -304,12 +304,12 @@ describe "Snippets extension", ->
 
     describe "when the letters preceding the cursor don't match a snippet", ->
       it "inserts a tab as normal", ->
-        editor.insertText("xte")
-        expect(editor.getCursorScreenPosition()).toEqual [0, 3]
+        editor.insertText("xxte")
+        expect(editor.getCursorScreenPosition()).toEqual [0, 4]
 
         editorView.trigger keydownEvent('tab', target: editorView[0])
-        expect(buffer.lineForRow(0)).toBe "xte  var quicksort = function () {"
-        expect(editor.getCursorScreenPosition()).toEqual [0, 5]
+        expect(buffer.lineForRow(0)).toBe "xxte  var quicksort = function () {"
+        expect(editor.getCursorScreenPosition()).toEqual [0, 6]
 
     describe "when text is selected", ->
       it "inserts a tab as normal", ->
