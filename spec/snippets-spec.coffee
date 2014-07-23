@@ -579,8 +579,8 @@ describe "Snippets extension", ->
             prefix: "chal"
             body: "$1: ${2:To pass this challenge}"
 
-      availableSnippetsView = new SnippetsAvailable(snippets, editor)
-      availableSnippetsView.toggle()
+      availableSnippetsView = new SnippetsAvailable(snippets)
+      availableSnippetsView.toggle(editor)
 
     it "will draw a SelectListView to select a snippet from the snippets passed to the constructor", ->
       expect(availableSnippetsView.getSelectedItem().prefix).toBe 'test'

@@ -6,7 +6,7 @@ class SnippetsAvailable extends SelectListView
   # Public: Initialize object.
   #
   # Returns: `undefined`
-  initialize: (@snippets, @editor) ->
+  initialize: (@snippets) ->
     super
     @addClass('overlay from-top available-snippets')
     @command 'snippets:available', => @toggle()
@@ -16,12 +16,16 @@ class SnippetsAvailable extends SelectListView
   # Returns: {String}
   getFilterKey: -> 'prefix'
 
-  toggle: ->
+  toggle: (@editor) ->
     if @hasParent()
       @cancel()
     else
       @populate()
       @attach()
+
+  detach: ->
+    @editor = null
+    super
 
   populate: ->
     snippets = _.values(@snippets.getSnippets(@editor))

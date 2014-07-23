@@ -117,8 +117,8 @@ module.exports =
 
     editorView.command 'snippets:available', (event) =>
       SnippetsAvailable ?= require './snippets-available'
-      @availableSnippetsView ?= new SnippetsAvailable(this, editor)
-      @availableSnippetsView.toggle()
+      @availableSnippetsView ?= new SnippetsAvailable(this)
+      @availableSnippetsView.toggle(editor)
 
   # Get a RegExp of all the characters used in the snippet prefixes
   wordRegexForSnippets: (snippets) ->
