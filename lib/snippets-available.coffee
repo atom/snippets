@@ -14,7 +14,7 @@ class SnippetsAvailable extends SelectListView
   # Public: Filter the fuzzy-search for the prefix.
   #
   # Returns: {String}
-  getFilterKey: -> 'prefix'
+  getFilterKey: -> 'searchText'
 
   toggle: (@editor) ->
     if @hasParent()
@@ -29,6 +29,8 @@ class SnippetsAvailable extends SelectListView
 
   populate: ->
     snippets = _.values(@snippets.getSnippets(@editor))
+    for snippet in snippets
+      snippet.searchText = _.compact([snippet.prefix, snippet.name]).join(' ')
     @setItems(snippets)
 
   attach: ->
