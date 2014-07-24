@@ -6,7 +6,7 @@ class SnippetsAvailable extends SelectListView
   # Public: Initialize object.
   #
   # Returns: `undefined`
-  initialize: (@snippets, @editor) ->
+  initialize: (@snippets) ->
     super
     @addClass('overlay from-top available-snippets')
     @command 'snippets:available', => @toggle()
@@ -14,17 +14,23 @@ class SnippetsAvailable extends SelectListView
   # Public: Filter the fuzzy-search for the prefix.
   #
   # Returns: {String}
-  getFilterKey: -> 'prefix'
+  getFilterKey: -> 'searchText'
 
-  toggle: ->
+  toggle: (@editor) ->
     if @hasParent()
       @cancel()
     else
       @populate()
       @attach()
 
+  detach: ->
+    @editor = null
+    super
+
   populate: ->
     snippets = _.values(@snippets.getSnippets(@editor))
+    for snippet in snippets
+      snippet.searchText = _.compact([snippet.prefix, snippet.name]).join(' ')
     @setItems(snippets)
 
   attach: ->
