@@ -37,3 +37,20 @@ console.log("crash");
 
 The string `"crash"` would be initially selected and pressing tab again would
 place the cursor after the `;`
+
+
+Note, you can also use multi-line syntax for larger templates:
+
+```coffee
+'.source.js':
+  'if, else if, else':
+    'prefix': 'ieie'
+    'body': """
+    if (${1:true}) {
+      ${0:console.log('I love unicorns!');}
+    } else if (${2:false}) {
+    } else {
+    }
+    """
+```
+
