@@ -38,19 +38,21 @@ console.log("crash");
 The string `"crash"` would be initially selected and pressing tab again would
 place the cursor after the `;`
 
+### Multi-line Snippet Body
 
-Note, you can also use multi-line syntax for larger templates:
+You can also use multi-line syntax using `"""` for larger templates:
 
 ```coffee
 '.source.js':
   'if, else if, else':
     'prefix': 'ieie'
     'body': """
-    if (${1:true}) {
-      ${0:console.log('I love unicorns!');}
-    } else if (${2:false}) {
-    } else {
-    }
+      if (${1:true}) {
+        $2
+      } else if (${3:false}) {
+        $4
+      } else {
+        $5
+      }
     """
 ```
-
