@@ -84,7 +84,7 @@ class SnippetExpansion
     for markers in @tabStopMarkers
       marker.destroy() for marker in markers
     @tabStopMarkers = []
-    @editor.snippetExpansions = _.remove @editor.snippetExpansions, this
+    @editor.snippetExpansions = []
 
   restore: (@editor) ->
     @editor.snippetExpansions.push this
