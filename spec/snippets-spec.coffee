@@ -399,9 +399,9 @@ describe "Snippets extension", ->
         editorView.trigger keydownEvent('tab', target: editorView[0])
         expect(editor.getSelectedBufferRange()).toEqual [[0, 6], [0, 11]]
 
-    describe "when multiple cursors are active", ->
-      describe "when the letters preceding all cursors trigger the same snippet", ->
-        it "should expand all snippets together and allow editing them simultaneous", ->
+    describe "when there are multiple cursors", ->
+      describe "when the cursors share a common snippet prefix", ->
+        it "expands the snippet for all cursors and allows simultaneous editing", ->
           editor.insertText('t9')
           editor.setCursorBufferPosition([12, 2])
           editor.insertText(' t9')
@@ -420,7 +420,7 @@ describe "Snippets extension", ->
           expect(buffer.lineForRow(14)).toBe "without placeholder hello"
 
         describe "when there are many tabstops", ->
-          it "should expand them all together and follow the tab stops for each cursor", ->
+          it "moves the cursors between the tab stops for their corresponding snippet when tab and shift-tab are pressed", ->
             editor.addCursorAtBufferPosition([7, 5])
             editor.addCursorAtBufferPosition([12, 2])
             editor.insertText('t11')
@@ -463,8 +463,8 @@ describe "Snippets extension", ->
             expect(cursors[1].selection.isEmpty()).toBe true
             expect(cursors[2].selection.isEmpty()).toBe true
 
-      describe "when the letters preceding all cursors trigger different snippets", ->
-        it "should insert tabs as normal", ->
+      describe "when the cursors do not share common snippet prefixes", ->
+        it "inserts tabs as normal", ->
           editor.insertText('t9')
           editor.setCursorBufferPosition([12, 2])
           editor.insertText(' t8')
