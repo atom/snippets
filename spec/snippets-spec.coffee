@@ -2,7 +2,7 @@ path = require 'path'
 
 {WorkspaceView} = require 'atom'
 fs = require 'fs-plus'
-temp = require 'temp'
+temp = require('temp').track()
 
 Snippet = require '../lib/snippet'
 Snippets = require '../lib/snippets'
@@ -101,6 +101,12 @@ describe "Snippets extension", ->
             prefix: "t10"
             body: """
               hello${10} ${11:large} indices${1}
+            """
+
+          "many tabstops":
+            prefix: "t11"
+            body: """
+              $0one${1} ${2:two} three${3}
             """
 
     describe "when the letters preceding the cursor trigger a snippet", ->
@@ -392,6 +398,80 @@ describe "Snippets extension", ->
         expect(editor.getCursorBufferPosition()).toEqual [0, 5]
         editorView.trigger keydownEvent('tab', target: editorView[0])
         expect(editor.getSelectedBufferRange()).toEqual [[0, 6], [0, 11]]
+
+    describe "when multiple cursors are active", ->
+      describe "when the letters preceding all cursors trigger the same snippet", ->
+        it "should expand all snippets together and allow editing them simultaneous", ->
+          editor.insertText('t9')
+          editor.setCursorBufferPosition([12, 2])
+          editor.insertText(' t9')
+          editor.addCursorAtBufferPosition([0, 2])
+          editorView.trigger keydownEvent('tab', target: editorView[0])
+
+          expect(buffer.lineForRow(0)).toBe "with placeholder test"
+          expect(buffer.lineForRow(1)).toBe "without placeholder var quicksort = function () {"
+          expect(buffer.lineForRow(13)).toBe "}; with placeholder test"
+          expect(buffer.lineForRow(14)).toBe "without placeholder "
+
+          editor.insertText('hello')
+          expect(buffer.lineForRow(0)).toBe "with placeholder hello"
+          expect(buffer.lineForRow(1)).toBe "without placeholder hellovar quicksort = function () {"
+          expect(buffer.lineForRow(13)).toBe "}; with placeholder hello"
+          expect(buffer.lineForRow(14)).toBe "without placeholder hello"
+
+        describe "when there are many tabstops", ->
+          it "should expand them all together and follow the tab stops for each cursor", ->
+            editor.addCursorAtBufferPosition([7, 5])
+            editor.addCursorAtBufferPosition([12, 2])
+            editor.insertText('t11')
+            editorView.trigger keydownEvent('tab', target: editorView[0])
+
+            cursors = editor.getCursors()
+            expect(cursors.length).toEqual 3
+
+            expect(cursors[0].getBufferPosition()).toEqual [0, 3]
+            expect(cursors[1].getBufferPosition()).toEqual [7, 8]
+            expect(cursors[2].getBufferPosition()).toEqual [12, 5]
+            expect(cursors[0].selection.isEmpty()).toBe true
+            expect(cursors[1].selection.isEmpty()).toBe true
+            expect(cursors[2].selection.isEmpty()).toBe true
+
+            editorView.trigger keydownEvent('tab', target: editorView[0])
+            expect(cursors[0].getBufferPosition()).toEqual [0, 7]
+            expect(cursors[1].getBufferPosition()).toEqual [7, 12]
+            expect(cursors[2].getBufferPosition()).toEqual [12, 9]
+            expect(cursors[0].selection.isEmpty()).toBe false
+            expect(cursors[1].selection.isEmpty()).toBe false
+            expect(cursors[2].selection.isEmpty()).toBe false
+            expect(cursors[0].selection.getText()).toEqual 'two'
+            expect(cursors[1].selection.getText()).toEqual 'two'
+            expect(cursors[2].selection.getText()).toEqual 'two'
+
+            editorView.trigger keydownEvent('tab', target: editorView[0])
+            expect(cursors[0].getBufferPosition()).toEqual [0, 13]
+            expect(cursors[1].getBufferPosition()).toEqual [7, 18]
+            expect(cursors[2].getBufferPosition()).toEqual [12, 15]
+            expect(cursors[0].selection.isEmpty()).toBe true
+            expect(cursors[1].selection.isEmpty()).toBe true
+            expect(cursors[2].selection.isEmpty()).toBe true
+
+            editorView.trigger keydownEvent('tab', target: editorView[0])
+            expect(cursors[0].getBufferPosition()).toEqual [0, 0]
+            expect(cursors[1].getBufferPosition()).toEqual [7, 5]
+            expect(cursors[2].getBufferPosition()).toEqual [12, 2]
+            expect(cursors[0].selection.isEmpty()).toBe true
+            expect(cursors[1].selection.isEmpty()).toBe true
+            expect(cursors[2].selection.isEmpty()).toBe true
+
+      describe "when the letters preceding all cursors trigger different snippets", ->
+        it "should insert tabs as normal", ->
+          editor.insertText('t9')
+          editor.setCursorBufferPosition([12, 2])
+          editor.insertText(' t8')
+          editor.addCursorAtBufferPosition([0, 2])
+          editorView.trigger keydownEvent('tab', target: editorView[0])
+          expect(buffer.lineForRow(0)).toBe "t9  var quicksort = function () {"
+          expect(buffer.lineForRow(12)).toBe "}; t8 "
 
   describe "snippet loading", ->
     [configDirPath, packageWithSnippets, packageWithBrokenSnippets] = []
