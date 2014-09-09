@@ -103,6 +103,25 @@ describe "Snippets extension", ->
               hello${10} ${11:large} indices${1}
             """
 
+          "no body":
+            prefix: "bad1"
+
+          "number body":
+            prefix: "bad2"
+            body: 100
+
+    describe "when the snippet body is invalid or missing", ->
+      it "does not register the snippet", ->
+        editor.setText('')
+        editor.insertText('bad1')
+        editorView.trigger 'snippets:expand'
+        expect(buffer.getText()).toBe 'bad1'
+
+        editor.setText('')
+        editor.setText('bad2')
+        editorView.trigger 'snippets:expand'
+        expect(buffer.getText()).toBe 'bad2'
+
     describe "when the letters preceding the cursor trigger a snippet", ->
       describe "when the snippet contains no tab stops", ->
         it "replaces the prefix with the snippet text and places the cursor at its end", ->
