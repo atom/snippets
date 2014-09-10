@@ -106,14 +106,14 @@ module.exports =
     editor.snippetExpansions ?= []
 
     editorView.command 'snippets:expand', (event) =>
-      if @snippetsToExpandUnderCursor(editor)
+      if @snippetToExpandUnderCursor(editor)
         editor.snippetExpansions = []
-        @expandSnippetsUnderCursor(editor)
+        @expandSnippetsUnderCursors(editor)
       else
         event.abortKeyBinding()
 
     editorView.command 'snippets:next-tab-stop', (event) =>
-      if editor.snippetExpansions?.length > 0 and not @snippetsToExpandUnderCursor(editor)
+      if editor.snippetExpansions?.length > 0 and not @snippetToExpandUnderCursor(editor)
         expansion?.goToNextTabStop() for expansion in editor.snippetExpansions
       else
         event.abortKeyBinding()
@@ -162,7 +162,7 @@ module.exports =
         snippets[snippetPrefix] ?= snippet
     snippets
 
-  snippetsToExpandUnderCursor: (editor) ->
+  snippetToExpandUnderCursor: (editor) ->
     return false unless editor.getSelection().isEmpty()
     snippets = @getSnippets(editor)
     return false if _.isEmpty(snippets)
@@ -173,8 +173,8 @@ module.exports =
     prefix = prefix[0]
     @snippetForPrefix(snippets, prefix)
 
-  expandSnippetsUnderCursor: (editor) ->
-    return false unless snippet = @snippetsToExpandUnderCursor(editor)
+  expandSnippetsUnderCursors: (editor) ->
+    return false unless snippet = @snippetToExpandUnderCursor(editor)
 
     editor.transact =>
       cursors = editor.getCursors()
