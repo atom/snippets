@@ -55,6 +55,7 @@ class SnippetsAvailable extends SelectListView
   #
   # Returns: `undefined`
   confirmed: (snippet) ->
+    editor = @editor
     @cancel()
-    for cursor in @editor.getCursors()
-      @snippets.insert(snippet.bodyText, @editor, cursor)
+    for cursor in editor.getCursors()
+      @snippets.insert(snippet.bodyText, editor, cursor)
