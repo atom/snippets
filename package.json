@@ -16,7 +16,7 @@
     "pathwatcher": "^2.0",
     "pegjs": "~0.8.0",
     "season": "1.x",
-    "temp": "~0.6.0",
+    "temp": "~0.8.0",
     "underscore-plus": "1.x"
   }
 }

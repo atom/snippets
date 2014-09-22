@@ -98,23 +98,32 @@ module.exports =
 
   getPrefixText: (snippets, editor) ->
     wordRegex = @wordRegexForSnippets(snippets)
-    cursor = editor.getCursor()
-    prefixStart = cursor.getBeginningOfCurrentWordBufferPosition({wordRegex})
-    editor.getTextInRange([prefixStart, cursor.getBufferPosition()])
+    cursors = editor.getCursors()
+    for cursor in cursors
+      prefixStart = cursor.getBeginningOfCurrentWordBufferPosition({wordRegex})
+      editor.getTextInRange([prefixStart, cursor.getBufferPosition()])
 
   enableSnippetsInEditor: (editorView) ->
     editor = editorView.getEditor()
+    editor.snippetExpansions ?= []
 
     editorView.command 'snippets:expand', (event) =>
-      unless @expandSnippetUnderCursor(editor)
+      if @snippetToExpandUnderCursor(editor)
+        editor.snippetExpansions = []
+        @expandSnippetsUnderCursors(editor)
+      else
         event.abortKeyBinding()
 
-    editorView.command 'snippets:next-tab-stop', (event) ->
-      unless editor.snippetExpansion?.goToNextTabStop()
+    editorView.command 'snippets:next-tab-stop', (event) =>
+      if editor.snippetExpansions?.length > 0 and not @snippetToExpandUnderCursor(editor)
+        expansion?.goToNextTabStop() for expansion in editor.snippetExpansions
+      else
         event.abortKeyBinding()
 
     editorView.command 'snippets:previous-tab-stop', (event) ->
-      unless editor.snippetExpansion?.goToPreviousTabStop()
+      if editor.snippetExpansions?.length > 0
+        expansion?.goToPreviousTabStop() for expansion in editor.snippetExpansions
+      else
         event.abortKeyBinding()
 
     editorView.command 'snippets:available', (event) =>
@@ -155,28 +164,32 @@ module.exports =
         snippets[snippetPrefix] ?= snippet
     snippets
 
-  expandSnippetUnderCursor: (editor) ->
+  snippetToExpandUnderCursor: (editor) ->
     return false unless editor.getSelection().isEmpty()
-
     snippets = @getSnippets(editor)
     return false if _.isEmpty(snippets)
 
     prefix = @getPrefixText(snippets, editor)
-    return false unless prefix
+    return false unless prefix and _.uniq(prefix).length is 1
 
-    snippet = @snippetForPrefix(snippets, prefix)
-    return false unless snippet?
+    prefix = prefix[0]
+    @snippetForPrefix(snippets, prefix)
+
+  expandSnippetsUnderCursors: (editor) ->
+    return false unless snippet = @snippetToExpandUnderCursor(editor)
 
     editor.transact =>
-      cursorPosition = editor.getCursorBufferPosition()
-      startPoint = cursorPosition.translate([0, -snippet.prefix.length], [0, 0])
-      editor.setSelectedBufferRange([startPoint, cursorPosition])
-      @insert(snippet, editor)
+      cursors = editor.getCursors()
+      for cursor in cursors
+        cursorPosition = cursor.getBufferPosition()
+        startPoint = cursorPosition.translate([0, -snippet.prefix.length], [0, 0])
+        cursor.selection.setBufferRange([startPoint, cursorPosition])
+        @insert(snippet, editor, cursor)
     true
 
-  insert: (snippet, editor=atom.workspace.getActiveEditor()) ->
+  insert: (snippet, editor=atom.workspace.getActiveEditor(), cursor=editor.getCursor()) ->
     if typeof snippet is 'string'
       bodyTree = @getBodyParser().parse(snippet)
       snippet = new Snippet({name: '__anonymous', prefix: '', bodyTree, bodyText: snippet})
 
-    new SnippetExpansion(snippet, editor)
+    new SnippetExpansion(snippet, editor, cursor)
