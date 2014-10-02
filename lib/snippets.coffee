@@ -115,16 +115,10 @@ module.exports =
         event.abortKeyBinding()
 
     editorView.command 'snippets:next-tab-stop', (event) =>
-      if editor.snippetExpansions?.length > 0 and not @snippetToExpandUnderCursor(editor)
-        expansion?.goToNextTabStop() for expansion in editor.snippetExpansions
-      else
-        event.abortKeyBinding()
+      event.abortKeyBinding() unless @goToNextTabStop(editor)
 
-    editorView.command 'snippets:previous-tab-stop', (event) ->
-      if editor.snippetExpansions?.length > 0
-        expansion?.goToPreviousTabStop() for expansion in editor.snippetExpansions
-      else
-        event.abortKeyBinding()
+    editorView.command 'snippets:previous-tab-stop', (event) =>
+      event.abortKeyBinding() unless @goToPreviousTabStop(editor)
 
     editorView.command 'snippets:available', (event) =>
       SnippetsAvailable ?= require './snippets-available'
@@ -186,6 +180,26 @@ module.exports =
         cursor.selection.setBufferRange([startPoint, cursorPosition])
         @insert(snippet, editor, cursor)
     true
+
+  goToNextTabStop: (editor) ->
+    if editor.snippetExpansions?.length > 0 and not @snippetToExpandUnderCursor(editor)
+      nextTabStopVisited = false
+      for expansion in editor.snippetExpansions
+        if expansion?.goToNextTabStop()
+          nextTabStopVisited = true
+      nextTabStopVisited
+    else
+      false
+
+  goToPreviousTabStop: (editor) ->
+    if editor.snippetExpansions?.length > 0
+      previousTabStopVisited = false
+      for expansion in editor.snippetExpansions
+        if expansion?.goToPreviousTabStop()
+          previousTabStopVisited = true
+      previousTabStopVisited
+    else
+      false
 
   insert: (snippet, editor=atom.workspace.getActiveEditor(), cursor=editor.getCursor()) ->
     if typeof snippet is 'string'
