@@ -182,24 +182,20 @@ module.exports =
     true
 
   goToNextTabStop: (editor) ->
-    if editor.snippetExpansions?.length > 0 and not @snippetToExpandUnderCursor(editor)
-      nextTabStopVisited = false
-      for expansion in editor.snippetExpansions
-        if expansion?.goToNextTabStop()
-          nextTabStopVisited = true
-      nextTabStopVisited
-    else
-      false
+    return false if @snippetToExpandUnderCursor(editor)
+
+    nextTabStopVisited = false
+    for expansion in editor.snippetExpansions ? []
+      if expansion?.goToNextTabStop()
+        nextTabStopVisited = true
+    nextTabStopVisited
 
   goToPreviousTabStop: (editor) ->
-    if editor.snippetExpansions?.length > 0
-      previousTabStopVisited = false
-      for expansion in editor.snippetExpansions
-        if expansion?.goToPreviousTabStop()
-          previousTabStopVisited = true
-      previousTabStopVisited
-    else
-      false
+    previousTabStopVisited = false
+    for expansion in editor.snippetExpansions ? []
+      if expansion?.goToPreviousTabStop()
+        previousTabStopVisited = true
+    previousTabStopVisited
 
   insert: (snippet, editor=atom.workspace.getActiveEditor(), cursor=editor.getCursor()) ->
     if typeof snippet is 'string'
