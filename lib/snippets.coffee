@@ -24,6 +24,7 @@ module.exports =
 
   deactivate: ->
     @userSnippetsFile?.off()
+    @editorSnippetExpansions?.clear()
 
   getUserSnippetsPath: ->
     userSnippetsPath = CSON.resolve(path.join(atom.getConfigDirPath(), 'snippets'))
