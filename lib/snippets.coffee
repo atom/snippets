@@ -105,11 +105,11 @@ module.exports =
 
   enableSnippetsInEditor: (editorView) ->
     editor = editorView.getEditor()
-    editor.snippetExpansions ?= []
+    @clearExpansions(editor)
 
     editorView.command 'snippets:expand', (event) =>
       if @snippetToExpandUnderCursor(editor)
-        editor.snippetExpansions = []
+        @clearExpansions(editor)
         @expandSnippetsUnderCursors(editor)
       else
         event.abortKeyBinding()
@@ -185,21 +185,31 @@ module.exports =
     return false if @snippetToExpandUnderCursor(editor)
 
     nextTabStopVisited = false
-    for expansion in editor.snippetExpansions ? []
+    for expansion in @getExpansions(editor)
       if expansion?.goToNextTabStop()
         nextTabStopVisited = true
     nextTabStopVisited
 
   goToPreviousTabStop: (editor) ->
     previousTabStopVisited = false
-    for expansion in editor.snippetExpansions ? []
+    for expansion in @getExpansions(editor)
       if expansion?.goToPreviousTabStop()
         previousTabStopVisited = true
     previousTabStopVisited
+
+  getExpansions: (editor) ->
+    @editorSnippetExpansions?.get(editor) ? []
+
+  clearExpansions: (editor) ->
+    @editorSnippetExpansions ?= new WeakMap()
+    @editorSnippetExpansions.set(editor, [])
+
+  addExpansion: (editor, snippetExpansion) ->
+    @getExpansions(editor).push(snippetExpansion)
 
   insert: (snippet, editor=atom.workspace.getActiveEditor(), cursor=editor.getCursor()) ->
     if typeof snippet is 'string'
       bodyTree = @getBodyParser().parse(snippet)
       snippet = new Snippet({name: '__anonymous', prefix: '', bodyTree, bodyText: snippet})
 
-    new SnippetExpansion(snippet, editor, cursor)
+    new SnippetExpansion(snippet, editor, cursor, this)
