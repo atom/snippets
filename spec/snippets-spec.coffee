@@ -521,6 +521,9 @@ describe "Snippets extension", ->
           expect(buffer.lineForRow(12)).toBe "}; t8 "
 
       describe "when a snippet is triggered within an existing snippet expansion", ->
+        beforeEach ->
+          atom.config.set('snippets.onlyOneAtATime', 'false')
+
         it "aborts the snippet expansion and expands the new snippet", ->
           editor.addCursorAtBufferPosition([7, 5])
           editor.addCursorAtBufferPosition([12, 2])
