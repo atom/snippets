@@ -327,6 +327,34 @@ describe "Snippets extension", ->
           expect(buffer.lineForRow(0)).toBe "@this is a testvar quicksort = function () {"
           expect(editor.getCursorScreenPosition()).toEqual [0, 15]
 
+      describe "when onlyOneAtATime is false", ->
+        beforeEach ->
+          atom.config.set('snippets.onlyOneAtATime', 'false')
+
+        it "allows tab expansion at a tab stop", ->
+          editor.setCursorScreenPosition([2, 0])
+          editor.insertText('t2')
+          editorView.trigger keydownEvent('tab', target: editorView[0])
+          editorView.trigger keydownEvent('tab', target: editorView[0])
+          editor.insertText('t1')
+          editorView.trigger keydownEvent('tab', target: editorView[0])
+          expect(buffer.lineForRow(2)).toBe "go here next:(this is a test) and finally go here:()"
+          expect(editor.getCursorScreenPosition()).toEqual [2, 28]
+
+      describe "when onlyOneAtATime is true", ->
+        beforeEach ->
+          atom.config.set('snippets.onlyOneAtATime', 'true')
+
+        it "allows tab expansion at a tab stop", ->
+          editor.setCursorScreenPosition([2, 0])
+          editor.insertText('t2')
+          editorView.trigger keydownEvent('tab', target: editorView[0])
+          editorView.trigger keydownEvent('tab', target: editorView[0])
+          editor.insertText('t1')
+          editorView.trigger keydownEvent('tab', target: editorView[0])
+          expect(buffer.lineForRow(2)).toBe "go here next:(t1) and finally go here:()"
+          expect(editor.getCursorScreenPosition()).toEqual [2, 39]
+
     describe "when the letters preceding the cursor don't match a snippet", ->
       it "inserts a tab as normal", ->
         editor.insertText("xxte")
