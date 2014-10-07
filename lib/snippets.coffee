@@ -16,7 +16,8 @@ module.exports =
   config:
     onlyOneAtATime:
       type: 'boolean'
-      default: 'false'
+      default: false
+      description: 'Prevent new snippet expansion at a tab stop'
 
   activate: ->
     atom.workspace.registerOpener (uri) =>
