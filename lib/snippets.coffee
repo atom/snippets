@@ -13,6 +13,12 @@ SnippetsAvailable = null # Defer until actually rendered
 module.exports =
   loaded: false
 
+  config:
+    onlyOneAtATime:
+      type: 'boolean'
+      default: false
+      description: 'Prevent new snippet expansion at a tab stop'
+
   activate: ->
     atom.workspace.registerOpener (uri) =>
       if uri is 'atom://.atom/snippets'
@@ -183,7 +189,7 @@ module.exports =
     true
 
   goToNextTabStop: (editor) ->
-    return false if @snippetToExpandUnderCursor(editor)
+    return false if !atom.config.get('snippets.onlyOneAtATime') and @snippetToExpandUnderCursor(editor)
 
     nextTabStopVisited = false
     for expansion in @getExpansions(editor)
