@@ -183,8 +183,6 @@ module.exports =
     true
 
   goToNextTabStop: (editor) ->
-    return false if @snippetToExpandUnderCursor(editor)
-
     nextTabStopVisited = false
     for expansion in @getExpansions(editor)
       if expansion?.goToNextTabStop()

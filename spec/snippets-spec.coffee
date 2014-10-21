@@ -493,7 +493,7 @@ describe "Snippets extension", ->
           expect(buffer.lineForRow(12)).toBe "}; t8 "
 
       describe "when a snippet is triggered within an existing snippet expansion", ->
-        it "aborts the snippet expansion and expands the new snippet", ->
+        it "ignores the snippet expansion and goes to the next tab stop", ->
           editor.addCursorAtBufferPosition([7, 5])
           editor.addCursorAtBufferPosition([12, 2])
           editor.insertText('t11')
@@ -506,15 +506,15 @@ describe "Snippets extension", ->
           cursors = editor.getCursors()
           expect(cursors.length).toEqual 3
 
-          expect(cursors[0].getBufferPosition()).toEqual [0, 18]
-          expect(cursors[1].getBufferPosition()).toEqual [7, 23]
-          expect(cursors[2].getBufferPosition()).toEqual [12, 20]
+          expect(cursors[0].getBufferPosition()).toEqual [0, 12]
+          expect(cursors[1].getBufferPosition()).toEqual [7, 17]
+          expect(cursors[2].getBufferPosition()).toEqual [12, 14]
           expect(cursors[0].selection.isEmpty()).toBe true
           expect(cursors[1].selection.isEmpty()).toBe true
           expect(cursors[2].selection.isEmpty()).toBe true
-          expect(buffer.lineForRow(0)).toBe "one this is a test threevar quicksort = function () {"
-          expect(buffer.lineForRow(7)).toBe "    }one this is a test three"
-          expect(buffer.lineForRow(12)).toBe "};one this is a test three"
+          expect(buffer.lineForRow(0)).toBe "one t1 threevar quicksort = function () {"
+          expect(buffer.lineForRow(7)).toBe "    }one t1 three"
+          expect(buffer.lineForRow(12)).toBe "};one t1 three"
 
   describe "snippet loading", ->
     [configDirPath, packageWithSnippets, packageWithBrokenSnippets] = []
