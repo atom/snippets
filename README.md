@@ -59,12 +59,21 @@ You can also use multi-line syntax using `"""` for larger templates:
 
 ### Finding out the correct selector (scope) for a snippet
 
-The outmost key of a snippet is the "scope" that you want the descendent snippets to be available in. To determine the scope of a language, do:
+The outmost key of a snippet is the "scope" that you want the descendent snippets
+to be available in.
 
-* Open a file of the type for which you want to add a snippet
-* Open the Developer Tools (<kbd>Cmd+Alt+I</kbd> on OS X)
-* Switch to the Console tab
-* Focus the source file and execute the _Editor > Log Cursor Scope_ command (<kbd>Cmd+Alt+P</kbd> on OS X)
+You can find out the correct scope by opening the Settings (<kbd>Cmd+,</kbd> on OS X)
+and selecting the corresponding *Language [xxx]* plugin, e.g. for *Language Html*:
+
+![Screenshot of Language Html settings](https://cloud.githubusercontent.com/assets/1038121/5137632/126beb66-70f2-11e4-839b-bc7e84103f67.png)
+
+If it's difficult to determine the plugin handling the file type in question
+(for example, for `.md`-documents), you can also proceed as following:
+
+1. Open a file of the type for which you want to add a snippet
+2. Open the Developer Tools (<kbd>Cmd+Alt+I</kbd> on OS X)
+3. Switch to the Console tab
+4. Focus the source file and execute the _Editor > Log Cursor Scope_ command (<kbd>Cmd+Alt+P</kbd> on OS X)
 
 The first entry in the array that is logged to the Console is the scope for that language.
 
@@ -89,7 +98,7 @@ Since the `snippets.cson` file describes one single object, snippets for the sam
     'prefix': 'strike'
     'body': '~~$1~~'
 ```
-      
+
 While this apperently not:
 
 ```coffee
