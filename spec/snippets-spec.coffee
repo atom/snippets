@@ -115,12 +115,13 @@ describe "Snippets extension", ->
             body: """
               $0one${1} ${2:two} three${3}
             """
-
+            
           "variables":
             prefix: "var1"
             body: """
-              xxx${/basename} yyy ${/extname}zzz ${/line} ${/dirnamerel}${:variable-prop1:variable-prop2}
+              xxx${/basename} yyy ${/extname}zzz ${/line}${/project} ${/dirnamerel} ${:variable-prop1:variable-prop2}
             """
+            
           "invalid variables":
             prefix: "var2"
             body: """
@@ -132,8 +133,7 @@ describe "Snippets extension", ->
         editor.setText('')
         editor.insertText('var1')
         editorView.trigger 'snippets:expand'
-        expect(buffer.getText()).toBe 'xxxsample.js yyy .jszzz 1 .variable-value'
-
+        expect(buffer.getText()).toBe 'xxxsample.js yyy .jszzz 1fixtures . variable-value'
     describe "when the snippet contains invalid variables", ->
       it "inserts error messages", ->
         editor.setText('')

@@ -6,10 +6,12 @@ moment = require 'moment'
 module.exports = (varName) ->
   if not varName then return ''
   
+  unixify  = (path) -> path.replace(/\\/g, '/')
   editor   = atom.workspace.getActiveTextEditor()
-  filePath = editor.getPath()
+  filePath = unixify(editor.getPath())
   project  = atom.project
   for projectPath in project.getPaths() 
+    projectPath = unixify(projectPath)
     if filePath[0...projectPath.length] is projectPath then break
   
   varNameBody = varName[1...]
@@ -38,7 +40,8 @@ module.exports = (varName) ->
         when 'extname'     then path.extname  filePath
         when 'sep'         then path.sep
         when 'delimiter'   then path.delimiter
-        when 'project'     then projectPath
+        when 'projectpath' then projectPath
+        when 'project'     then projectPath.split('/')[-1..-1][0]
         when 'filenamerel' then projectRel
         when 'dirnamerel'  then path.dirname projectRel
         when 'line'        then editor.getCursorBufferPosition().row + 1
