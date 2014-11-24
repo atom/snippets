@@ -1,6 +1,6 @@
 _ = require 'underscore-plus'
-{Range} = require 'atom'
-varValue = require './variable'
+{Range}  = require 'atom'
+variable = require './variable'
 
 module.exports =
 class Snippet
@@ -22,8 +22,8 @@ class Snippet
           extractTabStops(content)
           tabStopsByIndex[index] ?= []
           tabStopsByIndex[index].push new Range(start, [row, column])
-        else if (variable = segment.variable)
-          value = varValue(variable)
+        else if (varName = segment.variable)
+          value = variable.getValue(varName)
           bodyText.push(value)
           column += value.length
         else if _.isString(segment)

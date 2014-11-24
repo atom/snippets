@@ -133,7 +133,8 @@ describe "Snippets extension", ->
         editor.setText('')
         editor.insertText('var1')
         editorView.trigger 'snippets:expand'
-        expect(buffer.getText()).toBe 'xxxsample.js yyy .jszzz 1fixtures . variable-value'
+        expect(buffer.getText()).toBe 'xxxsample.js yyy .jszzz     1fixtures . variable-value'
+        
     describe "when the snippet contains invalid variables", ->
       it "inserts error messages", ->
         editor.setText('')

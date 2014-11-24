@@ -1,9 +1,15 @@
 
+###
+
+###
+
 fs     = require 'fs'
 path   = require 'path'
 moment = require 'moment'
 
-module.exports = (varName) ->
+lineNumMagicStr = '~l#N~'
+
+exports.getValue = (varName) ->
   if not varName then return ''
   
   unixify  = (path) -> path.replace(/\\/g, '/')
@@ -13,12 +19,12 @@ module.exports = (varName) ->
   for projectPath in project.getPaths() 
     projectPath = unixify(projectPath)
     if filePath[0...projectPath.length] is projectPath then break
-  
+    
   varNameBody = varName[1...]
   switch varName[0]
     when '-'
       moment().format(varNameBody)
-    
+
     when ':'
       try
         value = JSON.parse fs.readFileSync path.join(projectPath, 'package.json')
@@ -30,7 +36,7 @@ module.exports = (varName) ->
       if typeof value isnt 'string'
         return ' <expected string for package.json property "' + varNameBody + '"> '
       value
-    
+
     when '/'
       projectRel = filePath[projectPath.length+1...]
       switch varNameBody
@@ -44,7 +50,14 @@ module.exports = (varName) ->
         when 'project'     then projectPath.split('/')[-1..-1][0]
         when 'filenamerel' then projectRel
         when 'dirnamerel'  then path.dirname projectRel
-        when 'line'        then editor.getCursorBufferPosition().row + 1
+        when 'line'        then lineNumMagicStr
         else ' <unknown / variable: "' + varName + '"> '
 
     else ' <prefix not one of "-:/" in variable "' + varName + '"> '
+
+exports.fixLineNum = (body, startPosition) ->
+  lineStr = '' +(startPosition.row + 1)
+  while lineStr.length < lineNumMagicStr.length 
+    lineStr = ' ' + lineStr
+  magicRegex = new RegExp(lineNumMagicStr, 'g')
+  body.replace(magicRegex, lineStr)
