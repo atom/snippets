@@ -583,6 +583,23 @@ describe "Snippets extension", ->
       runs ->
         expect(atom.syntax.getProperty(['.foo'], 'snippets.foo')?.constructor).toBe Snippet
 
+    it "notifies the user when the file cannot be loaded", ->
+      spyOn(atom.notifications, 'addError') if atom.notifications?
+
+      fs.writeFileSync path.join(configDirPath, 'snippets.cson'), """
+        ".junk":::
+      """
+      spyOn(console, 'warn')
+      snippets.loaded = false
+      snippets.loadAll()
+
+      waitsFor "all snippets to load", 30000, -> snippets.loaded
+
+      runs ->
+        # warn about junk-file, but don't even try to parse a hidden file
+        expect(console.warn).toHaveBeenCalled()
+        expect(atom.notifications.addError).toHaveBeenCalled() if atom.notifications?
+
     it "loads the bundled snippet template snippets", ->
       spyOn(console, 'warn')
       snippets.loaded = false
