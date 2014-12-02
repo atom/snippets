@@ -1,8 +1,4 @@
 
-###
-
-###
-
 fs     = require 'fs'
 path   = require 'path'
 moment = require 'moment'
@@ -10,10 +6,11 @@ moment = require 'moment'
 lineNumMagicStr = '~l#N~'
 
 exports.getValue = (varName) ->
-  if not varName then return ''
-  
   unixify  = (path) -> path.replace(/\\/g, '/')
+  
   editor   = atom.workspace.getActiveTextEditor()
+  if not varName or not editor then return ''
+  
   filePath = unixify(editor.getPath())
   project  = atom.project
   for projectPath in project.getPaths() 
