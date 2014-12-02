@@ -1,5 +1,6 @@
 _ = require 'underscore-plus'
 {Subscriber} = require 'emissary'
+variable     = require './variable'
 
 module.exports =
 class SnippetExpansion
@@ -15,14 +16,15 @@ class SnippetExpansion
 
     @editor.transact =>
       newRange = @editor.transact =>
-        @cursor.selection.insertText(snippet.body, autoIndent: false)
+        body = variable.fixLineNum(snippet.body, startPosition)
+        @cursor.selection.insertText(body, autoIndent: false)
       if snippet.tabStops.length > 0
         @subscribe @cursor, 'moved', (event) => @cursorMoved(event)
         @placeTabStopMarkers(startPosition, snippet.tabStops)
         @snippets.addExpansion(@editor, this)
         @editor.normalizeTabsInBufferRange(newRange)
       @indentSubsequentLines(startPosition.row, snippet) if snippet.lineCount > 1
-
+    
   cursorMoved: ({oldBufferPosition, newBufferPosition, textChanged}) ->
     return if @settingTabStop or textChanged
     oldTabStops = @tabStopsForBufferPosition(oldBufferPosition)

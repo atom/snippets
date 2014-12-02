@@ -115,7 +115,36 @@ describe "Snippets extension", ->
             body: """
               $0one${1} ${2:two} three${3}
             """
+            
+          "variables":
+            prefix: "var1"
+            body: """
+              xxx${/basename} yyy ${/extname}zzz ${/line}${/project} ${/dirnamerel} ${:variable-prop1:variable-prop2}
+            """
+            
+          "invalid variables":
+            prefix: "var2"
+            body: """
+              ${abc}${:variable-prop1}${:X:variable-prop2}
+            """
 
+    describe "when the snippet contains variables", ->
+      it "evaluates the variables", ->
+        editor.setText('')
+        editor.insertText('var1')
+        editorView.trigger 'snippets:expand'
+        expect(buffer.getText()).toBe 'xxxsample.js yyy .jszzz     1fixtures . variable-value'
+        
+    describe "when the snippet contains invalid variables", ->
+      it "inserts error messages", ->
+        editor.setText('')
+        editor.insertText('var2')
+        editorView.trigger 'snippets:expand'
+        expect(buffer.getText()).toBe \
+          ' <prefix not one of "-:/" in variable "abc"> ' +
+          ' <expected string for package.json property "variable-prop1"> ' +
+          ' <package.json does not have property "X:variable-prop2"> '
+                                      
     describe "when the snippet body is invalid or missing", ->
       it "does not register the snippet", ->
         editor.setText('')
@@ -633,19 +662,6 @@ describe "Snippets extension", ->
         "the "
         { index: 4, content: ["lazy"] },
         " dog"
-      ]
-
-    it "removes interpolated variables in placeholder text (we don't currently support it)", ->
-      bodyTree = snippets.getBodyParser().parse """
-        module ${1:ActiveRecord::${TM_FILENAME/(?:\\A|_)([A-Za-z0-9]+)(?:\\.rb)?/(?2::\\u$1)/g}}
-      """
-
-      expect(bodyTree).toEqual [
-        "module ",
-        {
-          "index": 1,
-          "content": ["ActiveRecord::", ""]
-        }
       ]
 
   describe "when atom://.atom/snippets is opened", ->
