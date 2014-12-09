@@ -19,8 +19,34 @@ module.exports =
         atom.workspaceView.open(@getUserSnippetsPath())
 
     @loadAll()
-    atom.workspaceView.eachEditorView (editorView) =>
-      @enableSnippetsInEditor(editorView) if editorView.attached
+
+    snippets = this
+
+    atom.commands.add 'atom-text-editor',
+      'snippets:expand': (event) ->
+        editor = @getModel()
+        if snippets.snippetToExpandUnderCursor(editor)
+          snippets.clearExpansions(editor)
+          snippets.expandSnippetsUnderCursors(editor)
+        else
+          event.abortKeyBinding()
+
+      'snippets:next-tab-stop': (event) ->
+        editor = @getModel()
+        event.abortKeyBinding() unless snippets.goToNextTabStop(editor)
+
+      'snippets:previous-tab-stop': (event) ->
+        editor = @getModel()
+        event.abortKeyBinding() unless snippets.goToPreviousTabStop(editor)
+
+      'snippets:available': (event) ->
+        editor = @getModel()
+        SnippetsAvailable ?= require './snippets-available'
+        snippets.availableSnippetsView ?= new SnippetsAvailable(snippets)
+        snippets.availableSnippetsView.toggle(editor)
+
+    atom.workspace.observeTextEditors (editor) =>
+      @clearExpansions(editor)
 
   deactivate: ->
     @userSnippetsFile?.off()
@@ -104,28 +130,6 @@ module.exports =
     for cursor in cursors
       prefixStart = cursor.getBeginningOfCurrentWordBufferPosition({wordRegex})
       editor.getTextInRange([prefixStart, cursor.getBufferPosition()])
-
-  enableSnippetsInEditor: (editorView) ->
-    editor = editorView.getEditor()
-    @clearExpansions(editor)
-
-    editorView.command 'snippets:expand', (event) =>
-      if @snippetToExpandUnderCursor(editor)
-        @clearExpansions(editor)
-        @expandSnippetsUnderCursors(editor)
-      else
-        event.abortKeyBinding()
-
-    editorView.command 'snippets:next-tab-stop', (event) =>
-      event.abortKeyBinding() unless @goToNextTabStop(editor)
-
-    editorView.command 'snippets:previous-tab-stop', (event) =>
-      event.abortKeyBinding() unless @goToPreviousTabStop(editor)
-
-    editorView.command 'snippets:available', (event) =>
-      SnippetsAvailable ?= require './snippets-available'
-      @availableSnippetsView ?= new SnippetsAvailable(this)
-      @availableSnippetsView.toggle(editor)
 
   # Get a RegExp of all the characters used in the snippet prefixes
   wordRegexForSnippets: (snippets) ->

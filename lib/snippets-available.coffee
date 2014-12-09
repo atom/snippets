@@ -9,7 +9,7 @@ class SnippetsAvailable extends SelectListView
   initialize: (@snippets) ->
     super
     @addClass('overlay from-top available-snippets')
-    @command 'snippets:available', => @toggle()
+    atom.commands.add @element, 'snippets:available', => @toggle()
 
   # Public: Filter the fuzzy-search for the prefix.
   #
