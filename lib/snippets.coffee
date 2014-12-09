@@ -8,7 +8,6 @@ fs = require 'fs-plus'
 
 Snippet = require './snippet'
 SnippetExpansion = require './snippet-expansion'
-SnippetsAvailable = null # Defer until actually rendered
 
 module.exports =
   loaded: false
@@ -16,7 +15,7 @@ module.exports =
   activate: ->
     atom.workspace.registerOpener (uri) =>
       if uri is 'atom://.atom/snippets'
-        atom.workspaceView.open(@getUserSnippetsPath())
+        atom.workspace.open(@getUserSnippetsPath())
 
     @loadAll()
 
@@ -41,7 +40,7 @@ module.exports =
 
       'snippets:available': (event) ->
         editor = @getModel()
-        SnippetsAvailable ?= require './snippets-available'
+        SnippetsAvailable = require './snippets-available'
         snippets.availableSnippetsView ?= new SnippetsAvailable(snippets)
         snippets.availableSnippetsView.toggle(editor)
 

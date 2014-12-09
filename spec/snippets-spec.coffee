@@ -1,6 +1,5 @@
 path = require 'path'
 
-{WorkspaceView} = require 'atom'
 fs = require 'fs-plus'
 temp = require('temp').track()
 
@@ -16,7 +15,6 @@ describe "Snippets extension", ->
     atom.keymaps.handleKeyboardEvent(event.originalEvent)
 
   beforeEach ->
-    atom.workspaceView = new WorkspaceView
     spyOn(Snippets, 'loadAll')
 
     waitsForPromise ->
@@ -33,8 +31,6 @@ describe "Snippets extension", ->
       editor = atom.workspace.getActiveTextEditor()
       editorElement = atom.views.getView(editor)
       buffer = editor.getBuffer()
-      atom.workspaceView.simulateDomAttachment()
-      atom.workspaceView.enableKeymap()
 
   describe "when 'tab' is triggered on the editor", ->
     beforeEach ->
@@ -654,10 +650,10 @@ describe "Snippets extension", ->
 
   describe "when atom://.atom/snippets is opened", ->
     it "opens ~/.atom/snippets.cson", ->
-      atom.workspaceView.destroyActivePaneItem()
+      atom.workspace.destroyActivePaneItem()
       configDirPath = temp.mkdirSync('atom-config-dir-')
       spyOn(atom, 'getConfigDirPath').andReturn configDirPath
-      atom.workspaceView.open('atom://.atom/snippets')
+      atom.workspace.open('atom://.atom/snippets')
 
       waitsFor ->
         atom.workspace.getActiveEditor()?
