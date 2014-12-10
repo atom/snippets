@@ -25,7 +25,7 @@ class SnippetsAvailable extends SelectListView
       @populate()
       @attach()
 
-  detach: ->
+  cancelled: ->
     @editor = null
     if @panel?
       @panel.destroy()
