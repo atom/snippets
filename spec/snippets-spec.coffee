@@ -541,7 +541,7 @@ describe "Snippets extension", ->
       waitsFor "all snippets to load", 30000, -> snippets.loaded
 
       runs ->
-        expect(atom.syntax.getProperty(['.test'], 'snippets.test')?.constructor).toBe Snippet
+        expect(atom.config.get(['.test'], 'snippets.test')?.constructor).toBe Snippet
 
         # warn about junk-file, but don't even try to parse a hidden file
         expect(console.warn).toHaveBeenCalled()
@@ -565,7 +565,7 @@ describe "Snippets extension", ->
       waitsFor "all snippets to load", 30000, -> snippets.loaded
 
       runs ->
-        expect(atom.syntax.getProperty(['.foo'], 'snippets.foo')?.constructor).toBe Snippet
+        expect(atom.config.get(['.foo'], 'snippets.foo')?.constructor).toBe Snippet
 
     it "loads ~/.atom/snippets.cson when it exists", ->
       fs.writeFileSync path.join(configDirPath, 'snippets.cson'), """
@@ -581,7 +581,7 @@ describe "Snippets extension", ->
       waitsFor "all snippets to load", 30000, -> snippets.loaded
 
       runs ->
-        expect(atom.syntax.getProperty(['.foo'], 'snippets.foo')?.constructor).toBe Snippet
+        expect(atom.config.get(['.foo'], 'snippets.foo')?.constructor).toBe Snippet
 
     it "notifies the user when the file cannot be loaded", ->
       spyOn(atom.notifications, 'addError') if atom.notifications?
@@ -608,8 +608,8 @@ describe "Snippets extension", ->
       waitsFor "all snippets to load", 30000, -> snippets.loaded
 
       runs ->
-        expect(atom.syntax.getProperty(['.source.json'], 'snippets.snip')?.constructor).toBe Snippet
-        expect(atom.syntax.getProperty(['.source.coffee'], 'snippets.snip')?.constructor).toBe Snippet
+        expect(atom.config.get(['.source.json'], 'snippets.snip')?.constructor).toBe Snippet
+        expect(atom.config.get(['.source.coffee'], 'snippets.snip')?.constructor).toBe Snippet
 
   describe "snippet body parser", ->
     it "breaks a snippet body into lines, with each line containing tab stops at the appropriate position", ->
@@ -656,10 +656,10 @@ describe "Snippets extension", ->
       atom.workspace.open('atom://.atom/snippets')
 
       waitsFor ->
-        atom.workspace.getActiveEditor()?
+        atom.workspace.getActiveTextEditor()?
 
       runs ->
-        expect(atom.workspace.getActiveEditor().getUri()).toBe path.join(configDirPath, 'snippets.cson')
+        expect(atom.workspace.getActiveTextEditor().getUri()).toBe path.join(configDirPath, 'snippets.cson')
 
   describe "when ~/.atom/snippets.cson changes", ->
     it "reloads the snippets", ->
@@ -678,7 +678,7 @@ describe "Snippets extension", ->
       waitsFor "all snippets to load", 30000, -> snippets.loaded
 
       runs ->
-        expect(atom.syntax.getProperty(['.test'], 'snippets.test')).toBeUndefined()
+        expect(atom.config.get(['.test'], 'snippets.test')).toBeUndefined()
         fs.writeFileSync snippetsPath, """
           ".test":
             "Test Snippet":
@@ -687,14 +687,14 @@ describe "Snippets extension", ->
         """
 
       waitsFor "snippets to be added", ->
-        atom.syntax.getProperty(['.test'], 'snippets.test')?
+        atom.config.get(['.test'], 'snippets.test')?
 
       runs ->
-        expect(atom.syntax.getProperty(['.test'], 'snippets.test')?.constructor).toBe Snippet
+        expect(atom.config.get(['.test'], 'snippets.test')?.constructor).toBe Snippet
         fs.removeSync(snippetsPath)
 
       waitsFor "snippets to be removed", ->
-        atom.syntax.getProperty(['.test'], 'snippets.test')?
+        atom.config.get(['.test'], 'snippets.test')?
 
   describe "snippet insertion API", ->
     it "will automatically parse snippet definition and replace selection", ->

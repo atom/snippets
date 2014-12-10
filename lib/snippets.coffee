@@ -1,5 +1,5 @@
 path = require 'path'
-
+{Disposable, CompositeDisposable} = require 'atom'
 _ = require 'underscore-plus'
 async = require 'async'
 CSON = require 'season'
@@ -69,9 +69,11 @@ module.exports =
       if stat?.isFile()
         @userSnippetsFile = new File(userSnippetsPath)
         @userSnippetsFile.on 'moved removed contents-changed', =>
-          atom.syntax.removeProperties(userSnippetsPath)
+          @userSnippetsDisposable?.dispose()
           @loadUserSnippets()
-        @loadSnippetsFile(userSnippetsPath, callback)
+        @loadSnippetsFile userSnippetsPath, (err, disposable) =>
+          @userSnippetsDisposable = disposable
+          callback?()
       else
         callback?()
 
@@ -97,17 +99,19 @@ module.exports =
         async.eachSeries(paths, @loadSnippetsFile.bind(this), callback)
 
   loadSnippetsFile: (filePath, callback) ->
-    return callback?() unless CSON.isObjectPath(filePath)
+    disposable = new Disposable ->
+    return callback?(null, disposable) unless CSON.isObjectPath(filePath)
 
     CSON.readFile filePath, (error, object={}) =>
       if error?
         console.warn "Error reading snippets file '#{filePath}': #{error.stack ? error}"
         atom.notifications?.addError("Failed to load snippets from '#{filePath}'", {detail: error.stack, closable: true})
       else
-        @add(filePath, object)
-      callback?()
+        disposable = @add(filePath, object)
+      callback?(null, disposable)
 
   add: (filePath, snippetsBySelector) ->
+    disposable = new CompositeDisposable
     for selector, snippetsByName of snippetsBySelector
       snippetsByPrefix = {}
       for name, attributes of snippetsByName
@@ -118,7 +122,8 @@ module.exports =
         bodyTree ?= @getBodyParser().parse(body)
         snippet = new Snippet({name, prefix, bodyTree, bodyText: body})
         snippetsByPrefix[snippet.prefix] = snippet
-      atom.syntax.addProperties(filePath, selector, snippets: snippetsByPrefix)
+      disposable.add atom.config.addScopedSettings(filePath, selector, snippets: snippetsByPrefix)
+    disposable
 
   getBodyParser: ->
     @bodyParser ?= require './snippet-body-parser'
@@ -157,7 +162,7 @@ module.exports =
   getSnippets: (editor) ->
     scope = editor.getLastCursor().getScopeDescriptor()
     snippets = {}
-    for properties in atom.syntax.propertiesForScope(scope, 'snippets')
+    for properties in atom.config.settingsForScopeDescriptor(scope, 'snippets')
       snippetProperties = _.valueForKeyPath(properties, 'snippets') ? {}
       for snippetPrefix, snippet of snippetProperties
         snippets[snippetPrefix] ?= snippet
