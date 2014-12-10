@@ -35,7 +35,7 @@ class SnippetExpansion
     @setTabStopIndex(0)
 
   indentSubsequentLines: (startRow, snippet) ->
-    initialIndent = @editor.lineForBufferRow(startRow).match(/^\s*/)[0]
+    initialIndent = @editor.lineTextForBufferRow(startRow).match(/^\s*/)[0]
     for row in [startRow + 1...startRow + snippet.lineCount]
       @editor.buffer.insert([row, 0], initialIndent)
 
