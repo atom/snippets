@@ -1,5 +1,5 @@
 _ = require 'underscore-plus'
-{CompositeDisposable} = require 'event-kit'
+{CompositeDisposable} = require 'atom'
 
 module.exports =
 class SnippetExpansion
