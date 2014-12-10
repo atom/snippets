@@ -3,10 +3,9 @@ _ = require 'underscore-plus'
 
 module.exports =
 class SnippetExpansion
-
   settingTabStop: false
 
-  constructor: (@snippet, @editor, @cursor=@editor.getCursor(), @snippets) ->
+  constructor: (@snippet, @editor, @cursor, @snippets) ->
     @subscriptions = new CompositeDisposable
     @tabStopMarkers = []
     @selections = [@cursor.selection]

@@ -155,7 +155,7 @@ module.exports =
     longestPrefixMatch
 
   getSnippets: (editor) ->
-    scope = editor.getCursorScopes()
+    scope = editor.getLastCursor().getScopeDescriptor()
     snippets = {}
     for properties in atom.syntax.propertiesForScope(scope, 'snippets')
       snippetProperties = _.valueForKeyPath(properties, 'snippets') ? {}
@@ -164,7 +164,7 @@ module.exports =
     snippets
 
   snippetToExpandUnderCursor: (editor) ->
-    return false unless editor.getSelection().isEmpty()
+    return false unless editor.getLastSelection().isEmpty()
     snippets = @getSnippets(editor)
     return false if _.isEmpty(snippets)
 
@@ -210,7 +210,7 @@ module.exports =
   addExpansion: (editor, snippetExpansion) ->
     @getExpansions(editor).push(snippetExpansion)
 
-  insert: (snippet, editor=atom.workspace.getActiveEditor(), cursor=editor.getCursor()) ->
+  insert: (snippet, editor, cursor) ->
     if typeof snippet is 'string'
       bodyTree = @getBodyParser().parse(snippet)
       snippet = new Snippet({name: '__anonymous', prefix: '', bodyTree, bodyText: snippet})

@@ -206,8 +206,8 @@ describe "Snippets extension", ->
             editor.insertText('t2')
             simulateTabKeyEvent()
 
-            editor.moveCursorUp()
-            editor.moveCursorLeft()
+            editor.moveUp()
+            editor.moveLeft()
             simulateTabKeyEvent()
 
             expect(buffer.lineForRow(2)).toBe "go here next:(  ) and finally go here:()"
@@ -219,7 +219,7 @@ describe "Snippets extension", ->
             simulateTabKeyEvent()
             simulateTabKeyEvent()
 
-            editor.moveCursorRight()
+            editor.moveRight()
             simulateTabKeyEvent(shiftKey: true)
             expect(editor.getCursorBufferPosition()).toEqual [4, 15]
 
@@ -230,8 +230,8 @@ describe "Snippets extension", ->
             simulateTabKeyEvent()
 
             expect(buffer.lineForRow(0)).toBe "with placeholder test"
-            editor.moveCursorRight()
-            editor.moveCursorLeft()
+            editor.moveRight()
+            editor.moveLeft()
             editor.insertText("foo")
             expect(buffer.lineForRow(0)).toBe "with placeholder tesfoot"
 
@@ -239,7 +239,7 @@ describe "Snippets extension", ->
             expect(buffer.lineForRow(1)).toBe "without placeholder var quicksort = function () {"
             editor.insertText("test")
             expect(buffer.lineForRow(1)).toBe "without placeholder testvar quicksort = function () {"
-            editor.moveCursorLeft()
+            editor.moveLeft()
             editor.insertText("foo")
             expect(buffer.lineForRow(1)).toBe "without placeholder tesfootvar quicksort = function () {"
 
@@ -250,7 +250,7 @@ describe "Snippets extension", ->
             simulateTabKeyEvent()
 
             expect(buffer.lineForRow(0)).toBe "with placeholder test"
-            editor.moveCursorRight()
+            editor.moveRight()
             editor.backspace()
             editor.insertText("foo")
             expect(buffer.lineForRow(0)).toBe "with placeholder tesfoo"
