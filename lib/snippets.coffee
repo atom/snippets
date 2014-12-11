@@ -1,5 +1,5 @@
 path = require 'path'
-
+{Disposable, CompositeDisposable} = require 'atom'
 _ = require 'underscore-plus'
 async = require 'async'
 CSON = require 'season'
@@ -8,19 +8,44 @@ fs = require 'fs-plus'
 
 Snippet = require './snippet'
 SnippetExpansion = require './snippet-expansion'
-SnippetsAvailable = null # Defer until actually rendered
 
 module.exports =
   loaded: false
 
   activate: ->
-    atom.workspace.registerOpener (uri) =>
+    atom.workspace.addOpener (uri) =>
       if uri is 'atom://.atom/snippets'
-        atom.workspaceView.open(@getUserSnippetsPath())
+        atom.workspace.open(@getUserSnippetsPath())
 
     @loadAll()
-    atom.workspaceView.eachEditorView (editorView) =>
-      @enableSnippetsInEditor(editorView) if editorView.attached
+
+    snippets = this
+
+    atom.commands.add 'atom-text-editor',
+      'snippets:expand': (event) ->
+        editor = @getModel()
+        if snippets.snippetToExpandUnderCursor(editor)
+          snippets.clearExpansions(editor)
+          snippets.expandSnippetsUnderCursors(editor)
+        else
+          event.abortKeyBinding()
+
+      'snippets:next-tab-stop': (event) ->
+        editor = @getModel()
+        event.abortKeyBinding() unless snippets.goToNextTabStop(editor)
+
+      'snippets:previous-tab-stop': (event) ->
+        editor = @getModel()
+        event.abortKeyBinding() unless snippets.goToPreviousTabStop(editor)
+
+      'snippets:available': (event) ->
+        editor = @getModel()
+        SnippetsAvailable = require './snippets-available'
+        snippets.availableSnippetsView ?= new SnippetsAvailable(snippets)
+        snippets.availableSnippetsView.toggle(editor)
+
+    atom.workspace.observeTextEditors (editor) =>
+      @clearExpansions(editor)
 
   deactivate: ->
     @userSnippetsFile?.off()
@@ -44,9 +69,11 @@ module.exports =
       if stat?.isFile()
         @userSnippetsFile = new File(userSnippetsPath)
         @userSnippetsFile.on 'moved removed contents-changed', =>
-          atom.syntax.removeProperties(userSnippetsPath)
+          @userSnippetsDisposable?.dispose()
           @loadUserSnippets()
-        @loadSnippetsFile(userSnippetsPath, callback)
+        @loadSnippetsFile userSnippetsPath, (err, disposable) =>
+          @userSnippetsDisposable = disposable
+          callback?()
       else
         callback?()
 
@@ -72,17 +99,19 @@ module.exports =
         async.eachSeries(paths, @loadSnippetsFile.bind(this), callback)
 
   loadSnippetsFile: (filePath, callback) ->
-    return callback?() unless CSON.isObjectPath(filePath)
+    disposable = new Disposable ->
+    return callback?(null, disposable) unless CSON.isObjectPath(filePath)
 
     CSON.readFile filePath, (error, object={}) =>
       if error?
         console.warn "Error reading snippets file '#{filePath}': #{error.stack ? error}"
         atom.notifications?.addError("Failed to load snippets from '#{filePath}'", {detail: error.stack, closable: true})
       else
-        @add(filePath, object)
-      callback?()
+        disposable = @add(filePath, object)
+      callback?(null, disposable)
 
   add: (filePath, snippetsBySelector) ->
+    disposable = new CompositeDisposable
     for selector, snippetsByName of snippetsBySelector
       snippetsByPrefix = {}
       for name, attributes of snippetsByName
@@ -93,7 +122,8 @@ module.exports =
         bodyTree ?= @getBodyParser().parse(body)
         snippet = new Snippet({name, prefix, bodyTree, bodyText: body})
         snippetsByPrefix[snippet.prefix] = snippet
-      atom.syntax.addProperties(filePath, selector, snippets: snippetsByPrefix)
+      disposable.add atom.config.addScopedSettings(filePath, selector, snippets: snippetsByPrefix)
+    disposable
 
   getBodyParser: ->
     @bodyParser ?= require './snippet-body-parser'
@@ -104,28 +134,6 @@ module.exports =
     for cursor in cursors
       prefixStart = cursor.getBeginningOfCurrentWordBufferPosition({wordRegex})
       editor.getTextInRange([prefixStart, cursor.getBufferPosition()])
-
-  enableSnippetsInEditor: (editorView) ->
-    editor = editorView.getEditor()
-    @clearExpansions(editor)
-
-    editorView.command 'snippets:expand', (event) =>
-      if @snippetToExpandUnderCursor(editor)
-        @clearExpansions(editor)
-        @expandSnippetsUnderCursors(editor)
-      else
-        event.abortKeyBinding()
-
-    editorView.command 'snippets:next-tab-stop', (event) =>
-      event.abortKeyBinding() unless @goToNextTabStop(editor)
-
-    editorView.command 'snippets:previous-tab-stop', (event) =>
-      event.abortKeyBinding() unless @goToPreviousTabStop(editor)
-
-    editorView.command 'snippets:available', (event) =>
-      SnippetsAvailable ?= require './snippets-available'
-      @availableSnippetsView ?= new SnippetsAvailable(this)
-      @availableSnippetsView.toggle(editor)
 
   # Get a RegExp of all the characters used in the snippet prefixes
   wordRegexForSnippets: (snippets) ->
@@ -152,16 +160,16 @@ module.exports =
     longestPrefixMatch
 
   getSnippets: (editor) ->
-    scope = editor.getCursorScopes()
+    scope = editor.getLastCursor().getScopeDescriptor()
     snippets = {}
-    for properties in atom.syntax.propertiesForScope(scope, 'snippets')
+    for properties in atom.config.settingsForScopeDescriptor(scope, 'snippets')
       snippetProperties = _.valueForKeyPath(properties, 'snippets') ? {}
       for snippetPrefix, snippet of snippetProperties
         snippets[snippetPrefix] ?= snippet
     snippets
 
   snippetToExpandUnderCursor: (editor) ->
-    return false unless editor.getSelection().isEmpty()
+    return false unless editor.getLastSelection().isEmpty()
     snippets = @getSnippets(editor)
     return false if _.isEmpty(snippets)
 
@@ -207,7 +215,7 @@ module.exports =
   addExpansion: (editor, snippetExpansion) ->
     @getExpansions(editor).push(snippetExpansion)
 
-  insert: (snippet, editor=atom.workspace.getActiveEditor(), cursor=editor.getCursor()) ->
+  insert: (snippet, editor=atom.workspace.getActiveTextEditor(), cursor=editor.getLastCursor()) ->
     if typeof snippet is 'string'
       bodyTree = @getBodyParser().parse(snippet)
       snippet = new Snippet({name: '__anonymous', prefix: '', bodyTree, bodyText: snippet})

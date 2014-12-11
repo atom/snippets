@@ -1,13 +1,12 @@
 _ = require 'underscore-plus'
-{Subscriber} = require 'emissary'
+{CompositeDisposable} = require 'atom'
 
 module.exports =
 class SnippetExpansion
-  Subscriber.includeInto(this)
-
   settingTabStop: false
 
-  constructor: (@snippet, @editor, @cursor=@editor.getCursor(), @snippets) ->
+  constructor: (@snippet, @editor, @cursor, @snippets) ->
+    @subscriptions = new CompositeDisposable
     @tabStopMarkers = []
     @selections = [@cursor.selection]
 
@@ -17,7 +16,7 @@ class SnippetExpansion
       newRange = @editor.transact =>
         @cursor.selection.insertText(snippet.body, autoIndent: false)
       if snippet.tabStops.length > 0
-        @subscribe @cursor, 'moved', (event) => @cursorMoved(event)
+        @subscriptions.add @cursor.onDidChangePosition (event) => @cursorMoved(event)
         @placeTabStopMarkers(startPosition, snippet.tabStops)
         @snippets.addExpansion(@editor, this)
         @editor.normalizeTabsInBufferRange(newRange)
@@ -32,11 +31,11 @@ class SnippetExpansion
   placeTabStopMarkers: (startPosition, tabStopRanges) ->
     for ranges in tabStopRanges
       @tabStopMarkers.push ranges.map ({start, end}) =>
-        @editor.markBufferRange([startPosition.add(start), startPosition.add(end)])
+        @editor.markBufferRange([startPosition.traverse(start), startPosition.traverse(end)])
     @setTabStopIndex(0)
 
   indentSubsequentLines: (startRow, snippet) ->
-    initialIndent = @editor.lineForBufferRow(startRow).match(/^\s*/)[0]
+    initialIndent = @editor.lineTextForBufferRow(startRow).match(/^\s*/)[0]
     for row in [startRow + 1...startRow + snippet.lineCount]
       @editor.buffer.insert([row, 0], initialIndent)
 
@@ -80,7 +79,7 @@ class SnippetExpansion
       @editor.findMarkers(containsBufferPosition: bufferPosition))
 
   destroy: ->
-    @unsubscribe()
+    @subscriptions.dispose()
     for markers in @tabStopMarkers
       marker.destroy() for marker in markers
     @tabStopMarkers = []

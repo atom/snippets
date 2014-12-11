@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "async": "~0.2.6",
-    "emissary": "1.x",
+    "atom-space-pen-views": "^0.20.0",
     "fs-plus": "2.x",
     "loophole": "^0.1.0",
     "pathwatcher": "^2.0",

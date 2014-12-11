@@ -1,15 +1,17 @@
 _ = require 'underscore-plus'
-{$$, SelectListView} = require 'atom'
+{$$, SelectListView} = require 'atom-space-pen-views'
 
 module.exports =
 class SnippetsAvailable extends SelectListView
+  panel: null
+
   # Public: Initialize object.
   #
   # Returns: `undefined`
   initialize: (@snippets) ->
     super
-    @addClass('overlay from-top available-snippets')
-    @command 'snippets:available', => @toggle()
+    @addClass('available-snippets')
+    atom.commands.add @element, 'snippets:available', => @toggle()
 
   # Public: Filter the fuzzy-search for the prefix.
   #
@@ -17,15 +19,17 @@ class SnippetsAvailable extends SelectListView
   getFilterKey: -> 'searchText'
 
   toggle: (@editor) ->
-    if @hasParent()
+    if @panel?
       @cancel()
     else
       @populate()
       @attach()
 
-  detach: ->
+  cancelled: ->
     @editor = null
-    super
+    if @panel?
+      @panel.destroy()
+      @panel = null
 
   populate: ->
     snippets = _.values(@snippets.getSnippets(@editor))
@@ -35,7 +39,7 @@ class SnippetsAvailable extends SelectListView
 
   attach: ->
     @storeFocusedElement()
-    atom.workspaceView.append(this)
+    @panel = atom.workspace.addModalPanel(item: this)
     @focusFilterEditor()
 
   # Public: Implement SelectListView method to generate the view for each item.
