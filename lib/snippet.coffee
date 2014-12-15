@@ -9,7 +9,8 @@ module.exports =
       prefix,
       bodyText,
       body,
-      tabStops, lineCount
+      tabStops,
+      lineCount
     }
 
 extractTabStops = (bodyTree) ->
