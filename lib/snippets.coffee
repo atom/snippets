@@ -120,7 +120,8 @@ module.exports =
 
         # if `add` isn't called by the loader task (in specs for example), we need to parse the body
         bodyTree ?= @getBodyParser().parse(body)
-        snippet = new Snippet({name, prefix, bodyTree, bodyText: body})
+        snippet = Snippet.create({name, prefix, bodyTree, bodyText: body})
+
         snippetsByPrefix[snippet.prefix] = snippet
       disposable.add atom.config.addScopedSettings(filePath, selector, snippets: snippetsByPrefix)
     disposable
@@ -218,6 +219,6 @@ module.exports =
   insert: (snippet, editor=atom.workspace.getActiveTextEditor(), cursor=editor.getLastCursor()) ->
     if typeof snippet is 'string'
       bodyTree = @getBodyParser().parse(snippet)
-      snippet = new Snippet({name: '__anonymous', prefix: '', bodyTree, bodyText: snippet})
+      snippet = Snippet.create({name: '__anonymous', prefix: '', bodyTree, bodyText: snippet})
 
     new SnippetExpansion(snippet, editor, cursor, this)
