@@ -3,6 +3,7 @@ path = require 'path'
 fs = require 'fs-plus'
 temp = require('temp').track()
 
+Snippet = require '../lib/snippet'
 Snippets = require '../lib/snippets'
 SnippetsAvailable = require '../lib/snippets-available'
 
@@ -540,9 +541,7 @@ describe "Snippets extension", ->
       waitsFor "all snippets to load", 3000, -> snippets.loaded
 
       runs ->
-        snippet = atom.config.get(['.test'], 'snippets.test')
-        expect(snippet.prefix).toBe("test")
-        expect(snippet.body).toBe("testing 123")
+        expect(atom.config.get(['.test'], 'snippets.test')?.constructor).toBe Snippet
 
         # warn about junk-file, but don't even try to parse a hidden file
         expect(console.warn).toHaveBeenCalled()
@@ -566,9 +565,7 @@ describe "Snippets extension", ->
       waitsFor "all snippets to load", 30000, -> snippets.loaded
 
       runs ->
-        snippet = atom.config.get(['.foo'], 'snippets.foo')
-        expect(snippet.prefix).toBe("foo")
-        expect(snippet.body).toBe("bar")
+        expect(atom.config.get(['.foo'], 'snippets.foo')?.constructor).toBe Snippet
 
     it "loads ~/.atom/snippets.cson when it exists", ->
       fs.writeFileSync path.join(configDirPath, 'snippets.cson'), """
@@ -584,9 +581,7 @@ describe "Snippets extension", ->
       waitsFor "all snippets to load", 30000, -> snippets.loaded
 
       runs ->
-        snippet = atom.config.get(['.foo'], 'snippets.foo')
-        expect(snippet.prefix).toBe("foo")
-        expect(snippet.body).toBe("bar")
+        expect(atom.config.get(['.foo'], 'snippets.foo')?.constructor).toBe Snippet
 
     it "notifies the user when the file cannot be loaded", ->
       spyOn(atom.notifications, 'addError') if atom.notifications?
@@ -613,8 +608,8 @@ describe "Snippets extension", ->
       waitsFor "all snippets to load", 30000, -> snippets.loaded
 
       runs ->
-        expect(atom.config.get(['.source.json'], 'snippets.snip').prefix).toBe("snip")
-        expect(atom.config.get(['.source.coffee'], 'snippets.snip').prefix).toBe("snip")
+        expect(atom.config.get(['.source.json'], 'snippets.snip')?.constructor).toBe Snippet
+        expect(atom.config.get(['.source.coffee'], 'snippets.snip')?.constructor).toBe Snippet
 
   describe "snippet body parser", ->
     it "breaks a snippet body into lines, with each line containing tab stops at the appropriate position", ->
@@ -702,9 +697,7 @@ describe "Snippets extension", ->
         atom.config.get(['.test'], 'snippets.test')?
 
       runs ->
-        snippet = atom.config.get(['.test'], 'snippets.test')
-        expect(snippet.prefix).toBe "test"
-        expect(snippet.body).toBe "testing 123"
+        expect(atom.config.get(['.test'], 'snippets.test')?.constructor).toBe Snippet
         fs.removeSync(snippetsPath)
 
       waitsFor "snippets to be removed", ->
