@@ -13,15 +13,19 @@ module.exports =
   loaded: false
 
   activate: ->
-    atom.workspace.addOpener (uri) =>
+    @subscriptions = new CompositeDisposable
+
+    @subscriptions.add atom.workspace.addOpener (uri) =>
       if uri is 'atom://.atom/snippets'
         atom.workspace.open(@getUserSnippetsPath())
 
     @loadAll()
+    @watchUserSnippets (watchDisposable) =>
+      @subscriptions.add(watchDisposable)
 
     snippets = this
 
-    atom.commands.add 'atom-text-editor',
+    @subscriptions.add atom.commands.add 'atom-text-editor',
       'snippets:expand': (event) ->
         editor = @getModel()
         if snippets.snippetToExpandUnderCursor(editor)
@@ -44,71 +48,98 @@ module.exports =
         snippets.availableSnippetsView ?= new SnippetsAvailable(snippets)
         snippets.availableSnippetsView.toggle(editor)
 
-    atom.workspace.observeTextEditors (editor) =>
+    @subscriptions.add atom.workspace.observeTextEditors (editor) =>
       @clearExpansions(editor)
 
   deactivate: ->
-    @userSnippetsFile?.off()
     @editorSnippetExpansions?.clear()
+    atom.config.transact => @subscriptions.dispose()
 
   getUserSnippetsPath: ->
     userSnippetsPath = CSON.resolve(path.join(atom.getConfigDirPath(), 'snippets'))
     userSnippetsPath ? path.join(atom.getConfigDirPath(), 'snippets.cson')
 
-  loadAll: ->
-    @loadBundledSnippets => @loadUserSnippets => @loadPackageSnippets()
+  loadAll: (callback) ->
+    @loadBundledSnippets (bundledSnippets) =>
+      @loadPackageSnippets (packageSnippets) =>
+        @loadUserSnippets (userSnippets) =>
+          atom.config.transact =>
+            for snippetSet in [bundledSnippets, packageSnippets, userSnippets]
+              for filepath, snippetsBySelector of snippetSet
+                @add(filepath, snippetsBySelector)
+          @doneLoading()
 
   loadBundledSnippets: (callback) ->
     bundledSnippetsPath = CSON.resolve(path.join(__dirname, 'snippets'))
-    @loadSnippetsFile(bundledSnippetsPath, callback)
+    @loadSnippetsFile bundledSnippetsPath, (snippets) ->
+      snippetsByPath = {}
+      snippetsByPath[bundledSnippetsPath] = snippets
+      callback(snippetsByPath)
 
   loadUserSnippets: (callback) ->
-    @userSnippetsFile?.off()
     userSnippetsPath = @getUserSnippetsPath()
     fs.stat userSnippetsPath, (error, stat) =>
       if stat?.isFile()
-        @userSnippetsFile = new File(userSnippetsPath)
-        @userSnippetsFile.on 'moved removed contents-changed', =>
-          @userSnippetsDisposable?.dispose()
-          @loadUserSnippets()
-        @loadSnippetsFile userSnippetsPath, (err, disposable) =>
-          @userSnippetsDisposable = disposable
-          callback?()
+        @loadSnippetsFile userSnippetsPath, (snippets) ->
+          result = {}
+          result[userSnippetsPath] = snippets
+          callback(result)
       else
-        callback?()
+        callback({})
 
-  loadPackageSnippets: ->
+  watchUserSnippets: (callback) ->
+    userSnippetsPath = @getUserSnippetsPath()
+    fs.stat userSnippetsPath, (error, stat) =>
+      if stat?.isFile()
+        userSnippetsFile = new File(userSnippetsPath)
+        userSnippetsFile.on 'moved removed contents-changed', =>
+          atom.config.transact =>
+            atom.config.scopedSettingsStore.removePropertiesForSource(userSnippetsPath)
+            @loadSnippetsFile userSnippetsPath, (result) =>
+              @add(userSnippetsPath, result)
+        callback(new Disposable -> userSnippetsFile.off())
+      else
+        callback(new Disposable ->)
+
+  loadPackageSnippets: (callback) ->
     packages = atom.packages.getLoadedPackages()
-    snippetsDirPaths = []
-    snippetsDirPaths.push(path.join(pack.path, 'snippets')) for pack in packages
-    async.eachSeries snippetsDirPaths, @loadSnippetsDirectory.bind(this), @doneLoading.bind(this)
+    snippetsDirPaths = (path.join(pack.path, 'snippets') for pack in packages)
+    async.map snippetsDirPaths, @loadSnippetsDirectory.bind(this), (error, results) =>
+      callback(_.extend({}, results...))
 
   doneLoading: ->
     atom.packages.emit 'snippets:loaded'
     @loaded = true
 
   loadSnippetsDirectory: (snippetsDirPath, callback) ->
-    return callback?() unless fs.isDirectorySync(snippetsDirPath)
+    fs.isDirectory snippetsDirPath, (isDirectory) =>
+      return callback(null, {}) unless isDirectory
 
-    fs.readdir snippetsDirPath, (error, entries) =>
-      if error?
-        console.warn(error)
-        callback?()
-      else
-        paths = entries.map (file) -> path.join(snippetsDirPath, file)
-        async.eachSeries(paths, @loadSnippetsFile.bind(this), callback)
+      fs.readdir snippetsDirPath, (error, entries) =>
+        if error
+          console.warn("Error reading snippets directory #{snippetsDirPath}", error)
+          return callback(null, {})
+
+        async.map(
+          entries,
+          (entry, done)  =>
+            filePath = path.join(snippetsDirPath, entry)
+            @loadSnippetsFile filePath, (snippets) =>
+              done(null, {filePath, snippets})
+          (error, results) =>
+            snippetsByPath = {}
+            for {filePath, snippets} in results
+              snippetsByPath[filePath] = snippets
+            callback(null, snippetsByPath)
+        )
 
   loadSnippetsFile: (filePath, callback) ->
-    disposable = new Disposable ->
-    return callback?(null, disposable) unless CSON.isObjectPath(filePath)
-
+    return callback({}) unless CSON.isObjectPath(filePath)
     CSON.readFile filePath, (error, object={}) =>
       if error?
         console.warn "Error reading snippets file '#{filePath}': #{error.stack ? error}"
         atom.notifications?.addError("Failed to load snippets from '#{filePath}'", {detail: error.stack, closable: true})
-      else
-        disposable = @add(filePath, object)
-      callback?(null, disposable)
+      callback(object)
 
   add: (filePath, snippetsBySelector) ->
     disposable = new CompositeDisposable
