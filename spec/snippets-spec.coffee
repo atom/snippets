@@ -537,7 +537,7 @@ describe "Snippets extension", ->
       snippets.loaded = false
       snippets.loadAll()
 
-      waitsFor "all snippets to load", 30000, -> snippets.loaded
+      waitsFor "all snippets to load", 3000, -> snippets.loaded
 
       runs ->
         snippet = atom.config.get(['.test'], 'snippets.test')
@@ -667,6 +667,11 @@ describe "Snippets extension", ->
         expect(atom.workspace.getActiveTextEditor().getUri()).toBe path.join(configDirPath, 'snippets.cson')
 
   describe "when ~/.atom/snippets.cson changes", ->
+    watchDisposable = null
+
+    afterEach ->
+      watchDisposable?.dispose()
+
     it "reloads the snippets", ->
       jasmine.unspy(window, "setTimeout")
       jasmine.unspy(snippets, 'loadAll')
@@ -678,9 +683,11 @@ describe "Snippets extension", ->
       fs.writeFileSync(snippetsPath, '')
 
       snippets.loaded = false
-      snippets.loadAll()
 
-      waitsFor "all snippets to load", 30000, -> snippets.loaded
+      waitsFor (done) ->
+        snippets.watchUserSnippets (disposable) ->
+          watchDisposable = disposable
+          done()
 
       runs ->
         expect(atom.config.get(['.test'], 'snippets.test')).toBeUndefined()
