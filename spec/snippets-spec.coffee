@@ -30,7 +30,6 @@ describe "Snippets extension", ->
     runs ->
       editor = atom.workspace.getActiveTextEditor()
       editorElement = atom.views.getView(editor)
-      buffer = editor.getBuffer()
 
   describe "when 'tab' is triggered on the editor", ->
     beforeEach ->
@@ -121,12 +120,12 @@ describe "Snippets extension", ->
         editor.setText('')
         editor.insertText('bad1')
         atom.commands.dispatch editorElement, 'snippets:expand'
-        expect(buffer.getText()).toBe 'bad1'
+        expect(editor.getText()).toBe 'bad1'
 
         editor.setText('')
         editor.setText('bad2')
         atom.commands.dispatch editorElement, 'snippets:expand'
-        expect(buffer.getText()).toBe 'bad2'
+        expect(editor.getText()).toBe 'bad2'
 
     describe "when the letters preceding the cursor trigger a snippet", ->
       describe "when the snippet contains no tab stops", ->
@@ -135,15 +134,15 @@ describe "Snippets extension", ->
           expect(editor.getCursorScreenPosition()).toEqual [0, 2]
 
           simulateTabKeyEvent()
-          expect(buffer.lineForRow(0)).toBe "this is a testvar quicksort = function () {"
+          expect(editor.lineTextForBufferRow(0)).toBe "this is a testvar quicksort = function () {"
           expect(editor.getCursorScreenPosition()).toEqual [0, 14]
 
         it "inserts a real tab the next time a tab is pressed after the snippet is expanded", ->
           editor.insertText("t1")
           simulateTabKeyEvent()
-          expect(buffer.lineForRow(0)).toBe "this is a testvar quicksort = function () {"
+          expect(editor.lineTextForBufferRow(0)).toBe "this is a testvar quicksort = function () {"
           simulateTabKeyEvent()
-          expect(buffer.lineForRow(0)).toBe "this is a test  var quicksort = function () {"
+          expect(editor.lineTextForBufferRow(0)).toBe "this is a test  var quicksort = function () {"
 
       describe "when the snippet contains tab stops", ->
         it "places the cursor at the first tab-stop, and moves the cursor in response to 'next-tab-stop' events", ->
@@ -151,9 +150,9 @@ describe "Snippets extension", ->
           editor.setCursorScreenPosition([2, 0])
           editor.insertText('t2')
           simulateTabKeyEvent()
-          expect(buffer.lineForRow(2)).toBe "go here next:() and finally go here:()"
-          expect(buffer.lineForRow(3)).toBe "go here first:()"
-          expect(buffer.lineForRow(4)).toBe "    if (items.length <= 1) return items;"
+          expect(editor.lineTextForBufferRow(2)).toBe "go here next:() and finally go here:()"
+          expect(editor.lineTextForBufferRow(3)).toBe "go here first:()"
+          expect(editor.lineTextForBufferRow(4)).toBe "    if (items.length <= 1) return items;"
           expect(editor.getSelectedBufferRange()).toEqual [[3, 15], [3, 15]]
 
           simulateTabKeyEvent()
@@ -178,15 +177,15 @@ describe "Snippets extension", ->
           simulateTabKeyEvent()
           simulateTabKeyEvent()
           simulateTabKeyEvent()
-          expect(buffer.lineForRow(2)).toBe "go here next:(abc) and finally go here:(  )"
+          expect(editor.lineTextForBufferRow(2)).toBe "go here next:(abc) and finally go here:(  )"
           expect(editor.getMarkerCount()).toBe markerCountBefore
 
         describe "when tab stops are nested", ->
           it "destroys the inner tab stop if the outer tab stop is modified", ->
-            buffer.setText('')
+            editor.setText('')
             editor.insertText 't5'
             atom.commands.dispatch editorElement, 'snippets:expand'
-            expect(buffer.lineForRow(0)).toBe '"key": value'
+            expect(editor.lineTextForBufferRow(0)).toBe '"key": value'
             expect(editor.getSelectedBufferRange()).toEqual [[0, 0], [0, 5]]
             editor.insertText("foo")
             simulateTabKeyEvent()
@@ -194,7 +193,7 @@ describe "Snippets extension", ->
 
         describe "when tab stops are separated by blank lines", ->
           it "correctly places the tab stops (regression)", ->
-            buffer.setText('')
+            editor.setText('')
             editor.insertText 't7'
             atom.commands.dispatch editorElement, 'snippets:expand'
             atom.commands.dispatch editorElement, 'snippets:next-tab-stop'
@@ -210,7 +209,7 @@ describe "Snippets extension", ->
             editor.moveLeft()
             simulateTabKeyEvent()
 
-            expect(buffer.lineForRow(2)).toBe "go here next:(  ) and finally go here:()"
+            expect(editor.lineTextForBufferRow(2)).toBe "go here next:(  ) and finally go here:()"
             expect(editor.getCursorBufferPosition()).toEqual [2, 16]
 
             # test we can terminate with shift-tab
@@ -229,19 +228,19 @@ describe "Snippets extension", ->
             editor.insertText('t8')
             simulateTabKeyEvent()
 
-            expect(buffer.lineForRow(0)).toBe "with placeholder test"
+            expect(editor.lineTextForBufferRow(0)).toBe "with placeholder test"
             editor.moveRight()
             editor.moveLeft()
             editor.insertText("foo")
-            expect(buffer.lineForRow(0)).toBe "with placeholder tesfoot"
+            expect(editor.lineTextForBufferRow(0)).toBe "with placeholder tesfoot"
 
             simulateTabKeyEvent()
-            expect(buffer.lineForRow(1)).toBe "without placeholder var quicksort = function () {"
+            expect(editor.lineTextForBufferRow(1)).toBe "without placeholder var quicksort = function () {"
             editor.insertText("test")
-            expect(buffer.lineForRow(1)).toBe "without placeholder testvar quicksort = function () {"
+            expect(editor.lineTextForBufferRow(1)).toBe "without placeholder testvar quicksort = function () {"
             editor.moveLeft()
             editor.insertText("foo")
-            expect(buffer.lineForRow(1)).toBe "without placeholder tesfootvar quicksort = function () {"
+            expect(editor.lineTextForBufferRow(1)).toBe "without placeholder tesfootvar quicksort = function () {"
 
         describe "when the backspace is press within the bounds of the current tab stop", ->
           it "should not terminate the snippet", ->
@@ -249,19 +248,19 @@ describe "Snippets extension", ->
             editor.insertText('t8')
             simulateTabKeyEvent()
 
-            expect(buffer.lineForRow(0)).toBe "with placeholder test"
+            expect(editor.lineTextForBufferRow(0)).toBe "with placeholder test"
             editor.moveRight()
             editor.backspace()
             editor.insertText("foo")
-            expect(buffer.lineForRow(0)).toBe "with placeholder tesfoo"
+            expect(editor.lineTextForBufferRow(0)).toBe "with placeholder tesfoo"
 
             simulateTabKeyEvent()
-            expect(buffer.lineForRow(1)).toBe "without placeholder var quicksort = function () {"
+            expect(editor.lineTextForBufferRow(1)).toBe "without placeholder var quicksort = function () {"
             editor.insertText("test")
-            expect(buffer.lineForRow(1)).toBe "without placeholder testvar quicksort = function () {"
+            expect(editor.lineTextForBufferRow(1)).toBe "without placeholder testvar quicksort = function () {"
             editor.backspace()
             editor.insertText("foo")
-            expect(buffer.lineForRow(1)).toBe "without placeholder tesfoovar quicksort = function () {"
+            expect(editor.lineTextForBufferRow(1)).toBe "without placeholder tesfoovar quicksort = function () {"
 
       describe "when the snippet contains hard tabs", ->
         describe "when the edit session is in soft-tabs mode", ->
@@ -269,7 +268,7 @@ describe "Snippets extension", ->
             expect(editor.getSoftTabs()).toBeTruthy()
             editor.insertText("t3")
             simulateTabKeyEvent()
-            expect(buffer.lineForRow(1)).toBe "  line 2"
+            expect(editor.lineTextForBufferRow(1)).toBe "  line 2"
             expect(editor.getCursorBufferPosition()).toEqual [1, 8]
 
         describe "when the edit session is in hard-tabs mode", ->
@@ -277,7 +276,7 @@ describe "Snippets extension", ->
             editor.setSoftTabs(false)
             editor.insertText("t3")
             simulateTabKeyEvent()
-            expect(buffer.lineForRow(1)).toBe "\tline 2"
+            expect(editor.lineTextForBufferRow(1)).toBe "\tline 2"
             expect(editor.getCursorBufferPosition()).toEqual [1, 7]
 
       describe "when the snippet prefix is indented", ->
@@ -286,7 +285,7 @@ describe "Snippets extension", ->
             editor.setCursorScreenPosition([2, Infinity])
             editor.insertText ' t1'
             atom.commands.dispatch editorElement, 'snippets:expand'
-            expect(buffer.lineForRow(3)).toBe "    var pivot = items.shift(), current, left = [], right = [];"
+            expect(editor.lineTextForBufferRow(3)).toBe "    var pivot = items.shift(), current, left = [], right = [];"
 
         describe "when the snippet spans multiple lines", ->
           it "indents the subsequent lines of the snippet to be even with the start of the first line", ->
@@ -294,8 +293,8 @@ describe "Snippets extension", ->
             editor.setCursorScreenPosition([2, Infinity])
             editor.insertText ' t3'
             atom.commands.dispatch editorElement, 'snippets:expand'
-            expect(buffer.lineForRow(2)).toBe "    if (items.length <= 1) return items; line 1"
-            expect(buffer.lineForRow(3)).toBe "      line 2"
+            expect(editor.lineTextForBufferRow(2)).toBe "    if (items.length <= 1) return items; line 1"
+            expect(editor.lineTextForBufferRow(3)).toBe "      line 2"
             expect(editor.getCursorBufferPosition()).toEqual [3, 12]
 
       describe "when multiple snippets match the prefix", ->
@@ -304,7 +303,7 @@ describe "Snippets extension", ->
           expect(editor.getCursorScreenPosition()).toEqual [0, 4]
 
           simulateTabKeyEvent()
-          expect(buffer.lineForRow(0)).toBe "t113  var quicksort = function () {"
+          expect(editor.lineTextForBufferRow(0)).toBe "t113  var quicksort = function () {"
           expect(editor.getCursorScreenPosition()).toEqual [0, 6]
 
           editor.undo()
@@ -314,7 +313,7 @@ describe "Snippets extension", ->
           expect(editor.getCursorScreenPosition()).toEqual [0, 3]
 
           simulateTabKeyEvent()
-          expect(buffer.lineForRow(0)).toBe "this is another testvar quicksort = function () {"
+          expect(editor.lineTextForBufferRow(0)).toBe "this is another testvar quicksort = function () {"
           expect(editor.getCursorScreenPosition()).toEqual [0, 20]
 
           editor.undo()
@@ -324,7 +323,7 @@ describe "Snippets extension", ->
           expect(editor.getCursorScreenPosition()).toEqual [0, 3]
 
           simulateTabKeyEvent()
-          expect(buffer.lineForRow(0)).toBe "@this is a testvar quicksort = function () {"
+          expect(editor.lineTextForBufferRow(0)).toBe "@this is a testvar quicksort = function () {"
           expect(editor.getCursorScreenPosition()).toEqual [0, 15]
 
     describe "when the letters preceding the cursor don't match a snippet", ->
@@ -333,7 +332,7 @@ describe "Snippets extension", ->
         expect(editor.getCursorScreenPosition()).toEqual [0, 4]
 
         simulateTabKeyEvent()
-        expect(buffer.lineForRow(0)).toBe "xxte  var quicksort = function () {"
+        expect(editor.lineTextForBufferRow(0)).toBe "xxte  var quicksort = function () {"
         expect(editor.getCursorScreenPosition()).toEqual [0, 6]
 
     describe "when text is selected", ->
@@ -342,7 +341,7 @@ describe "Snippets extension", ->
         editor.setSelectedBufferRange([[0, 0], [0, 2]])
 
         simulateTabKeyEvent()
-        expect(buffer.lineForRow(0)).toBe "  t1var quicksort = function () {"
+        expect(editor.lineTextForBufferRow(0)).toBe "  t1var quicksort = function () {"
         expect(editor.getSelectedBufferRange()).toEqual [[0, 0], [0, 4]]
 
     describe "when a previous snippet expansion has just been undone", ->
@@ -350,11 +349,11 @@ describe "Snippets extension", ->
         editor.insertText 't6\n'
         editor.setCursorBufferPosition [0, 2]
         simulateTabKeyEvent()
-        expect(buffer.lineForRow(0)).toBe "first line"
+        expect(editor.lineTextForBufferRow(0)).toBe "first line"
         editor.undo()
-        expect(buffer.lineForRow(0)).toBe "t6"
+        expect(editor.lineTextForBufferRow(0)).toBe "t6"
         simulateTabKeyEvent()
-        expect(buffer.lineForRow(0)).toBe "first line"
+        expect(editor.lineTextForBufferRow(0)).toBe "first line"
 
     describe "when the prefix contains non-word characters", ->
       it "selects the non-word characters as part of the prefix", ->
@@ -362,14 +361,14 @@ describe "Snippets extension", ->
         expect(editor.getCursorScreenPosition()).toEqual [0, 7]
 
         simulateTabKeyEvent()
-        expect(buffer.lineForRow(0)).toBe "@unique seevar quicksort = function () {"
+        expect(editor.lineTextForBufferRow(0)).toBe "@unique seevar quicksort = function () {"
         expect(editor.getCursorScreenPosition()).toEqual [0, 11]
 
         editor.setCursorBufferPosition [10, 0]
         editor.insertText("'@unique")
 
         simulateTabKeyEvent()
-        expect(buffer.lineForRow(10)).toBe "'@unique see"
+        expect(editor.lineTextForBufferRow(10)).toBe "'@unique see"
         expect(editor.getCursorScreenPosition()).toEqual [10, 12]
 
       it "does not select the whitespace before the prefix", ->
@@ -377,7 +376,7 @@ describe "Snippets extension", ->
         expect(editor.getCursorScreenPosition()).toEqual [0, 10]
 
         simulateTabKeyEvent()
-        expect(buffer.lineForRow(0)).toBe "a; @unique seevar quicksort = function () {"
+        expect(editor.lineTextForBufferRow(0)).toBe "a; @unique seevar quicksort = function () {"
         expect(editor.getCursorScreenPosition()).toEqual [0, 14]
 
     describe "when snippet contains tabstops with or without placeholder", ->
@@ -386,8 +385,8 @@ describe "Snippets extension", ->
         editor.setCursorScreenPosition([0, 0])
         editor.insertText('t8')
         simulateTabKeyEvent()
-        expect(buffer.lineForRow(0)).toBe "with placeholder test"
-        expect(buffer.lineForRow(1)).toBe "without placeholder var quicksort = function () {"
+        expect(editor.lineTextForBufferRow(0)).toBe "with placeholder test"
+        expect(editor.lineTextForBufferRow(1)).toBe "without placeholder var quicksort = function () {"
         expect(editor.getMarkerCount()).toBe 3
 
         expect(editor.getSelectedBufferRange()).toEqual [[0, 17], [0, 21]]
@@ -400,11 +399,11 @@ describe "Snippets extension", ->
         editor.setCursorScreenPosition([0, 0])
         editor.insertText('t9')
         simulateTabKeyEvent()
-        expect(buffer.lineForRow(0)).toBe "with placeholder test"
-        expect(buffer.lineForRow(1)).toBe "without placeholder var quicksort = function () {"
+        expect(editor.lineTextForBufferRow(0)).toBe "with placeholder test"
+        expect(editor.lineTextForBufferRow(1)).toBe "without placeholder var quicksort = function () {"
         editor.insertText('hello')
-        expect(buffer.lineForRow(0)).toBe "with placeholder hello"
-        expect(buffer.lineForRow(1)).toBe "without placeholder hellovar quicksort = function () {"
+        expect(editor.lineTextForBufferRow(0)).toBe "with placeholder hello"
+        expect(editor.lineTextForBufferRow(1)).toBe "without placeholder hellovar quicksort = function () {"
 
     describe "when the snippet contains tab stops with an index >= 10", ->
       it "parses and orders the indices correctly", ->
@@ -427,16 +426,16 @@ describe "Snippets extension", ->
           editor.addCursorAtBufferPosition([0, 2])
           simulateTabKeyEvent()
 
-          expect(buffer.lineForRow(0)).toBe "with placeholder test"
-          expect(buffer.lineForRow(1)).toBe "without placeholder var quicksort = function () {"
-          expect(buffer.lineForRow(13)).toBe "}; with placeholder test"
-          expect(buffer.lineForRow(14)).toBe "without placeholder "
+          expect(editor.lineTextForBufferRow(0)).toBe "with placeholder test"
+          expect(editor.lineTextForBufferRow(1)).toBe "without placeholder var quicksort = function () {"
+          expect(editor.lineTextForBufferRow(13)).toBe "}; with placeholder test"
+          expect(editor.lineTextForBufferRow(14)).toBe "without placeholder "
 
           editor.insertText('hello')
-          expect(buffer.lineForRow(0)).toBe "with placeholder hello"
-          expect(buffer.lineForRow(1)).toBe "without placeholder hellovar quicksort = function () {"
-          expect(buffer.lineForRow(13)).toBe "}; with placeholder hello"
-          expect(buffer.lineForRow(14)).toBe "without placeholder hello"
+          expect(editor.lineTextForBufferRow(0)).toBe "with placeholder hello"
+          expect(editor.lineTextForBufferRow(1)).toBe "without placeholder hellovar quicksort = function () {"
+          expect(editor.lineTextForBufferRow(13)).toBe "}; with placeholder hello"
+          expect(editor.lineTextForBufferRow(14)).toBe "without placeholder hello"
 
         describe "when there are many tabstops", ->
           it "moves the cursors between the tab stops for their corresponding snippet when tab and shift-tab are pressed", ->
@@ -489,8 +488,8 @@ describe "Snippets extension", ->
           editor.insertText(' t8')
           editor.addCursorAtBufferPosition([0, 2])
           simulateTabKeyEvent()
-          expect(buffer.lineForRow(0)).toBe "t9  var quicksort = function () {"
-          expect(buffer.lineForRow(12)).toBe "}; t8 "
+          expect(editor.lineTextForBufferRow(0)).toBe "t9  var quicksort = function () {"
+          expect(editor.lineTextForBufferRow(12)).toBe "}; t8 "
 
       describe "when a snippet is triggered within an existing snippet expansion", ->
         it "ignores the snippet expansion and goes to the next tab stop", ->
@@ -512,9 +511,9 @@ describe "Snippets extension", ->
           expect(cursors[0].selection.isEmpty()).toBe true
           expect(cursors[1].selection.isEmpty()).toBe true
           expect(cursors[2].selection.isEmpty()).toBe true
-          expect(buffer.lineForRow(0)).toBe "one t1 threevar quicksort = function () {"
-          expect(buffer.lineForRow(7)).toBe "    }one t1 three"
-          expect(buffer.lineForRow(12)).toBe "};one t1 three"
+          expect(editor.lineTextForBufferRow(0)).toBe "one t1 threevar quicksort = function () {"
+          expect(editor.lineTextForBufferRow(7)).toBe "    }one t1 three"
+          expect(editor.lineTextForBufferRow(12)).toBe "};one t1 three"
 
   describe "snippet loading", ->
     [configDirPath, packageWithSnippets, packageWithBrokenSnippets] = []
@@ -708,7 +707,7 @@ describe "Snippets extension", ->
       editor.setSelectedBufferRange([[0, 4], [0, 13]])
       Snippets.insert("hello ${1:world}", editor)
 
-      expect(buffer.lineForRow(0)).toBe "var hello world = function () {"
+      expect(editor.lineTextForBufferRow(0)).toBe "var hello world = function () {"
       expect(editor.getMarkerCount()).toBe 2
       expect(editor.getSelectedBufferRange()).toEqual [[0, 10], [0, 15]]
 
@@ -743,4 +742,4 @@ describe "Snippets extension", ->
       atom.commands.dispatch availableSnippetsView.filterEditorView[0], 'core:confirm'
       expect(editor.getCursorScreenPosition()).toEqual [0, 18]
       expect(editor.getSelectedText()).toBe 'Test pass you will'
-      expect(buffer.lineForRow(0)).toBe 'Test pass you will, young var quicksort = function () {'
+      expect(editor.lineTextForBufferRow(0)).toBe 'Test pass you will, young var quicksort = function () {'
