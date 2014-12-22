@@ -1,9 +1,5 @@
 path = require 'path'
-
-fs = require 'fs-plus'
 temp = require('temp').track()
-
-Snippet = require '../lib/snippet'
 Snippets = require '../lib/snippets'
 SnippetsAvailable = require '../lib/snippets-available'
 
@@ -515,101 +511,6 @@ describe "Snippets extension", ->
           expect(editor.lineTextForBufferRow(7)).toBe "    }one t1 three"
           expect(editor.lineTextForBufferRow(12)).toBe "};one t1 three"
 
-  describe "snippet loading", ->
-    [configDirPath, packageWithSnippets, packageWithBrokenSnippets] = []
-
-    beforeEach ->
-      packageWithBrokenSnippets = atom.packages.loadPackage(path.join(__dirname, 'fixtures', 'package-with-broken-snippets'))
-      packageWithSnippets =  atom.packages.loadPackage(path.join(__dirname, 'fixtures', 'package-with-snippets'))
-      configDirPath = temp.mkdirSync('atom-config-dir-')
-
-      jasmine.unspy(window, "setTimeout")
-      jasmine.unspy(snippets, 'loadAll')
-      spyOn(atom.packages, 'getLoadedPackages').andReturn [packageWithSnippets, packageWithBrokenSnippets]
-      spyOn(atom, 'getConfigDirPath').andReturn configDirPath
-
-    afterEach ->
-      # Unspy here so other afterEach blocks don't run with this spy active
-      jasmine.unspy(atom.packages, 'getLoadedPackages')
-
-    it "loads non-hidden snippet files from all atom packages with snippets directories, logging a warning if a file can't be parsed", ->
-      spyOn(console, 'warn')
-      snippets.loaded = false
-      snippets.loadAll()
-
-      waitsFor "all snippets to load", 3000, -> snippets.loaded
-
-      runs ->
-        expect(atom.config.get(['.test'], 'snippets.test')?.constructor).toBe Snippet
-
-        # warn about junk-file, but don't even try to parse a hidden file
-        expect(console.warn).toHaveBeenCalled()
-        expect(console.warn.calls.length).toBe 1
-
-    it "loads ~/.atom/snippets.json when it exists", ->
-      fs.writeFileSync path.join(configDirPath, 'snippets.json'), """
-        {
-          ".foo": {
-            "foo snippet": {
-              "prefix": "foo",
-              "body": "bar"
-            }
-          }
-        }
-      """
-      spyOn(console, 'warn')
-      snippets.loaded = false
-      snippets.loadAll()
-
-      waitsFor "all snippets to load", 30000, -> snippets.loaded
-
-      runs ->
-        expect(atom.config.get(['.foo'], 'snippets.foo')?.constructor).toBe Snippet
-
-    it "loads ~/.atom/snippets.cson when it exists", ->
-      fs.writeFileSync path.join(configDirPath, 'snippets.cson'), """
-        ".foo":
-          "foo snippet":
-            "prefix": "foo"
-            "body": "bar"
-      """
-      spyOn(console, 'warn')
-      snippets.loaded = false
-      snippets.loadAll()
-
-      waitsFor "all snippets to load", 30000, -> snippets.loaded
-
-      runs ->
-        expect(atom.config.get(['.foo'], 'snippets.foo')?.constructor).toBe Snippet
-
-    it "notifies the user when the file cannot be loaded", ->
-      spyOn(atom.notifications, 'addError') if atom.notifications?
-
-      fs.writeFileSync path.join(configDirPath, 'snippets.cson'), """
-        ".junk":::
-      """
-      spyOn(console, 'warn')
-      snippets.loaded = false
-      snippets.loadAll()
-
-      waitsFor "all snippets to load", 30000, -> snippets.loaded
-
-      runs ->
-        # warn about junk-file, but don't even try to parse a hidden file
-        expect(console.warn).toHaveBeenCalled()
-        expect(atom.notifications.addError).toHaveBeenCalled() if atom.notifications?
-
-    it "loads the bundled snippet template snippets", ->
-      spyOn(console, 'warn')
-      snippets.loaded = false
-      snippets.loadAll()
-
-      waitsFor "all snippets to load", 30000, -> snippets.loaded
-
-      runs ->
-        expect(atom.config.get(['.source.json'], 'snippets.snip')?.constructor).toBe Snippet
-        expect(atom.config.get(['.source.coffee'], 'snippets.snip')?.constructor).toBe Snippet
-
   describe "snippet body parser", ->
     it "breaks a snippet body into lines, with each line containing tab stops at the appropriate position", ->
       bodyTree = snippets.getBodyParser().parse """
@@ -659,48 +560,6 @@ describe "Snippets extension", ->
 
       runs ->
         expect(atom.workspace.getActiveTextEditor().getUri()).toBe path.join(configDirPath, 'snippets.cson')
-
-  describe "when ~/.atom/snippets.cson changes", ->
-    watchDisposable = null
-
-    afterEach ->
-      watchDisposable?.dispose()
-
-    it "reloads the snippets", ->
-      jasmine.unspy(window, "setTimeout")
-      jasmine.unspy(snippets, 'loadAll')
-      spyOn(snippets, 'loadPackageSnippets').andCallFake ->
-        process.nextTick -> snippets.doneLoading()
-      configDirPath = temp.mkdirSync('atom-config-dir-')
-      spyOn(atom, 'getConfigDirPath').andReturn configDirPath
-      snippetsPath = path.join(configDirPath, 'snippets.cson')
-      fs.writeFileSync(snippetsPath, '')
-
-      snippets.loaded = false
-
-      waitsFor (done) ->
-        snippets.watchUserSnippets (disposable) ->
-          watchDisposable = disposable
-          done()
-
-      runs ->
-        expect(atom.config.get(['.test'], 'snippets.test')).toBeUndefined()
-        fs.writeFileSync snippetsPath, """
-          ".test":
-            "Test Snippet":
-              prefix: "test"
-              body: "testing 123"
-        """
-
-      waitsFor "snippets to be added", ->
-        atom.config.get(['.test'], 'snippets.test')?
-
-      runs ->
-        expect(atom.config.get(['.test'], 'snippets.test')?.constructor).toBe Snippet
-        fs.removeSync(snippetsPath)
-
-      waitsFor "snippets to be removed", ->
-        atom.config.get(['.test'], 'snippets.test')?
 
   describe "snippet insertion API", ->
     it "will automatically parse snippet definition and replace selection", ->
