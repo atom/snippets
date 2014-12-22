@@ -1,7 +1,6 @@
 path = require 'path'
 temp = require('temp').track()
 Snippets = require '../lib/snippets'
-SnippetsAvailable = require '../lib/snippets-available'
 
 describe "Snippets extension", ->
   [editorElement, editor, snippets] = []
@@ -533,7 +532,7 @@ describe "Snippets extension", ->
       expect(editor.getMarkerCount()).toBe 2
       expect(editor.getSelectedBufferRange()).toEqual [[0, 10], [0, 15]]
 
-  describe "snippet available selector", ->
+  describe "when the 'snippets:available' command is triggered", ->
     availableSnippetsView = null
 
     beforeEach ->
@@ -547,10 +546,12 @@ describe "Snippets extension", ->
             prefix: "chal"
             body: "$1: ${2:To pass this challenge}"
 
-      availableSnippetsView = new SnippetsAvailable(snippets)
-      availableSnippetsView.toggle(editor)
+      delete snippets.availableSnippetsView
 
-    it "will draw a SelectListView to select a snippet from the snippets passed to the constructor", ->
+      atom.commands.dispatch(editorElement, "snippets:available")
+      availableSnippetsView = atom.workspace.getModalPanels()[0].getItem()
+
+    it "renders a select list of all available snippets", ->
       expect(availableSnippetsView.getSelectedItem().prefix).toBe 'test'
       expect(availableSnippetsView.getSelectedItem().name).toBe 'test'
       expect(availableSnippetsView.getSelectedItem().bodyText).toBe '${1:Test pass you will}, young '
@@ -560,7 +561,7 @@ describe "Snippets extension", ->
       expect(availableSnippetsView.getSelectedItem().name).toBe 'challenge'
       expect(availableSnippetsView.getSelectedItem().bodyText).toBe '$1: ${2:To pass this challenge}'
 
-    it "will write the selected snippet to the editor as snippet", ->
+    it "writes the selected snippet to the editor as snippet", ->
       atom.commands.dispatch availableSnippetsView.filterEditorView[0], 'core:confirm'
       expect(editor.getCursorScreenPosition()).toEqual [0, 18]
       expect(editor.getSelectedText()).toBe 'Test pass you will'
