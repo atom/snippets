@@ -8,7 +8,7 @@ Snippets = require '../lib/snippets'
 SnippetsAvailable = require '../lib/snippets-available'
 
 describe "Snippets extension", ->
-  [buffer, editorElement, editor, snippets] = []
+  [editorElement, editor, snippets] = []
 
   simulateTabKeyEvent = ({shiftKey}={}) ->
     event = keydownEvent('tab', {shiftKey, target: editorElement})
