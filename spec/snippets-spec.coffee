@@ -3,7 +3,7 @@ temp = require('temp').track()
 Snippets = require '../lib/snippets'
 
 describe "Snippets extension", ->
-  [editorElement, editor, snippets] = []
+  [editorElement, editor] = []
 
   simulateTabKeyEvent = ({shiftKey}={}) ->
     event = keydownEvent('tab', {shiftKey, target: editorElement})
@@ -19,8 +19,7 @@ describe "Snippets extension", ->
       atom.packages.activatePackage('language-javascript')
 
     waitsForPromise ->
-      atom.packages.activatePackage("snippets").then ({mainModule}) ->
-        snippets = mainModule
+      atom.packages.activatePackage("snippets")
 
     runs ->
       editor = atom.workspace.getActiveTextEditor()
@@ -28,7 +27,7 @@ describe "Snippets extension", ->
 
   describe "when 'tab' is triggered on the editor", ->
     beforeEach ->
-      snippets.add __filename,
+      Snippets.add __filename,
         ".source.js":
           "without tab stops":
             prefix: "t1"
@@ -536,7 +535,7 @@ describe "Snippets extension", ->
     availableSnippetsView = null
 
     beforeEach ->
-      snippets.add __filename,
+      Snippets.add __filename,
         ".source.js":
           "test":
             prefix: "test"
@@ -546,7 +545,7 @@ describe "Snippets extension", ->
             prefix: "chal"
             body: "$1: ${2:To pass this challenge}"
 
-      delete snippets.availableSnippetsView
+      delete Snippets.availableSnippetsView
 
       atom.commands.dispatch(editorElement, "snippets:available")
       availableSnippetsView = atom.workspace.getModalPanels()[0].getItem()
