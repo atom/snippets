@@ -511,43 +511,6 @@ describe "Snippets extension", ->
           expect(editor.lineTextForBufferRow(7)).toBe "    }one t1 three"
           expect(editor.lineTextForBufferRow(12)).toBe "};one t1 three"
 
-  describe "snippet body parser", ->
-    it "breaks a snippet body into lines, with each line containing tab stops at the appropriate position", ->
-      bodyTree = snippets.getBodyParser().parse """
-        the quick brown $1fox ${2:jumped ${3:over}
-        }the ${4:lazy} dog
-      """
-
-      expect(bodyTree).toEqual [
-        "the quick brown ",
-        { index: 1, content: [] },
-        "fox ",
-        {
-          index: 2,
-          content: [
-            "jumped ",
-            { index: 3, content: ["over"]},
-            "\n"
-          ],
-        }
-        "the "
-        { index: 4, content: ["lazy"] },
-        " dog"
-      ]
-
-    it "removes interpolated variables in placeholder text (we don't currently support it)", ->
-      bodyTree = snippets.getBodyParser().parse """
-        module ${1:ActiveRecord::${TM_FILENAME/(?:\\A|_)([A-Za-z0-9]+)(?:\\.rb)?/(?2::\\u$1)/g}}
-      """
-
-      expect(bodyTree).toEqual [
-        "module ",
-        {
-          "index": 1,
-          "content": ["ActiveRecord::", ""]
-        }
-      ]
-
   describe "when atom://.atom/snippets is opened", ->
     it "opens ~/.atom/snippets.cson", ->
       atom.workspace.destroyActivePaneItem()
