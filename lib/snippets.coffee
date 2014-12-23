@@ -191,7 +191,7 @@ module.exports =
     longestPrefixMatch
 
   getSnippets: (editor) ->
-    atom.config.get(editor.getLastCursor().getScopeDescriptor(), 'snippets')
+    atom.config.get('snippets', scope: editor.getLastCursor().getScopeDescriptor())
 
   snippetToExpandUnderCursor: (editor) ->
     return false unless editor.getLastSelection().isEmpty()
