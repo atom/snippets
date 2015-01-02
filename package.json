@@ -11,12 +11,12 @@
   "dependencies": {
     "async": "~0.2.6",
     "atom-space-pen-views": "^0.20.0",
-    "fs-plus": "2.x",
+    "fs-plus": "^2.0.0",
     "loophole": "^0.1.0",
     "pathwatcher": "^2.0",
     "pegjs": "~0.8.0",
-    "season": "1.x",
+    "season": "^1.0.0",
     "temp": "~0.8.0",
-    "underscore-plus": "1.x"
+    "underscore-plus": "^1.0.0"
   }
 }
