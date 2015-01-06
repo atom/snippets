@@ -1,10 +1,10 @@
 # it's critical that these bindings be loaded after those snippets-1 so they
 # are later in the cascade, hence breaking the keymap into 2 files
 
-'.editor:not(.mini)':
+'atom-text-editor:not([mini])':
   'tab': 'snippets:next-tab-stop'
   'shift-tab': 'snippets:previous-tab-stop'
   'alt-shift-s': 'snippets:available'
 
-'.available-snippets .mini.editor input':
+'.available-snippets atom-text-editor[mini]':
   'alt-shift-s': 'snippets:available'
