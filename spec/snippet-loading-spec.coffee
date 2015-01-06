@@ -35,25 +35,25 @@ describe "Snippet Loading", ->
     activateSnippetsPackage()
 
     runs ->
-      jsonSnippet = atom.config.get(['.source.json'], 'snippets.snip')
+      jsonSnippet = atom.config.get('snippets.snip', scope: ['.source.json'])
       expect(jsonSnippet.name).toBe 'Atom Snippet'
       expect(jsonSnippet.prefix).toBe 'snip'
-      expect(jsonSnippet.body).toContain('"prefix":')
-      expect(jsonSnippet.body).toContain('"body":')
+      expect(jsonSnippet.body).toContain '"prefix":'
+      expect(jsonSnippet.body).toContain '"body":'
       expect(jsonSnippet.tabStops.length).toBeGreaterThan(0)
 
-      csonSnippet = atom.config.get(['.source.coffee'], 'snippets.snip')
+      csonSnippet = atom.config.get('snippets.snip', scope: ['.source.coffee'])
       expect(csonSnippet.name).toBe 'Atom Snippet'
       expect(csonSnippet.prefix).toBe 'snip'
-      expect(csonSnippet.body).toContain ("'prefix':")
-      expect(csonSnippet.body).toContain ("'body':")
+      expect(csonSnippet.body).toContain "'prefix':"
+      expect(csonSnippet.body).toContain "'body':"
       expect(csonSnippet.tabStops.length).toBeGreaterThan(0)
 
   it "loads non-hidden snippet files from atom packages with snippets directories", ->
     activateSnippetsPackage()
 
     runs ->
-      snippet = atom.config.get(['.test'], 'snippets.test')
+      snippet = atom.config.get('snippets.test', scope: ['.test'])
       expect(snippet.prefix).toBe 'test'
       expect(snippet.body).toBe 'testing 123'
 
@@ -80,7 +80,7 @@ describe "Snippet Loading", ->
       activateSnippetsPackage()
 
     it "loads the snippets from that file", ->
-      snippet = atom.config.get(['.foo'], 'snippets.foo')
+      snippet = atom.config.get('snippets.foo', scope: ['.foo'])
       expect(snippet.name).toBe 'foo snippet'
       expect(snippet.prefix).toBe "foo"
       expect(snippet.body).toBe "bar1"
@@ -99,13 +99,13 @@ describe "Snippet Loading", ->
         """
 
         waitsFor "snippets to be changed", ->
-          atom.config.get(['.foo'], 'snippets.foo').body is 'bar2'
+          atom.config.get('snippets.foo', scope: ['.foo'])?.body is 'bar2'
 
         runs ->
           fs.writeFileSync path.join(configDirPath, 'snippets.json'), ""
 
         waitsFor "snippets to be removed", ->
-          not atom.config.get(['.foo'], 'snippets.foo')?
+          not atom.config.get('snippets.foo', scope: ['.foo'])?
 
   describe "when ~/.atom/snippets.cson exists", ->
     beforeEach ->
@@ -118,7 +118,7 @@ describe "Snippet Loading", ->
       activateSnippetsPackage()
 
     it "loads the snippets from that file", ->
-      snippet = atom.config.get(['.foo'], 'snippets.foo')
+      snippet = atom.config.get('snippets.foo', scope: ['.foo'])
       expect(snippet.name).toBe 'foo snippet'
       expect(snippet.prefix).toBe "foo"
       expect(snippet.body).toBe "bar1"
@@ -133,13 +133,13 @@ describe "Snippet Loading", ->
         """
 
         waitsFor "snippets to be changed", ->
-          atom.config.get(['.foo'], 'snippets.foo').body is 'bar2'
+          atom.config.get('snippets.foo', scope: ['.foo']).body is 'bar2'
 
         runs ->
           fs.writeFileSync path.join(configDirPath, 'snippets.cson'), ""
 
         waitsFor "snippets to be removed", ->
-          not atom.config.get(['.foo'], 'snippets.foo')?
+          not atom.config.get('snippets.foo', scope: ['.foo'])?
 
   it "notifies the user when the user snippets file cannot be loaded", ->
     fs.writeFileSync path.join(configDirPath, 'snippets.cson'), """

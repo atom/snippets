@@ -94,7 +94,7 @@ module.exports =
         userSnippetsFile = new File(userSnippetsPath)
         userSnippetsFile.on 'moved removed contents-changed', =>
           atom.config.transact =>
-            atom.config.scopedSettingsStore.removePropertiesForSource(userSnippetsPath)
+            atom.config.unset(null, source: userSnippetsPath)
             @loadSnippetsFile userSnippetsPath, (result) =>
               @add(userSnippetsPath, result)
         callback(new Disposable -> userSnippetsFile.off())
@@ -142,7 +142,6 @@ module.exports =
       callback(object)
 
   add: (filePath, snippetsBySelector) ->
-    disposable = new CompositeDisposable
     for selector, snippetsByName of snippetsBySelector
       snippetsByPrefix = {}
       for name, attributes of snippetsByName
@@ -153,8 +152,7 @@ module.exports =
         bodyTree ?= @getBodyParser().parse(body)
         snippet = new Snippet({name, prefix, bodyTree, bodyText: body})
         snippetsByPrefix[snippet.prefix] = snippet
-      disposable.add atom.config.addScopedSettings(filePath, selector, snippets: snippetsByPrefix)
-    disposable
+      atom.config.set('snippets', snippetsByPrefix, source: filePath, scopeSelector: selector)
 
   getBodyParser: ->
     @bodyParser ?= require './snippet-body-parser'
@@ -169,6 +167,7 @@ module.exports =
   # Get a RegExp of all the characters used in the snippet prefixes
   wordRegexForSnippets: (snippets) ->
     prefixes = {}
+
     for prefix of snippets
       prefixes[character] = true for character in prefix
     prefixCharacters = Object.keys(prefixes).join('')
@@ -191,7 +190,7 @@ module.exports =
     longestPrefixMatch
 
   getSnippets: (editor) ->
-    atom.config.get(editor.getLastCursor().getScopeDescriptor(), 'snippets')
+    atom.config.get('snippets', scope: editor.getLastCursor().getScopeDescriptor())
 
   snippetToExpandUnderCursor: (editor) ->
     return false unless editor.getLastSelection().isEmpty()
