@@ -1,4 +1,4 @@
-BodyParser = require '../lib/snippet-body-parser.coffee'
+BodyParser = require '../lib/snippet-body-parser'
 
 describe "Snippet Body Parser", ->
   it "breaks a snippet body into lines, with each line containing tab stops at the appropriate position", ->
