@@ -1,5 +1,5 @@
 path = require 'path'
-{Disposable, CompositeDisposable} = require 'atom'
+{Emitter, Disposable, CompositeDisposable} = require 'atom'
 _ = require 'underscore-plus'
 async = require 'async'
 CSON = require 'season'
@@ -52,6 +52,8 @@ module.exports =
       @clearExpansions(editor)
 
   deactivate: ->
+    @emitter.dispose()
+    @emitter = null
     @editorSnippetExpansions?.clear()
     atom.config.transact => @subscriptions.dispose()
 
@@ -110,6 +112,13 @@ module.exports =
   doneLoading: ->
     atom.packages.emit 'snippets:loaded'
     @loaded = true
+    @getEmitter().emit 'did-load-snippets'
+
+  onDidLoadSnippets: (callback) ->
+    @getEmitter().on 'did-load-snippets', callback
+
+  getEmitter: ->
+    @emitter ?= new Emitter
 
   loadSnippetsDirectory: (snippetsDirPath, callback) ->
     fs.isDirectory snippetsDirPath, (isDirectory) =>

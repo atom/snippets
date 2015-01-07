@@ -65,6 +65,17 @@ describe "Snippet Loading", ->
       expect(console.warn.calls.length).toBe 1
       expect(console.warn.mostRecentCall.args[0]).toMatch(/Error reading.*package-with-broken-snippets/)
 
+  describe "::onDidLoadSnippets(callback)", ->
+    it "invokes listeners when all snippets are loaded", ->
+      loadedCallback = null
+
+      waitsFor "package to activate", (done) ->
+        atom.packages.activatePackage("snippets").then ({mainModule}) ->
+          mainModule.onDidLoadSnippets(loadedCallback = jasmine.createSpy('onDidLoadSnippets callback'))
+          done()
+
+      waitsFor "onDidLoad callback to be called", -> loadedCallback.callCount > 0
+
   describe "when ~/.atom/snippets.json exists", ->
     beforeEach ->
       fs.writeFileSync path.join(configDirPath, 'snippets.json'), """
