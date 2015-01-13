@@ -52,7 +52,7 @@ module.exports =
       @clearExpansions(editor)
 
   deactivate: ->
-    @emitter.dispose()
+    @emitter?.dispose()
     @emitter = null
     @editorSnippetExpansions?.clear()
     atom.config.transact => @subscriptions.dispose()
