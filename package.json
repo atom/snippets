@@ -15,7 +15,7 @@
     "loophole": "^0.1.0",
     "pathwatcher": "^2.0",
     "pegjs": "~0.8.0",
-    "season": "^5.0.2",
+    "season": "^5.0.4",
     "temp": "~0.8.0",
     "underscore-plus": "^1.0.0"
   }
