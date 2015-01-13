@@ -147,7 +147,7 @@ module.exports =
     CSON.readFile filePath, (error, object={}) =>
       if error?
         console.warn "Error reading snippets file '#{filePath}': #{error.stack ? error}"
-        atom.notifications?.addError("Failed to load snippets from '#{filePath}'", {detail: error.stack, closable: true})
+        atom.notifications?.addError("Failed to load snippets from '#{filePath}'", {detail: error.message, dismissable: true})
       callback(object)
 
   add: (filePath, snippetsBySelector) ->
