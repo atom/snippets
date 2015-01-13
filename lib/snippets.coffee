@@ -94,14 +94,29 @@ module.exports =
     fs.stat userSnippetsPath, (error, stat) =>
       if stat?.isFile()
         userSnippetsFile = new File(userSnippetsPath)
-        userSnippetsFile.on 'moved removed contents-changed', =>
-          atom.config.transact =>
-            atom.config.unset(null, source: userSnippetsPath)
-            @loadSnippetsFile userSnippetsPath, (result) =>
-              @add(userSnippetsPath, result)
+        try
+          userSnippetsFile.on 'moved removed contents-changed', => @handleUserSnippetsDidChange()
+        catch e
+          message = """
+            Unable to watch path: `snippets.cson`. Make sure you have permissions
+            to the `~/.atom` directory and `#{userSnippetsPath}`.
+
+            On linux there are currently problems with watch sizes. See
+            [this document][watches] for more info.
+            [watches]:https://github.com/atom/atom/blob/master/docs/build-instructions/linux.md#typeerror-unable-to-watch-path
+          """
+          atom.notifications.addError(message, {dismissable: true})
+
         callback(new Disposable -> userSnippetsFile.off())
       else
         callback(new Disposable ->)
+
+  handleUserSnippetsDidChange: ->
+    userSnippetsPath = @getUserSnippetsPath()
+    atom.config.transact =>
+      atom.config.unset(null, source: userSnippetsPath)
+      @loadSnippetsFile userSnippetsPath, (result) =>
+        @add(userSnippetsPath, result)
 
   loadPackageSnippets: (callback) ->
     packages = atom.packages.getLoadedPackages()
