@@ -5,9 +5,9 @@ Snippets = require '../lib/snippets'
 describe "Snippets extension", ->
   [editorElement, editor] = []
 
-  simulateTabKeyEvent = ({shiftKey}={}) ->
-    event = keydownEvent('tab', {shiftKey, target: editorElement})
-    atom.keymaps.handleKeyboardEvent(event.originalEvent)
+  simulateTabKeyEvent = ({shift}={}) ->
+    event = atom.keymaps.constructor.buildKeydownEvent('tab', {shift, target: editorElement})
+    atom.keymaps.handleKeyboardEvent(event)
 
   beforeEach ->
     spyOn(Snippets, 'loadAll')
@@ -157,14 +157,14 @@ describe "Snippets extension", ->
           expect(editor.getSelectedBufferRange()).toEqual [[2, 40], [2, 40]]
 
           # tab backwards
-          simulateTabKeyEvent(shiftKey: true)
+          simulateTabKeyEvent(shift: true)
           expect(editor.getSelectedBufferRange()).toEqual [[2, 14], [2, 17]] # should highlight text typed at tab stop
 
-          simulateTabKeyEvent(shiftKey: true)
+          simulateTabKeyEvent(shift: true)
           expect(editor.getSelectedBufferRange()).toEqual [[3, 15], [3, 15]]
 
           # shift-tab on first tab-stop does nothing
-          simulateTabKeyEvent(shiftKey: true)
+          simulateTabKeyEvent(shift: true)
           expect(editor.getCursorScreenPosition()).toEqual [3, 15]
 
           # tab through all tab stops, then tab on last stop to terminate snippet
@@ -213,7 +213,7 @@ describe "Snippets extension", ->
             simulateTabKeyEvent()
 
             editor.moveRight()
-            simulateTabKeyEvent(shiftKey: true)
+            simulateTabKeyEvent(shift: true)
             expect(editor.getCursorBufferPosition()).toEqual [4, 15]
 
         describe "when the cursor is moved within the bounds of the current tab stop", ->
@@ -520,7 +520,7 @@ describe "Snippets extension", ->
         atom.workspace.getActiveTextEditor()?
 
       runs ->
-        expect(atom.workspace.getActiveTextEditor().getUri()).toBe path.join(configDirPath, 'snippets.cson')
+        expect(atom.workspace.getActiveTextEditor().getURI()).toBe path.join(configDirPath, 'snippets.cson')
 
   describe "snippet insertion API", ->
     it "will automatically parse snippet definition and replace selection", ->
