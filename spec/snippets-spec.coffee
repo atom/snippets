@@ -320,6 +320,12 @@ describe "Snippets extension", ->
           expect(editor.lineTextForBufferRow(0)).toBe "@this is a testvar quicksort = function () {"
           expect(editor.getCursorScreenPosition()).toEqual [0, 15]
 
+    describe "when the word preceding the cursor ends with a snippet prefix", ->
+      it "inserts a tab as normal", ->
+        editor.insertText("dat1")
+        simulateTabKeyEvent()
+        expect(editor.lineTextForBufferRow(0)).toBe "dat1  var quicksort = function () {"
+
     describe "when the letters preceding the cursor don't match a snippet", ->
       it "inserts a tab as normal", ->
         editor.insertText("xxte")
