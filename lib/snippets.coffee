@@ -186,7 +186,9 @@ module.exports =
     cursors = editor.getCursors()
     for cursor in cursors
       prefixStart = cursor.getBeginningOfCurrentWordBufferPosition({wordRegex})
-      editor.getTextInRange([prefixStart, cursor.getBufferPosition()])
+      wordStart = cursor.getBeginningOfCurrentWordBufferPosition()
+      if prefixStart.isLessThanOrEqual(wordStart)
+        editor.getTextInRange([prefixStart, cursor.getBufferPosition()])
 
   # Get a RegExp of all the characters used in the snippet prefixes
   wordRegexForSnippets: (snippets) ->
