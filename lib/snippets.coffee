@@ -181,14 +181,29 @@ module.exports =
   getBodyParser: ->
     @bodyParser ?= require './snippet-body-parser'
 
+  # Get an {Object} with these keys:
+  # * `snippetPrefix`: the possible snippet prefix text preceding the cursor
+  # * `wordPrefix`: the word preceding the cursor
+  #
+  # Returns `null` if the values aren't the same for all cursors
   getPrefixText: (snippets, editor) ->
     wordRegex = @wordRegexForSnippets(snippets)
-    cursors = editor.getCursors()
-    for cursor in cursors
+    [snippetPrefix, wordPrefix] = []
+
+    for cursor in editor.getCursors()
+      position = cursor.getBufferPosition()
+
       prefixStart = cursor.getBeginningOfCurrentWordBufferPosition({wordRegex})
+      cursorSnippetPrefix = editor.getTextInRange([prefixStart, position])
+      return null if snippetPrefix? and cursorSnippetPrefix isnt snippetPrefix
+      snippetPrefix = cursorSnippetPrefix
+
       wordStart = cursor.getBeginningOfCurrentWordBufferPosition()
-      if prefixStart.isLessThanOrEqual(wordStart)
-        editor.getTextInRange([prefixStart, cursor.getBufferPosition()])
+      cursorWordPrefix = editor.getTextInRange([wordStart, position])
+      return null if wordPrefix? and cursorWordPrefix isnt wordPrefix
+      wordPrefix = cursorWordPrefix
+
+    {snippetPrefix, wordPrefix}
 
   # Get a RegExp of all the characters used in the snippet prefixes
   wordRegexForSnippets: (snippets) ->
@@ -201,16 +216,12 @@ module.exports =
 
   # Get the best match snippet for the given prefix text.  This will return
   # the longest match where there is no exact match to the prefix text.
-  snippetForPrefix: (snippets, prefix) ->
+  snippetForPrefix: (snippets, prefix, wordPrefix) ->
     longestPrefixMatch = null
 
     for snippetPrefix, snippet of snippets
-      if snippetPrefix is prefix
-        longestPrefixMatch = snippet
-        break
-      else if _.endsWith(prefix, snippetPrefix)
-        longestPrefixMatch ?= snippet
-        if snippetPrefix.length > longestPrefixMatch.prefix.length
+      if _.endsWith(prefix, snippetPrefix) and wordPrefix.length <= snippetPrefix.length
+        if not longestPrefixMatch? or snippetPrefix.length > longestPrefixMatch.prefix.length
           longestPrefixMatch = snippet
 
     longestPrefixMatch
@@ -223,11 +234,8 @@ module.exports =
     snippets = @getSnippets(editor)
     return false if _.isEmpty(snippets)
 
-    prefix = @getPrefixText(snippets, editor)
-    return false unless prefix and _.uniq(prefix).length is 1
-
-    prefix = prefix[0]
-    @snippetForPrefix(snippets, prefix)
+    if prefixData = @getPrefixText(snippets, editor)
+      @snippetForPrefix(snippets, prefixData.snippetPrefix, prefixData.wordPrefix)
 
   expandSnippetsUnderCursors: (editor) ->
     return false unless snippet = @snippetToExpandUnderCursor(editor)
