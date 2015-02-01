@@ -18,7 +18,7 @@ Snippet files can be either `.json` or `.cson`.
     'body': 'console.log(${1:"crash"});$2'
 ```
 
-The outermost keys are the selectors where this snippets should be active.
+The outermost keys are the selectors where this snippets should be active. If you would want the snippet to be active in python, for example, you would use `'.source.py'`.
 
 The next level of keys are the snippet names.
 
