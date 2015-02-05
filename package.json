@@ -18,5 +18,13 @@
     "season": "^5.0.4",
     "temp": "~0.8.0",
     "underscore-plus": "^1.0.0"
+  },
+  "providedServices": {
+    "snippets": {
+      "description": "Snippets are text shortcuts that can be expanded to their definition.",
+      "versions": {
+        "0.73.0": "provideSnippets"
+      }
+    }
   }
 }

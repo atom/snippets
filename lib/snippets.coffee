@@ -273,9 +273,18 @@ module.exports =
   addExpansion: (editor, snippetExpansion) ->
     @getExpansions(editor).push(snippetExpansion)
 
-  insert: (snippet, editor=atom.workspace.getActiveTextEditor(), cursor=editor.getLastCursor()) ->
+  insert: (snippet, editor = atom.workspace.getActiveTextEditor(), cursor = editor.getLastCursor()) ->
     if typeof snippet is 'string'
       bodyTree = @getBodyParser().parse(snippet)
       snippet = new Snippet({name: '__anonymous', prefix: '', bodyTree, bodyText: snippet})
 
     new SnippetExpansion(snippet, editor, cursor, this)
+
+  provideSnippets: ->
+    isLoaded = -> @loaded
+    snippets = this
+    return s =
+      loaded: isLoaded.bind(snippets)
+      insert: @insert.bind(snippets)
+      getSnippets: @getSnippets.bind(snippets)
+      getPrefixText: @getPrefixText.bind(snippets)
