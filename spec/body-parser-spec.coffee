@@ -48,7 +48,7 @@ describe "Snippet Body Parser", ->
         "index": 1,
         "content": []
       },
-      "escaped $2 \\",
+      " escaped $2 \\",
       {
         "index": 3,
         "content": []
