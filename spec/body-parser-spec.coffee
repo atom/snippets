@@ -36,3 +36,21 @@ describe "Snippet Body Parser", ->
         "content": ["ActiveRecord::", ""]
       }
     ]
+
+  it "skips escaped tabstops", ->
+    bodyTree = BodyParser.parse """
+      snippet $1 escaped \\$2 \\\\$3
+    """
+
+    expect(bodyTree).toEqual [
+      "snippet ",
+      {
+        "index": 1,
+        "content": []
+      },
+      " escaped $2 \\",
+      {
+        "index": 3,
+        "content": []
+      }
+    ]
