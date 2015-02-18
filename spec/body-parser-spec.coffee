@@ -45,12 +45,12 @@ describe "Snippet Body Parser", ->
     expect(bodyTree).toEqual [
       "snippet ",
       {
-        "index": 1,
-        "content": []
+        index: 1,
+        content: []
       },
       " escaped $2 \\",
       {
-        "index": 3,
-        "content": []
+        index: 3,
+        content: []
       }
     ]
