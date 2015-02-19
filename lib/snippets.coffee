@@ -280,10 +280,4 @@ module.exports =
     new SnippetExpansion(snippet, editor, cursor, this)
 
   provideSnippets: ->
-    isLoaded = -> @loaded
-    snippets = this
-    return s =
-      loaded: isLoaded.bind(snippets)
-      insert: @insert.bind(snippets)
-      getSnippets: @getSnippets.bind(snippets)
-      getPrefixText: @getPrefixText.bind(snippets)
+    insert: @insert.bind(this)
