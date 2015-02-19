@@ -23,7 +23,7 @@
     "snippets": {
       "description": "Snippets are text shortcuts that can be expanded to their definition.",
       "versions": {
-        "0.73.0": "provideSnippets"
+        "0.1.0": "provideSnippets"
       }
     }
   }
