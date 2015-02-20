@@ -280,4 +280,5 @@ module.exports =
     new SnippetExpansion(snippet, editor, cursor, this)
 
   provideSnippets: ->
-    insert: @insert.bind(this)
+    bundledSnippetsLoaded: => @loaded
+    insertSnippet: @insert.bind(this)
