@@ -25,6 +25,24 @@ describe "Snippets extension", ->
       editor = atom.workspace.getActiveTextEditor()
       editorElement = atom.views.getView(editor)
 
+  describe "provideSnippets interface", ->
+    snippetsInterface = null
+
+    beforeEach ->
+      snippetsInterface = Snippets.provideSnippets()
+
+    describe "bundledSnippetsLoaded", ->
+      it "indicates the loaded state of the bundled snippets", ->
+        Snippets.loaded = false
+        expect(snippetsInterface.bundledSnippetsLoaded()).toBe false
+        Snippets.doneLoading()
+        expect(snippetsInterface.bundledSnippetsLoaded()).toBe true
+
+      it "can insert a snippet", ->
+        editor.setSelectedBufferRange([[0, 4], [0, 13]])
+        snippetsInterface.insertSnippet("hello ${1:world}", editor)
+        expect(editor.lineTextForBufferRow(0)).toBe "var hello world = function () {"
+
   describe "when 'tab' is triggered on the editor", ->
     beforeEach ->
       Snippets.add __filename,
