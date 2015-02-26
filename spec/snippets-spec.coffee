@@ -589,3 +589,7 @@ describe "Snippets extension", ->
       expect(editor.getCursorScreenPosition()).toEqual [0, 18]
       expect(editor.getSelectedText()).toBe 'Test pass you will'
       expect(editor.lineTextForBufferRow(0)).toBe 'Test pass you will, young var quicksort = function () {'
+
+    it "closes the dialog when triggered again", ->
+      atom.commands.dispatch availableSnippetsView.filterEditorView[0], 'snippets:available'
+      expect(atom.workspace.getModalPanels().length).toBe 0
