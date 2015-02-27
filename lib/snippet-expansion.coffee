@@ -68,7 +68,9 @@ class SnippetExpansion
         if @selections[i]
           @selections[i].setBufferRange(range)
         else
-          @selections.push @editor.addSelectionForBufferRange(range)
+          newSelection = @editor.addSelectionForBufferRange(range)
+          @subscriptions.add newSelection.cursor.onDidChangePosition (event) => @cursorMoved(event)
+          @selections.push newSelection
       markerSelected = true
 
     @settingTabStop = false

@@ -108,6 +108,14 @@ describe "Snippets extension", ->
               without placeholder $1
             """
 
+          "multi-caret-multi-tabstop":
+            prefix: "t9b"
+            body: """
+              with placeholder ${1:test}
+              without placeholder $1
+              second tabstop $2
+            """
+
           "large indices":
             prefix: "t10"
             body: """
@@ -422,6 +430,20 @@ describe "Snippets extension", ->
         editor.insertText('hello')
         expect(editor.lineTextForBufferRow(0)).toBe "with placeholder hello"
         expect(editor.lineTextForBufferRow(1)).toBe "without placeholder hellovar quicksort = function () {"
+
+      it "terminates the snippet expansion if a new cursor moves outside the bounds of the tab stops", ->
+        editor.setCursorScreenPosition([0, 0])
+        editor.insertText('t9b')
+        simulateTabKeyEvent()
+        editor.insertText('test')
+
+        editor.consolidateSelections()
+        editor.moveDown() # this should destroy the previous expansion
+        editor.moveToBeginningOfLine()
+
+        # this should insert whitespace instead of going through tabstops of the previous destroyed snippet
+        simulateTabKeyEvent()
+        expect(editor.lineTextForBufferRow(2).indexOf("  second")).toBe 0
 
     describe "when the snippet contains tab stops with an index >= 10", ->
       it "parses and orders the indices correctly", ->
