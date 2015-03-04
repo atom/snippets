@@ -17,6 +17,7 @@ class SnippetExpansion
         @cursor.selection.insertText(snippet.body, autoIndent: false)
       if snippet.tabStops.length > 0
         @subscriptions.add @cursor.onDidChangePosition (event) => @cursorMoved(event)
+        @subscriptions.add @cursor.onDidDestroy => @destroy()
         @placeTabStopMarkers(startPosition, snippet.tabStops)
         @snippets.addExpansion(@editor, this)
         @editor.normalizeTabsInBufferRange(newRange)
@@ -70,6 +71,7 @@ class SnippetExpansion
         else
           newSelection = @editor.addSelectionForBufferRange(range)
           @subscriptions.add newSelection.cursor.onDidChangePosition (event) => @cursorMoved(event)
+          @subscriptions.add newSelection.cursor.onDidDestroy => @destroy()
           @selections.push newSelection
       markerSelected = true
 

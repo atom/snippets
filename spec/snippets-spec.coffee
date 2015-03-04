@@ -431,6 +431,15 @@ describe "Snippets extension", ->
         expect(editor.lineTextForBufferRow(0)).toBe "with placeholder hello"
         expect(editor.lineTextForBufferRow(1)).toBe "without placeholder hellovar quicksort = function () {"
 
+      it "terminates the snippet when cursors are destroyed", ->
+        editor.setCursorScreenPosition([0, 0])
+        editor.insertText('t9b')
+        simulateTabKeyEvent()
+        editor.consolidateSelections()
+        simulateTabKeyEvent()
+
+        expect(editor.lineTextForBufferRow(1)).toEqual("without placeholder   ")
+
       it "terminates the snippet expansion if a new cursor moves outside the bounds of the tab stops", ->
         editor.setCursorScreenPosition([0, 0])
         editor.insertText('t9b')
