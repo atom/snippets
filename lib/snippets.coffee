@@ -93,9 +93,12 @@ module.exports =
     userSnippetsPath = @getUserSnippetsPath()
     fs.stat userSnippetsPath, (error, stat) =>
       if stat?.isFile()
+        userSnipetsFileDisposable = new CompositeDisposable()
         userSnippetsFile = new File(userSnippetsPath)
         try
-          userSnippetsFile.on 'moved removed contents-changed', => @handleUserSnippetsDidChange()
+          userSnipetsFileDisposable.add userSnippetsFile.onDidChange => @handleUserSnippetsDidChange()
+          userSnipetsFileDisposable.add userSnippetsFile.onDidDelete => @handleUserSnippetsDidChange()
+          userSnipetsFileDisposable.add userSnippetsFile.onDidRename => @handleUserSnippetsDidChange()
         catch e
           message = """
             Unable to watch path: `snippets.cson`. Make sure you have permissions
@@ -107,7 +110,7 @@ module.exports =
           """
           atom.notifications.addError(message, {dismissable: true})
 
-        callback(new Disposable -> userSnippetsFile.off())
+        callback(userSnipetsFileDisposable)
       else
         callback(new Disposable ->)
 
