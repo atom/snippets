@@ -13,7 +13,7 @@
     "atom-space-pen-views": "^2.0.0",
     "fs-plus": "^2.0.0",
     "loophole": "^1",
-    "pathwatcher": "^4",
+    "pathwatcher": "^3.0.0",
     "pegjs": "~0.8.0",
     "season": "^5.0.4",
     "temp": "~0.8.0",
