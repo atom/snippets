@@ -144,7 +144,7 @@ describe "Snippet Loading", ->
         """
 
         waitsFor "snippets to be changed", ->
-          atom.config.get('snippets.foo', scope: ['.foo']).body is 'bar2'
+          atom.config.get('snippets.foo', scope: ['.foo'])?.body is 'bar2'
 
         runs ->
           fs.writeFileSync path.join(configDirPath, 'snippets.cson'), ""
