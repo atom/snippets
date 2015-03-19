@@ -114,6 +114,7 @@ describe "Snippets extension", ->
               with placeholder ${1:test}
               without placeholder $1
               second tabstop $2
+              third tabstop $3
             """
 
           "large indices":
@@ -453,6 +454,20 @@ describe "Snippets extension", ->
         # this should insert whitespace instead of going through tabstops of the previous destroyed snippet
         simulateTabKeyEvent()
         expect(editor.lineTextForBufferRow(2).indexOf("  second")).toBe 0
+
+      it "moves to the second tabstop after a multi-caret tabstop", ->
+        editor.setCursorScreenPosition([0, 0])
+        editor.insertText('t9b')
+        simulateTabKeyEvent()
+        editor.insertText('line 1')
+
+        simulateTabKeyEvent()
+        editor.insertText('line 2')
+
+        simulateTabKeyEvent()
+        editor.insertText('line 3')
+
+        expect(editor.lineTextForBufferRow(2).indexOf("line 2 ")).toBe -1
 
     describe "when the snippet contains tab stops with an index >= 10", ->
       it "parses and orders the indices correctly", ->
