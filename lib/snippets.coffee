@@ -128,7 +128,6 @@ module.exports =
       callback(_.extend({}, results...))
 
   doneLoading: ->
-    atom.packages.emit 'snippets:loaded'
     @loaded = true
     @getEmitter().emit 'did-load-snippets'
 
