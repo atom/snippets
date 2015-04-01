@@ -54,7 +54,7 @@ module.exports =
   deactivate: ->
     @emitter?.dispose()
     @emitter = null
-    @editorSnippetExpansions?.clear()
+    @editorSnippetExpansions = null
     atom.config.transact => @subscriptions.dispose()
 
   getUserSnippetsPath: ->
