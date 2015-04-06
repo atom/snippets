@@ -54,3 +54,16 @@ describe "Snippet Body Parser", ->
         content: []
       }
     ]
+
+  it "includes escaped right-braces", ->
+    bodyTree = BodyParser.parse """
+      snippet ${1:{\\}}
+    """
+
+    expect(bodyTree).toEqual [
+      "snippet ",
+      {
+        index: 1,
+        content: ["{}"]
+      }
+    ]
