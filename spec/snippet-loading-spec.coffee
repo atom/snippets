@@ -57,6 +57,12 @@ describe "Snippet Loading", ->
       expect(snippet.prefix).toBe 'test'
       expect(snippet.body).toBe 'testing 123'
 
+      snippet = atom.config.get('snippets.testd', scope: ['.test'])
+      expect(snippet.prefix).toBe 'testd'
+      expect(snippet.body).toBe 'testing 456'
+      expect(snippet.description).toBe 'a description'
+      expect(snippet.descriptionMoreURL).toBe 'http://google.com'
+
   it "logs a warning if package snippets files cannot be parsed", ->
     activateSnippetsPackage()
 
