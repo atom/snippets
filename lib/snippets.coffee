@@ -171,12 +171,12 @@ module.exports =
     for selector, snippetsByName of snippetsBySelector
       snippetsByPrefix = {}
       for name, attributes of snippetsByName
-        {prefix, body, bodyTree} = attributes
+        {prefix, body, bodyTree, description, descriptionMoreURL} = attributes
         continue if typeof body isnt 'string'
 
         # if `add` isn't called by the loader task (in specs for example), we need to parse the body
         bodyTree ?= @getBodyParser().parse(body)
-        snippet = new Snippet({name, prefix, bodyTree, bodyText: body})
+        snippet = new Snippet({name, prefix, bodyTree, description, descriptionMoreURL, bodyText: body})
         snippetsByPrefix[snippet.prefix] = snippet
       atom.config.set('snippets', snippetsByPrefix, source: filePath, scopeSelector: selector)
 

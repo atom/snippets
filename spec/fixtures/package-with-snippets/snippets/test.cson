@@ -2,3 +2,8 @@
   "Test Snippet":
     prefix: "test"
     body: "testing 123"
+  "Test Snippet With Description":
+    prefix: "testd"
+    body: "testing 456"
+    description: "a description"
+    descriptionMoreURL: "http://google.com"
