@@ -25,9 +25,8 @@ class SnippetExpansion
 
   cursorMoved: ({oldBufferPosition, newBufferPosition, textChanged}) ->
     return if @settingTabStop or textChanged
-    oldTabStops = @tabStopsForBufferPosition(oldBufferPosition)
-    newTabStops = @tabStopsForBufferPosition(newBufferPosition)
-    @destroy() unless _.intersection(oldTabStops, newTabStops).length
+    @destroy() unless @tabStopMarkers[@tabStopIndex].some (marker) ->
+      marker.getBufferRange().containsPoint(newBufferPosition)
 
   cursorDestroyed: -> @destroy() unless @settingTabStop
 
@@ -79,10 +78,6 @@ class SnippetExpansion
 
     @settingTabStop = false
     markerSelected
-
-  tabStopsForBufferPosition: (bufferPosition) ->
-    _.intersection(@tabStopMarkers[@tabStopIndex],
-      @editor.findMarkers(containsBufferPosition: bufferPosition))
 
   destroy: ->
     @subscriptions.dispose()
