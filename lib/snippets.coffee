@@ -181,6 +181,7 @@ module.exports =
         else if not body?
           snippetsByPrefix[prefix] = null
       atom.config.set('snippets', snippetsByPrefix, source: filePath, scopeSelector: selector)
+    return
 
   getBodyParser: ->
     @bodyParser ?= require './snippet-body-parser'
