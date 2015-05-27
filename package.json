@@ -26,5 +26,8 @@
         "0.1.0": "provideSnippets"
       }
     }
+  },
+  "devDependencies": {
+    "coffeelint": "^1.9.7"
   }
 }
