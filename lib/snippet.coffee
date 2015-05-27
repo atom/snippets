@@ -15,8 +15,8 @@ class Snippet
     extractTabStops = (bodyTree) ->
       for segment in bodyTree
         if segment.index?
-          { index, content } = segment
-          index = Infinity if index == 0
+          {index, content} = segment
+          index = Infinity if index is 0
           start = [row, column]
           extractTabStops(content)
           tabStopsByIndex[index] ?= []

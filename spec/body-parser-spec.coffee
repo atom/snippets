@@ -9,18 +9,18 @@ describe "Snippet Body Parser", ->
 
     expect(bodyTree).toEqual [
       "the quick brown ",
-      { index: 1, content: [] },
+      {index: 1, content: []},
       "fox ",
       {
         index: 2,
         content: [
           "jumped ",
-          { index: 3, content: ["over"]},
+          {index: 3, content: ["over"]},
           "\n"
         ],
       }
       "the "
-      { index: 4, content: ["lazy"] },
+      {index: 4, content: ["lazy"]},
       " dog"
     ]
 

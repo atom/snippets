@@ -112,7 +112,7 @@ module.exports =
 
         callback(userSnipetsFileDisposable)
       else
-        callback(new Disposable ->)
+        callback(new Disposable -> )
 
   handleUserSnippetsDidChange: ->
     userSnippetsPath = @getUserSnippetsPath()
@@ -124,7 +124,7 @@ module.exports =
   loadPackageSnippets: (callback) ->
     packages = atom.packages.getLoadedPackages()
     snippetsDirPaths = (path.join(pack.path, 'snippets') for pack in packages)
-    async.map snippetsDirPaths, @loadSnippetsDirectory.bind(this), (error, results) =>
+    async.map snippetsDirPaths, @loadSnippetsDirectory.bind(this), (error, results) ->
       callback(_.extend({}, results...))
 
   doneLoading: ->
@@ -150,9 +150,9 @@ module.exports =
           entries,
           (entry, done)  =>
             filePath = path.join(snippetsDirPath, entry)
-            @loadSnippetsFile filePath, (snippets) =>
+            @loadSnippetsFile filePath, (snippets) ->
               done(null, {filePath, snippets})
-          (error, results) =>
+          (error, results) ->
             snippetsByPath = {}
             for {filePath, snippets} in results
               snippetsByPath[filePath] = snippets
@@ -161,7 +161,7 @@ module.exports =
 
   loadSnippetsFile: (filePath, callback) ->
     return callback({}) unless CSON.isObjectPath(filePath)
-    CSON.readFile filePath, (error, object={}) =>
+    CSON.readFile filePath, (error, object={}) ->
       if error?
         console.warn "Error reading snippets file '#{filePath}': #{error.stack ? error}"
         atom.notifications?.addError("Failed to load snippets from '#{filePath}'", {detail: error.message, dismissable: true})
