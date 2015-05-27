@@ -172,13 +172,16 @@ module.exports =
       snippetsByPrefix = {}
       for name, attributes of snippetsByName
         {prefix, body, bodyTree, description, descriptionMoreURL} = attributes
-        continue if typeof body isnt 'string'
 
-        # if `add` isn't called by the loader task (in specs for example), we need to parse the body
-        bodyTree ?= @getBodyParser().parse(body)
-        snippet = new Snippet({name, prefix, bodyTree, description, descriptionMoreURL, bodyText: body})
-        snippetsByPrefix[snippet.prefix] = snippet
+        if typeof body is 'string'
+          # if `add` isn't called by the loader task (in specs for example), we need to parse the body
+          bodyTree ?= @getBodyParser().parse(body) if typeof body is 'string'
+          snippet = new Snippet({name, prefix, bodyTree, description, descriptionMoreURL, bodyText: body})
+          snippetsByPrefix[snippet.prefix] = snippet
+        else if not body?
+          snippetsByPrefix[prefix] = null
       atom.config.set('snippets', snippetsByPrefix, source: filePath, scopeSelector: selector)
+    return
 
   getBodyParser: ->
     @bodyParser ?= require './snippet-body-parser'

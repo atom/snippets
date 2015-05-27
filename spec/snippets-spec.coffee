@@ -43,6 +43,25 @@ describe "Snippets extension", ->
         snippetsInterface.insertSnippet("hello ${1:world}", editor)
         expect(editor.lineTextForBufferRow(0)).toBe "var hello world = function () {"
 
+  describe "when null snippets are present", ->
+    beforeEach ->
+      Snippets.add __filename,
+        '.source.js':
+          "some snippet":
+            prefix: "t1"
+            body: "this is a test"
+
+        '.source.js .nope':
+          "some snippet":
+            prefix: "t1"
+            body: null
+
+    it "overrides the less-specific defined snippet", ->
+      snippets = atom.config.get('snippets', scope: ['.source.js'])
+      expect(snippets['t1']).not.toBe null
+      snippets = atom.config.get('snippets', scope: ['.source.js .nope.not-today'])
+      expect(snippets['t1']).toBe null
+
   describe "when 'tab' is triggered on the editor", ->
     beforeEach ->
       Snippets.add __filename,
