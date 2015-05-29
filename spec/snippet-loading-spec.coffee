@@ -71,6 +71,23 @@ describe "Snippet Loading", ->
       expect(console.warn.calls.length).toBe 1
       expect(console.warn.mostRecentCall.args[0]).toMatch(/Error reading.*package-with-broken-snippets/)
 
+  describe "::loadPackageSnippets(callback)", ->
+
+    beforeEach ->
+      # simulate a list of packages where the javascript core package is returned at the end
+      jasmine.unspy(atom.packages, 'getLoadedPackages')
+      spyOn(atom.packages, 'getLoadedPackages').andReturn [
+        atom.packages.loadPackage(path.join(__dirname, 'fixtures', 'package-with-snippets'))
+        atom.packages.loadPackage('language-javascript')
+      ]
+
+    it "returns core packages before other packages", ->
+      waitsFor "package to activate", (done) ->
+        atom.packages.activatePackage("snippets").then ({mainModule}) ->
+          mainModule.loadPackageSnippets (snippetSet) ->
+            expect(Object.keys(snippetSet)[0]).toMatch(/\/app\.asar\/node_modules\//)
+            done()
+
   describe "::onDidLoadSnippets(callback)", ->
     it "invokes listeners when all snippets are loaded", ->
       loadedCallback = null
