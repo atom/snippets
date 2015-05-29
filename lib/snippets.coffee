@@ -123,7 +123,8 @@ module.exports =
 
   loadPackageSnippets: (callback) ->
     packages = atom.packages.getLoadedPackages()
-    snippetsDirPaths = (path.join(pack.path, 'snippets') for pack in packages)
+    snippetsDirPaths = (path.join(pack.path, 'snippets') for pack in packages).sort (a, b) ->
+      if /\/app\.asar\/node_modules\//.test(a) then -1 else 1
     async.map snippetsDirPaths, @loadSnippetsDirectory.bind(this), (error, results) ->
       callback(_.extend({}, results...))
 
