@@ -85,7 +85,7 @@ describe "Snippet Loading", ->
       waitsFor "package to activate", (done) ->
         atom.packages.activatePackage("snippets").then ({mainModule}) ->
           mainModule.loadPackageSnippets (snippetSet) ->
-            expect(Object.keys(snippetSet)[0]).toMatch(/\/app\.asar\/node_modules\//)
+            expect(Object.keys(snippetSet)[0]).toMatch(/language-javascript/)
             done()
 
   describe "::onDidLoadSnippets(callback)", ->
