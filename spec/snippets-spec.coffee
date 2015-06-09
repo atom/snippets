@@ -43,6 +43,25 @@ describe "Snippets extension", ->
         snippetsInterface.insertSnippet("hello ${1:world}", editor)
         expect(editor.lineTextForBufferRow(0)).toBe "var hello world = function () {"
 
+  it "ignores invalid snippets in the config", ->
+    snippets = atom.packages.getActivePackage('snippets').mainModule
+
+    invalidSnippets = null
+    spyOn(atom.config, 'get').andCallFake -> invalidSnippets
+    expect(snippets.getSnippets(editor)).toEqual {}
+
+    invalidSnippets = 'test'
+    expect(snippets.getSnippets(editor)).toEqual {}
+
+    invalidSnippets = []
+    expect(snippets.getSnippets(editor)).toEqual {}
+
+    invalidSnippets = 3
+    expect(snippets.getSnippets(editor)).toEqual {}
+
+    invalidSnippets = {a: null}
+    expect(snippets.getSnippets(editor)).toEqual {}
+
   describe "when null snippets are present", ->
     beforeEach ->
       Snippets.add __filename,
