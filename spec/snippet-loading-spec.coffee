@@ -3,7 +3,7 @@ fs = require 'fs-plus'
 temp = require('temp').track()
 
 describe "Snippet Loading", ->
-  configDirPath = null
+  [configDirPath, snippetsModule] = []
 
   beforeEach ->
     configDirPath = temp.mkdirSync('atom-config-dir-')
@@ -18,18 +18,17 @@ describe "Snippet Loading", ->
     ]
 
   afterEach ->
+    atom.packages.deactivatePackages('snippets')
     jasmine.unspy(atom.packages, 'getLoadedPackages')
 
   activateSnippetsPackage = ->
-    module = null
-
     waitsForPromise ->
       atom.packages.activatePackage("snippets").then ({mainModule}) ->
-        module = mainModule
-        module.loaded = false
+        snippetsModule = mainModule
+        snippetsModule.loaded = false
 
     waitsFor "all snippets to load", 3000, ->
-      module.loaded
+      snippetsModule.loaded
 
   it "loads the bundled snippet template snippets", ->
     activateSnippetsPackage()
@@ -72,21 +71,21 @@ describe "Snippet Loading", ->
       expect(console.warn.mostRecentCall.args[0]).toMatch(/Error reading.*package-with-broken-snippets/)
 
   describe "::loadPackageSnippets(callback)", ->
-
     beforeEach ->
       # simulate a list of packages where the javascript core package is returned at the end
-      jasmine.unspy(atom.packages, 'getLoadedPackages')
-      spyOn(atom.packages, 'getLoadedPackages').andReturn [
+      atom.packages.getLoadedPackages.andReturn [
         atom.packages.loadPackage(path.join(__dirname, 'fixtures', 'package-with-snippets'))
         atom.packages.loadPackage('language-javascript')
       ]
 
-    it "returns core packages before other packages", ->
-      waitsFor "package to activate", (done) ->
-        atom.packages.activatePackage("snippets").then ({mainModule}) ->
-          mainModule.loadPackageSnippets (snippetSet) ->
-            expect(Object.keys(snippetSet)[0]).toMatch(/language-javascript/)
-            done()
+    it "allows other packages to override core packages' snippets", ->
+      waitsForPromise ->
+        atom.packages.activatePackage("language-javascript")
+
+      activateSnippetsPackage()
+
+      runs ->
+        expect(atom.config.get("snippets.log", scope: ['.source.js']).body).toBe "from-a-community-package"
 
   describe "::onDidLoadSnippets(callback)", ->
     it "invokes listeners when all snippets are loaded", ->
@@ -114,10 +113,15 @@ describe "Snippet Loading", ->
       activateSnippetsPackage()
 
     it "loads the snippets from that file", ->
-      snippet = atom.config.get('snippets.foo', scope: ['.foo'])
-      expect(snippet.name).toBe 'foo snippet'
-      expect(snippet.prefix).toBe "foo"
-      expect(snippet.body).toBe "bar1"
+      snippet = null
+
+      waitsFor ->
+        snippet = atom.config.get('snippets.foo', scope: ['.foo'])
+
+      runs ->
+        expect(snippet.name).toBe 'foo snippet'
+        expect(snippet.prefix).toBe "foo"
+        expect(snippet.body).toBe "bar1"
 
     describe "when that file changes", ->
       it "reloads the snippets", ->
@@ -152,10 +156,15 @@ describe "Snippet Loading", ->
       activateSnippetsPackage()
 
     it "loads the snippets from that file", ->
-      snippet = atom.config.get('snippets.foo', scope: ['.foo'])
-      expect(snippet.name).toBe 'foo snippet'
-      expect(snippet.prefix).toBe "foo"
-      expect(snippet.body).toBe "bar1"
+      snippet = null
+
+      waitsFor ->
+        snippet = atom.config.get('snippets.foo', scope: ['.foo'])
+
+      runs ->
+        expect(snippet.name).toBe 'foo snippet'
+        expect(snippet.prefix).toBe "foo"
+        expect(snippet.body).toBe "bar1"
 
     describe "when that file changes", ->
       it "reloads the snippets", ->

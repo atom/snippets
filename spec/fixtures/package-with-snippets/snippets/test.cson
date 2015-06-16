@@ -7,3 +7,8 @@
     body: "testing 456"
     description: "a description"
     descriptionMoreURL: "http://google.com"
+
+".source.js":
+  "Overrides a core package's snippet":
+    prefix: "log"
+    body: "from-a-community-package"
