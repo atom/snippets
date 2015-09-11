@@ -1,9 +1,8 @@
 path = require 'path'
-{Emitter, Disposable, CompositeDisposable} = require 'atom'
+{Emitter, Disposable, CompositeDisposable, File} = require 'atom'
 _ = require 'underscore-plus'
 async = require 'async'
 CSON = require 'season'
-{File} = require 'pathwatcher'
 fs = require 'fs-plus'
 
 Snippet = require './snippet'
@@ -55,7 +54,9 @@ module.exports =
     @emitter?.dispose()
     @emitter = null
     @editorSnippetExpansions = null
-    atom.config.transact => @subscriptions.dispose()
+    atom.config.transact =>
+      console.log 'DISPOSE'
+      @subscriptions.dispose()
 
   getUserSnippetsPath: ->
     userSnippetsPath = CSON.resolve(path.join(atom.getConfigDirPath(), 'snippets'))
@@ -93,12 +94,13 @@ module.exports =
     userSnippetsPath = @getUserSnippetsPath()
     fs.stat userSnippetsPath, (error, stat) =>
       if stat?.isFile()
-        userSnipetsFileDisposable = new CompositeDisposable()
+        userSnippetsFileDisposable = new CompositeDisposable()
         userSnippetsFile = new File(userSnippetsPath)
         try
-          userSnipetsFileDisposable.add userSnippetsFile.onDidChange => @handleUserSnippetsDidChange()
-          userSnipetsFileDisposable.add userSnippetsFile.onDidDelete => @handleUserSnippetsDidChange()
-          userSnipetsFileDisposable.add userSnippetsFile.onDidRename => @handleUserSnippetsDidChange()
+          console.log 'subscribe'
+          userSnippetsFileDisposable.add userSnippetsFile.onDidChange => @handleUserSnippetsDidChange()
+          userSnippetsFileDisposable.add userSnippetsFile.onDidDelete => @handleUserSnippetsDidChange()
+          userSnippetsFileDisposable.add userSnippetsFile.onDidRename => @handleUserSnippetsDidChange()
         catch e
           message = """
             Unable to watch path: `snippets.cson`. Make sure you have permissions
@@ -110,7 +112,7 @@ module.exports =
           """
           atom.notifications.addError(message, {dismissable: true})
 
-        callback(userSnipetsFileDisposable)
+        callback(userSnippetsFileDisposable)
       else
         callback(new Disposable -> )
 

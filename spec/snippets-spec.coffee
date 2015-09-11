@@ -11,6 +11,7 @@ describe "Snippets extension", ->
 
   beforeEach ->
     spyOn(Snippets, 'loadAll')
+    spyOn(Snippets, 'getUserSnippetsPath').andReturn('')
 
     waitsForPromise ->
       atom.workspace.open('sample.js')
@@ -24,6 +25,9 @@ describe "Snippets extension", ->
     runs ->
       editor = atom.workspace.getActiveTextEditor()
       editorElement = atom.views.getView(editor)
+
+  afterEach ->
+    atom.packages.deactivatePackage("snippets")
 
   describe "provideSnippets interface", ->
     snippetsInterface = null
@@ -619,6 +623,7 @@ describe "Snippets extension", ->
 
   describe "when atom://.atom/snippets is opened", ->
     it "opens ~/.atom/snippets.cson", ->
+      jasmine.unspy(Snippets, 'getUserSnippetsPath')
       atom.workspace.destroyActivePaneItem()
       configDirPath = temp.mkdirSync('atom-config-dir-')
       spyOn(atom, 'getConfigDirPath').andReturn configDirPath
