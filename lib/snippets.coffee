@@ -54,9 +54,7 @@ module.exports =
     @emitter?.dispose()
     @emitter = null
     @editorSnippetExpansions = null
-    atom.config.transact =>
-      console.log 'DISPOSE'
-      @subscriptions.dispose()
+    atom.config.transact => @subscriptions.dispose()
 
   getUserSnippetsPath: ->
     userSnippetsPath = CSON.resolve(path.join(atom.getConfigDirPath(), 'snippets'))
