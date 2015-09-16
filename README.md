@@ -38,6 +38,23 @@ console.log("crash");
 The string `"crash"` would be initially selected and pressing tab again would
 place the cursor after the `;`
 
+### Determining the correct scope for a snippet
+
+The outmost key of a snippet is the "scope" that you want the descendent snippets
+to be available in. You can find out the correct scope by opening the Settings (<kbd>cmd+,</kbd> on OS X)
+and selecting the corresponding *Language [xxx]* package, e.g. for *Language Html*:
+
+![Screenshot of Language Html settings](https://cloud.githubusercontent.com/assets/1038121/5137632/126beb66-70f2-11e4-839b-bc7e84103f67.png)
+
+If it's difficult to determine the package handling the file type in question
+(for example, for `.md`-documents), you can also proceed as following. Put your
+cursor in a file in which you want the snippet to be available, open the
+[Command Palette](https://github.com/atom/command-palette)
+(<kbd>cmd+shift+p</kbd>), and run the `Editor: Log Cursor Scope` command. This
+will trigger a notification which will contain a list of scopes. The first
+scope that's listed is the scope for that language. Here are some examples:
+`source.coffee`, `text.plain`, `text.html.basic`.
+
 ### Multi-line Snippet Body
 
 You can also use multi-line syntax using `"""` for larger templates:
@@ -75,58 +92,6 @@ that tab stop early. To prevent that, escape the brace with two backslashes, lik
       """
 ```
 
-### Finding out the correct selector (scope) for a snippet
-
-The outmost key of a snippet is the "scope" that you want the descendent snippets
-to be available in.
-
-You can find out the correct scope by opening the Settings (<kbd>Cmd+,</kbd> on OS X)
-and selecting the corresponding *Language [xxx]* plugin, e.g. for *Language Html*:
-
-![Screenshot of Language Html settings](https://cloud.githubusercontent.com/assets/1038121/5137632/126beb66-70f2-11e4-839b-bc7e84103f67.png)
-
-If it's difficult to determine the plugin handling the file type in question
-(for example, for `.md`-documents), you can also proceed as following:
-
-1. Open a file of the type for which you want to add a snippet
-2. Open the Developer Tools (<kbd>Cmd+Alt+I</kbd> on OS X)
-3. Switch to the Console tab
-4. Focus the source file and execute the _Editor > Log Cursor Scope_ command (<kbd>Cmd+Alt+P</kbd> on OS X)
-
-The first entry in the array that is logged to the Console is the scope for that language.
-
-If you have special characters (like `+`) in the scope, you have to escape them:
-
-```coffee
-.source.c, .source.c\\+\\+, .source.objc, .source.objc\\+\\+':
-  ...
-```
-
 ### Multiple snippets for the same scope
 
-Since the `snippets.cson` file describes one single object, snippets for the same selector must be placed within the same key, so that would work:
-
-```coffee
-'.source.gfm': # The selector for "markdown" (.md) files
-  'Preformatted text':
-    'prefix': 'pre'
-    'body': '`$1`'
-
-  'Strikethrough':
-    'prefix': 'strike'
-    'body': '~~$1~~'
-```
-
-While this apperently not:
-
-```coffee
-'.source.gfm': # This one is used
-  'Preformatted text':
-    'prefix': 'pre'
-    'body': '`$1`'
-
-'.source.gfm': # Second declaration of the same key, ignored
-  'Strikethrough':
-    'prefix': 'strike'
-    'body': '~~$1~~'
-```
+Snippets for the same scope must be placed within the same key. See [this section of the Atom Flight Manual](https://atom.io/docs/latest/using-atom-basic-customization#configuring-with-cson) for more information.
