@@ -59,8 +59,8 @@ You can also use multi-line syntax using `"""` for larger templates:
 
 ### Escaping Characters
 
-Including a literal a closing brace inside the text provided by a snippet's tab stop will close
-that tab stop early. You need to escape it -- with *two* backslashes, like this:
+Including a literal closing brace inside the text provided by a snippet's tab stop will close
+that tab stop early. To prevent that, escape the brace with two backslashes, like so:
 
 ```coffee
 'body': """
