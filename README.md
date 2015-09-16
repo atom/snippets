@@ -63,11 +63,14 @@ Including a literal closing brace inside the text provided by a snippet's tab st
 that tab stop early. To prevent that, escape the brace with two backslashes, like so:
 
 ```coffee
-'body': """
-  ${1:function () {
-    statements;
-  \\}
-  this line is also included in the snippet tab;
-  }
-  """
+'.source.js':
+  'function':
+    'prefix': 'funct'
+    'body': """
+      ${1:function () {
+        statements;
+      \\}
+      this line is also included in the snippet tab;
+      }
+      """
 ```
