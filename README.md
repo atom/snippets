@@ -56,3 +56,21 @@ You can also use multi-line syntax using `"""` for larger templates:
       }
     """
 ```
+
+### Escaping Characters
+
+Including a literal closing brace inside the text provided by a snippet's tab stop will close
+that tab stop early. To prevent that, escape the brace with two backslashes, like so:
+
+```coffee
+'.source.js':
+  'function':
+    'prefix': 'funct'
+    'body': """
+      ${1:function () {
+        statements;
+      \\}
+      this line is also included in the snippet tab;
+      }
+      """
+```
