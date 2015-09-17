@@ -1,6 +1,6 @@
 {
   "name": "snippets",
-  "version": "0.97.0",
+  "version": "0.98.0",
   "main": "./lib/snippets",
   "description": "Expand snippets matching the current prefix with `tab`.",
   "repository": "https://github.com/atom/snippets",
