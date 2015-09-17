@@ -12,8 +12,8 @@
       }$5
     """
 
-  'Atom Snippet Keys':
-    prefix: 'snipk'
+  'Atom Snippet With No Selector':
+    prefix: 'snipns'
     body: """
       "${1:Snippet Name}": {
         "prefix": "${2:Snippet Trigger}",
@@ -41,12 +41,12 @@
           'body': '${4:Hello World!}'$5
     """
 
-  'Atom Snippet Keys':
-    prefix: 'snipk'
+  'Atom Snippet With No Selector':
+    prefix: 'snipns'
     body: """
       '${1:Snippet Name}':
         'prefix': '${2:Snippet Trigger}'
-        'body': '${3:Hello World!}'$5
+        'body': '${3:Hello World!}'$4
     """
 
   'Atom Keymap':
