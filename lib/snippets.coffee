@@ -95,7 +95,6 @@ module.exports =
         userSnippetsFileDisposable = new CompositeDisposable()
         userSnippetsFile = new File(userSnippetsPath)
         try
-          console.log 'subscribe'
           userSnippetsFileDisposable.add userSnippetsFile.onDidChange => @handleUserSnippetsDidChange()
           userSnippetsFileDisposable.add userSnippetsFile.onDidDelete => @handleUserSnippetsDidChange()
           userSnippetsFileDisposable.add userSnippetsFile.onDidRename => @handleUserSnippetsDidChange()
