@@ -1,7 +1,6 @@
 fs = require 'fs'
 path = require 'path'
 moment = require 'moment'
-
 lineNumMagicStr = '~l#N~'
 
 exports.getValue = (varName) ->
