@@ -1,6 +1,5 @@
-
-fs     = require 'fs'
-path   = require 'path'
+fs = require 'fs'
+path = require 'path'
 moment = require 'moment'
 
 lineNumMagicStr = '~l#N~'
@@ -12,7 +11,7 @@ exports.getValue = (varName) ->
   if not varName or not editor then return ''
 
   filePath = unixify(editor.getPath())
-  project  = atom.project
+  project = atom.project
   for projectPath in project.getPaths()
     projectPath = unixify(projectPath)
     if filePath[0...projectPath.length] is projectPath then break

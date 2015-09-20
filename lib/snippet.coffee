@@ -1,5 +1,5 @@
 _ = require 'underscore-plus'
-{Range}  = require 'atom'
+{Range} = require 'atom'
 variable = require './variable'
 
 module.exports =
