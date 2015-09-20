@@ -5,11 +5,20 @@
       {
         "${1:.source.js}": {
           "${2:Snippet Name}": {
-            "prefix": "${3:hello}",
+            "prefix": "${3:Snippet Trigger}",
             "body": "${4:Hello World!}"
           }
         }
       }$5
+    """
+
+  'Atom Snippet With No Selector':
+    prefix: 'snipns'
+    body: """
+      "${1:Snippet Name}": {
+        "prefix": "${2:Snippet Trigger}",
+        "body": "${3:Hello World!}"
+      }$4
     """
 
   'Atom Keymap':
@@ -28,8 +37,16 @@
     body: """
       '${1:.source.js}':
         '${2:Snippet Name}':
-          'prefix': '${3:hello}'
+          'prefix': '${3:Snippet Trigger}'
           'body': '${4:Hello World!}'$5
+    """
+
+  'Atom Snippet With No Selector':
+    prefix: 'snipns'
+    body: """
+      '${1:Snippet Name}':
+        'prefix': '${2:Snippet Trigger}'
+        'body': '${3:Hello World!}'$4
     """
 
   'Atom Keymap':

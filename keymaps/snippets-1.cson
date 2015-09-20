@@ -1,2 +1,2 @@
-'.editor:not(.mini)':
+'atom-text-editor:not([mini])':
   'tab': 'snippets:expand'

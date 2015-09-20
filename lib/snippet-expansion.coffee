@@ -1,14 +1,13 @@
 _ = require 'underscore-plus'
-{Subscriber} = require 'emissary'
-variable     = require './variable'
+{CompositeDisposable} = require 'atom'
+variable = require './variable'
 
 module.exports =
 class SnippetExpansion
-  Subscriber.includeInto(this)
-
   settingTabStop: false
 
-  constructor: (@snippet, @editor, @cursor=@editor.getCursor(), @snippets) ->
+  constructor: (@snippet, @editor, @cursor, @snippets) ->
+    @subscriptions = new CompositeDisposable
     @tabStopMarkers = []
     @selections = [@cursor.selection]
 
@@ -19,26 +18,28 @@ class SnippetExpansion
         body = variable.fixLineNum(snippet.body, startPosition)
         @cursor.selection.insertText(body, autoIndent: false)
       if snippet.tabStops.length > 0
-        @subscribe @cursor, 'moved', (event) => @cursorMoved(event)
+        @subscriptions.add @cursor.onDidChangePosition (event) => @cursorMoved(event)
+        @subscriptions.add @cursor.onDidDestroy => @cursorDestroyed()
         @placeTabStopMarkers(startPosition, snippet.tabStops)
         @snippets.addExpansion(@editor, this)
         @editor.normalizeTabsInBufferRange(newRange)
       @indentSubsequentLines(startPosition.row, snippet) if snippet.lineCount > 1
-    
+
   cursorMoved: ({oldBufferPosition, newBufferPosition, textChanged}) ->
     return if @settingTabStop or textChanged
-    oldTabStops = @tabStopsForBufferPosition(oldBufferPosition)
-    newTabStops = @tabStopsForBufferPosition(newBufferPosition)
-    @destroy() unless _.intersection(oldTabStops, newTabStops).length
+    @destroy() unless @tabStopMarkers[@tabStopIndex].some (marker) ->
+      marker.getBufferRange().containsPoint(newBufferPosition)
+
+  cursorDestroyed: -> @destroy() unless @settingTabStop
 
   placeTabStopMarkers: (startPosition, tabStopRanges) ->
     for ranges in tabStopRanges
       @tabStopMarkers.push ranges.map ({start, end}) =>
-        @editor.markBufferRange([startPosition.add(start), startPosition.add(end)])
+        @editor.markBufferRange([startPosition.traverse(start), startPosition.traverse(end)])
     @setTabStopIndex(0)
 
   indentSubsequentLines: (startRow, snippet) ->
-    initialIndent = @editor.lineForBufferRow(startRow).match(/^\s*/)[0]
+    initialIndent = @editor.lineTextForBufferRow(startRow).match(/^\s*/)[0]
     for row in [startRow + 1...startRow + snippet.lineCount]
       @editor.buffer.insert([row, 0], initialIndent)
 
@@ -71,18 +72,17 @@ class SnippetExpansion
         if @selections[i]
           @selections[i].setBufferRange(range)
         else
-          @selections.push @editor.addSelectionForBufferRange(range)
+          newSelection = @editor.addSelectionForBufferRange(range)
+          @subscriptions.add newSelection.cursor.onDidChangePosition (event) => @cursorMoved(event)
+          @subscriptions.add newSelection.cursor.onDidDestroy => @cursorDestroyed()
+          @selections.push newSelection
       markerSelected = true
 
     @settingTabStop = false
     markerSelected
 
-  tabStopsForBufferPosition: (bufferPosition) ->
-    _.intersection(@tabStopMarkers[@tabStopIndex],
-      @editor.findMarkers(containsBufferPosition: bufferPosition))
-
   destroy: ->
-    @unsubscribe()
+    @subscriptions.dispose()
     for markers in @tabStopMarkers
       marker.destroy() for marker in markers
     @tabStopMarkers = []

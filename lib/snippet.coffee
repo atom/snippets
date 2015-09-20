@@ -4,7 +4,7 @@ variable = require './variable'
 
 module.exports =
 class Snippet
-  constructor: ({@name, @prefix, @bodyText, bodyTree}) ->
+  constructor: ({@name, @prefix, @bodyText, @description, @descriptionMoreURL, bodyTree}) ->
     @body = @extractTabStops(bodyTree)
 
   extractTabStops: (bodyTree) ->
@@ -16,8 +16,8 @@ class Snippet
     extractTabStops = (bodyTree) ->
       for segment in bodyTree
         if segment.index?
-          { index, content } = segment
-          index = Infinity if index == 0
+          {index, content} = segment
+          index = Infinity if index is 0
           start = [row, column]
           extractTabStops(content)
           tabStopsByIndex[index] ?= []

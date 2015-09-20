@@ -1,134 +1,219 @@
 path = require 'path'
-
+{Emitter, Disposable, CompositeDisposable, File} = require 'atom'
 _ = require 'underscore-plus'
 async = require 'async'
 CSON = require 'season'
-{File} = require 'pathwatcher'
 fs = require 'fs-plus'
 
 Snippet = require './snippet'
 SnippetExpansion = require './snippet-expansion'
-SnippetsAvailable = null # Defer until actually rendered
 
 module.exports =
   loaded: false
 
   activate: ->
-    atom.workspace.registerOpener (uri) =>
+    @subscriptions = new CompositeDisposable
+
+    @subscriptions.add atom.workspace.addOpener (uri) =>
       if uri is 'atom://.atom/snippets'
-        atom.workspaceView.open(@getUserSnippetsPath())
+        atom.project.open(@getUserSnippetsPath())
 
     @loadAll()
-    atom.workspaceView.eachEditorView (editorView) =>
-      @enableSnippetsInEditor(editorView) if editorView.attached
+    @watchUserSnippets (watchDisposable) =>
+      @subscriptions.add(watchDisposable)
+
+    snippets = this
+
+    @subscriptions.add atom.commands.add 'atom-text-editor',
+      'snippets:expand': (event) ->
+        editor = @getModel()
+        if snippets.snippetToExpandUnderCursor(editor)
+          snippets.clearExpansions(editor)
+          snippets.expandSnippetsUnderCursors(editor)
+        else
+          event.abortKeyBinding()
+
+      'snippets:next-tab-stop': (event) ->
+        editor = @getModel()
+        event.abortKeyBinding() unless snippets.goToNextTabStop(editor)
+
+      'snippets:previous-tab-stop': (event) ->
+        editor = @getModel()
+        event.abortKeyBinding() unless snippets.goToPreviousTabStop(editor)
+
+      'snippets:available': (event) ->
+        editor = @getModel()
+        SnippetsAvailable = require './snippets-available'
+        snippets.availableSnippetsView ?= new SnippetsAvailable(snippets)
+        snippets.availableSnippetsView.toggle(editor)
+
+    @subscriptions.add atom.workspace.observeTextEditors (editor) =>
+      @clearExpansions(editor)
 
   deactivate: ->
-    @userSnippetsFile?.off()
-    @editorSnippetExpansions?.clear()
+    @emitter?.dispose()
+    @emitter = null
+    @editorSnippetExpansions = null
+    atom.config.transact => @subscriptions.dispose()
 
   getUserSnippetsPath: ->
     userSnippetsPath = CSON.resolve(path.join(atom.getConfigDirPath(), 'snippets'))
     userSnippetsPath ? path.join(atom.getConfigDirPath(), 'snippets.cson')
 
-  loadAll: ->
-    @loadBundledSnippets => @loadUserSnippets => @loadPackageSnippets()
+  loadAll: (callback) ->
+    @loadBundledSnippets (bundledSnippets) =>
+      @loadPackageSnippets (packageSnippets) =>
+        @loadUserSnippets (userSnippets) =>
+          atom.config.transact =>
+            for snippetSet in [bundledSnippets, packageSnippets, userSnippets]
+              for filepath, snippetsBySelector of snippetSet
+                @add(filepath, snippetsBySelector)
+          @doneLoading()
 
   loadBundledSnippets: (callback) ->
     bundledSnippetsPath = CSON.resolve(path.join(__dirname, 'snippets'))
-    @loadSnippetsFile(bundledSnippetsPath, callback)
+    @loadSnippetsFile bundledSnippetsPath, (snippets) ->
+      snippetsByPath = {}
+      snippetsByPath[bundledSnippetsPath] = snippets
+      callback(snippetsByPath)
 
   loadUserSnippets: (callback) ->
-    @userSnippetsFile?.off()
     userSnippetsPath = @getUserSnippetsPath()
     fs.stat userSnippetsPath, (error, stat) =>
       if stat?.isFile()
-        @userSnippetsFile = new File(userSnippetsPath)
-        @userSnippetsFile.on 'moved removed contents-changed', =>
-          atom.syntax.removeProperties(userSnippetsPath)
-          @loadUserSnippets()
-        @loadSnippetsFile(userSnippetsPath, callback)
+        @loadSnippetsFile userSnippetsPath, (snippets) ->
+          result = {}
+          result[userSnippetsPath] = snippets
+          callback(result)
       else
-        callback?()
+        callback({})
 
-  loadPackageSnippets: ->
+  watchUserSnippets: (callback) ->
+    userSnippetsPath = @getUserSnippetsPath()
+    fs.stat userSnippetsPath, (error, stat) =>
+      if stat?.isFile()
+        userSnippetsFileDisposable = new CompositeDisposable()
+        userSnippetsFile = new File(userSnippetsPath)
+        try
+          userSnippetsFileDisposable.add userSnippetsFile.onDidChange => @handleUserSnippetsDidChange()
+          userSnippetsFileDisposable.add userSnippetsFile.onDidDelete => @handleUserSnippetsDidChange()
+          userSnippetsFileDisposable.add userSnippetsFile.onDidRename => @handleUserSnippetsDidChange()
+        catch e
+          message = """
+            Unable to watch path: `snippets.cson`. Make sure you have permissions
+            to the `~/.atom` directory and `#{userSnippetsPath}`.
+
+            On linux there are currently problems with watch sizes. See
+            [this document][watches] for more info.
+            [watches]:https://github.com/atom/atom/blob/master/docs/build-instructions/linux.md#typeerror-unable-to-watch-path
+          """
+          atom.notifications.addError(message, {dismissable: true})
+
+        callback(userSnippetsFileDisposable)
+      else
+        callback(new Disposable -> )
+
+  handleUserSnippetsDidChange: ->
+    userSnippetsPath = @getUserSnippetsPath()
+    atom.config.transact =>
+      atom.config.unset(null, source: userSnippetsPath)
+      @loadSnippetsFile userSnippetsPath, (result) =>
+        @add(userSnippetsPath, result)
+
+  loadPackageSnippets: (callback) ->
     packages = atom.packages.getLoadedPackages()
-    snippetsDirPaths = []
-    snippetsDirPaths.push(path.join(pack.path, 'snippets')) for pack in packages
-    async.eachSeries snippetsDirPaths, @loadSnippetsDirectory.bind(this), @doneLoading.bind(this)
+    snippetsDirPaths = (path.join(pack.path, 'snippets') for pack in packages).sort (a, b) ->
+      if /\/app\.asar\/node_modules\//.test(a) then -1 else 1
+    async.map snippetsDirPaths, @loadSnippetsDirectory.bind(this), (error, results) ->
+      callback(_.extend({}, results...))
 
   doneLoading: ->
-    atom.packages.emit 'snippets:loaded'
     @loaded = true
+    @getEmitter().emit 'did-load-snippets'
+
+  onDidLoadSnippets: (callback) ->
+    @getEmitter().on 'did-load-snippets', callback
+
+  getEmitter: ->
+    @emitter ?= new Emitter
 
   loadSnippetsDirectory: (snippetsDirPath, callback) ->
-    return callback?() unless fs.isDirectorySync(snippetsDirPath)
+    fs.isDirectory snippetsDirPath, (isDirectory) =>
+      return callback(null, {}) unless isDirectory
 
-    fs.readdir snippetsDirPath, (error, entries) =>
-      if error?
-        console.warn(error)
-        callback?()
-      else
-        paths = entries.map (file) -> path.join(snippetsDirPath, file)
-        async.eachSeries(paths, @loadSnippetsFile.bind(this), callback)
+      fs.readdir snippetsDirPath, (error, entries) =>
+        if error
+          console.warn("Error reading snippets directory #{snippetsDirPath}", error)
+          return callback(null, {})
+
+        async.map(
+          entries,
+          (entry, done)  =>
+            filePath = path.join(snippetsDirPath, entry)
+            @loadSnippetsFile filePath, (snippets) ->
+              done(null, {filePath, snippets})
+          (error, results) ->
+            snippetsByPath = {}
+            for {filePath, snippets} in results
+              snippetsByPath[filePath] = snippets
+            callback(null, snippetsByPath)
+        )
 
   loadSnippetsFile: (filePath, callback) ->
-    return callback?() unless CSON.isObjectPath(filePath)
-
-    CSON.readFile filePath, (error, object={}) =>
+    return callback({}) unless CSON.isObjectPath(filePath)
+    CSON.readFile filePath, (error, object={}) ->
       if error?
         console.warn "Error reading snippets file '#{filePath}': #{error.stack ? error}"
-      else
-        @add(filePath, object)
-      callback?()
+        atom.notifications?.addError("Failed to load snippets from '#{filePath}'", {detail: error.message, dismissable: true})
+      callback(object)
 
   add: (filePath, snippetsBySelector) ->
     for selector, snippetsByName of snippetsBySelector
       snippetsByPrefix = {}
       for name, attributes of snippetsByName
-        {prefix, body, bodyTree} = attributes
-        continue if typeof body isnt 'string'
+        {prefix, body, bodyTree, description, descriptionMoreURL} = attributes
 
-        # if `add` isn't called by the loader task (in specs for example), we need to parse the body
-        bodyTree ?= @getBodyParser().parse(body)
-        snippet = new Snippet({name, prefix, bodyTree, bodyText: body})
-        snippetsByPrefix[snippet.prefix] = snippet
-      atom.syntax.addProperties(filePath, selector, snippets: snippetsByPrefix)
+        if typeof body is 'string'
+          # if `add` isn't called by the loader task (in specs for example), we need to parse the body
+          bodyTree ?= @getBodyParser().parse(body) if typeof body is 'string'
+          snippet = new Snippet({name, prefix, bodyTree, description, descriptionMoreURL, bodyText: body})
+          snippetsByPrefix[snippet.prefix] = snippet
+        else if not body?
+          snippetsByPrefix[prefix] = null
+      atom.config.set('snippets', snippetsByPrefix, source: filePath, scopeSelector: selector)
+    return
 
   getBodyParser: ->
     @bodyParser ?= require './snippet-body-parser'
 
+  # Get an {Object} with these keys:
+  # * `snippetPrefix`: the possible snippet prefix text preceding the cursor
+  # * `wordPrefix`: the word preceding the cursor
+  #
+  # Returns `null` if the values aren't the same for all cursors
   getPrefixText: (snippets, editor) ->
     wordRegex = @wordRegexForSnippets(snippets)
-    cursors = editor.getCursors()
-    for cursor in cursors
+    [snippetPrefix, wordPrefix] = []
+
+    for cursor in editor.getCursors()
+      position = cursor.getBufferPosition()
+
       prefixStart = cursor.getBeginningOfCurrentWordBufferPosition({wordRegex})
-      editor.getTextInRange([prefixStart, cursor.getBufferPosition()])
+      cursorSnippetPrefix = editor.getTextInRange([prefixStart, position])
+      return null if snippetPrefix? and cursorSnippetPrefix isnt snippetPrefix
+      snippetPrefix = cursorSnippetPrefix
 
-  enableSnippetsInEditor: (editorView) ->
-    editor = editorView.getEditor()
-    @clearExpansions(editor)
+      wordStart = cursor.getBeginningOfCurrentWordBufferPosition()
+      cursorWordPrefix = editor.getTextInRange([wordStart, position])
+      return null if wordPrefix? and cursorWordPrefix isnt wordPrefix
+      wordPrefix = cursorWordPrefix
 
-    editorView.command 'snippets:expand', (event) =>
-      if @snippetToExpandUnderCursor(editor)
-        @clearExpansions(editor)
-        @expandSnippetsUnderCursors(editor)
-      else
-        event.abortKeyBinding()
-
-    editorView.command 'snippets:next-tab-stop', (event) =>
-      event.abortKeyBinding() unless @goToNextTabStop(editor)
-
-    editorView.command 'snippets:previous-tab-stop', (event) =>
-      event.abortKeyBinding() unless @goToPreviousTabStop(editor)
-
-    editorView.command 'snippets:available', (event) =>
-      SnippetsAvailable ?= require './snippets-available'
-      @availableSnippetsView ?= new SnippetsAvailable(this)
-      @availableSnippetsView.toggle(editor)
+    {snippetPrefix, wordPrefix}
 
   # Get a RegExp of all the characters used in the snippet prefixes
   wordRegexForSnippets: (snippets) ->
     prefixes = {}
+
     for prefix of snippets
       prefixes[character] = true for character in prefix
     prefixCharacters = Object.keys(prefixes).join('')
@@ -136,39 +221,30 @@ module.exports =
 
   # Get the best match snippet for the given prefix text.  This will return
   # the longest match where there is no exact match to the prefix text.
-  snippetForPrefix: (snippets, prefix) ->
+  snippetForPrefix: (snippets, prefix, wordPrefix) ->
     longestPrefixMatch = null
 
     for snippetPrefix, snippet of snippets
-      if snippetPrefix is prefix
-        longestPrefixMatch = snippet
-        break
-      else if _.endsWith(prefix, snippetPrefix)
-        longestPrefixMatch ?= snippet
-        if snippetPrefix.length > longestPrefixMatch.prefix.length
+      if _.endsWith(prefix, snippetPrefix) and wordPrefix.length <= snippetPrefix.length
+        if not longestPrefixMatch? or snippetPrefix.length > longestPrefixMatch.prefix.length
           longestPrefixMatch = snippet
 
     longestPrefixMatch
 
   getSnippets: (editor) ->
-    scope = editor.getCursorScopes()
-    snippets = {}
-    for properties in atom.syntax.propertiesForScope(scope, 'snippets')
-      snippetProperties = _.valueForKeyPath(properties, 'snippets') ? {}
-      for snippetPrefix, snippet of snippetProperties
-        snippets[snippetPrefix] ?= snippet
+    snippets = atom.config.get('snippets', scope: editor.getLastCursor().getScopeDescriptor()) ? {}
+    snippets = {} if Array.isArray(snippets) or typeof snippets isnt 'object'
+    for name, snippet of snippets
+      delete snippets[name] unless snippet
     snippets
 
   snippetToExpandUnderCursor: (editor) ->
-    return false unless editor.getSelection().isEmpty()
+    return false unless editor.getLastSelection().isEmpty()
     snippets = @getSnippets(editor)
     return false if _.isEmpty(snippets)
 
-    prefix = @getPrefixText(snippets, editor)
-    return false unless prefix and _.uniq(prefix).length is 1
-
-    prefix = prefix[0]
-    @snippetForPrefix(snippets, prefix)
+    if prefixData = @getPrefixText(snippets, editor)
+      @snippetForPrefix(snippets, prefixData.snippetPrefix, prefixData.wordPrefix)
 
   expandSnippetsUnderCursors: (editor) ->
     return false unless snippet = @snippetToExpandUnderCursor(editor)
@@ -206,9 +282,12 @@ module.exports =
   addExpansion: (editor, snippetExpansion) ->
     @getExpansions(editor).push(snippetExpansion)
 
-  insert: (snippet, editor=atom.workspace.getActiveEditor(), cursor=editor.getCursor()) ->
+  insert: (snippet, editor=atom.workspace.getActiveTextEditor(), cursor=editor.getLastCursor()) ->
     if typeof snippet is 'string'
       bodyTree = @getBodyParser().parse(snippet)
       snippet = new Snippet({name: '__anonymous', prefix: '', bodyTree, bodyText: snippet})
-
     new SnippetExpansion(snippet, editor, cursor, this)
+
+  provideSnippets: ->
+    bundledSnippetsLoaded: => @loaded
+    insertSnippet: @insert.bind(this)
