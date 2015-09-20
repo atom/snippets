@@ -7,16 +7,16 @@ lineNumMagicStr = '~l#N~'
 
 exports.getValue = (varName) ->
   unixify  = (path) -> path.replace(/\\/g, '/')
-  
+
   editor   = atom.workspace.getActiveTextEditor()
   if not varName or not editor then return ''
-  
+
   filePath = unixify(editor.getPath())
   project  = atom.project
-  for projectPath in project.getPaths() 
+  for projectPath in project.getPaths()
     projectPath = unixify(projectPath)
     if filePath[0...projectPath.length] is projectPath then break
-    
+
   varNameBody = varName[1...]
   switch varName[0]
     when '-'
@@ -54,7 +54,7 @@ exports.getValue = (varName) ->
 
 exports.fixLineNum = (body, startPosition) ->
   lineStr = '' +(startPosition.row + 1)
-  while lineStr.length < lineNumMagicStr.length 
+  while lineStr.length < lineNumMagicStr.length
     lineStr = ' ' + lineStr
   magicRegex = new RegExp(lineNumMagicStr, 'g')
   body.replace(magicRegex, lineStr)
