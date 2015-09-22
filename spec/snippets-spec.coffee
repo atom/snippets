@@ -478,7 +478,7 @@ describe "Snippets extension", ->
         editor.setCursorScreenPosition([0, 0])
         editor.insertText('t9b')
         simulateTabKeyEvent()
-        editor.consolidateSelections()
+        editor.getCursors()[0].destroy()
         simulateTabKeyEvent()
 
         expect(editor.lineTextForBufferRow(1)).toEqual("without placeholder   ")
@@ -489,7 +489,7 @@ describe "Snippets extension", ->
         simulateTabKeyEvent()
         editor.insertText('test')
 
-        editor.consolidateSelections()
+        editor.getCursors()[0].destroy()
         editor.moveDown() # this should destroy the previous expansion
         editor.moveToBeginningOfLine()
 
