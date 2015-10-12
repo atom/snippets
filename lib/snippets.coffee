@@ -16,7 +16,7 @@ module.exports =
 
     @subscriptions.add atom.workspace.addOpener (uri) =>
       if uri is 'atom://.atom/snippets'
-        atom.project.open(@getUserSnippetsPath())
+        atom.workspace.open(@getUserSnippetsPath())
 
     @loadAll()
     @watchUserSnippets (watchDisposable) =>
