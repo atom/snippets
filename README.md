@@ -18,7 +18,7 @@ Snippet files can be either `.json` or `.cson`.
     'body': 'console.log(${1:"crash"});$2'
 ```
 
-The outermost keys are the selectors where this snippets should be active (details below).
+The outermost keys are the selectors where these snippets should be active prefixed with a period (`.`) (details below).
 
 The next level of keys are the snippet names.
 
@@ -41,7 +41,7 @@ place the cursor after the `;`
 ### Determining the correct scope for a snippet
 
 The outmost key of a snippet is the "scope" that you want the descendent snippets
-to be available in. You can find out the correct scope by opening the Settings (<kbd>cmd+,</kbd> on OS X)
+to be available in. The key should be prefixed with a period (`text.html.basic` => `.text.html.basic`). You can find out the correct scope by opening the Settings (<kbd>cmd+,</kbd> on OS X)
 and selecting the corresponding *Language [xxx]* package, e.g. for *Language Html*:
 
 ![Screenshot of Language Html settings](https://cloud.githubusercontent.com/assets/1038121/5137632/126beb66-70f2-11e4-839b-bc7e84103f67.png)
