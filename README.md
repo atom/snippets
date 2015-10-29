@@ -18,7 +18,7 @@ Snippet files can be either `.json` or `.cson`.
     'body': 'console.log(${1:"crash"});$2'
 ```
 
-The outermost keys are the selectors where these snippets should be active prefixed with a period (`.`) (details below).
+The outermost keys are the selectors where these snippets should be active, prefixed with a period (`.`) (details below).
 
 The next level of keys are the snippet names.
 
