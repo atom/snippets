@@ -81,8 +81,8 @@ describe "Snippets extension", ->
 
     it "overrides the less-specific defined snippet", ->
       snippets = Snippets.provideSnippets()
-      expect(snippets.snippetsByPrefixForScopes(['.source.js'])['t1']).toBeTruthy()
-      expect(snippets.snippetsByPrefixForScopes(['.source.js .nope.not-today'])['t1']).toBeFalsy()
+      expect(snippets.snippetsForScopes(['.source.js'])['t1']).toBeTruthy()
+      expect(snippets.snippetsForScopes(['.source.js .nope.not-today'])['t1']).toBeFalsy()
 
   describe "when 'tab' is triggered on the editor", ->
     beforeEach ->

@@ -34,14 +34,14 @@ describe "Snippet Loading", ->
     activateSnippetsPackage()
 
     runs ->
-      jsonSnippet = snippetsService.snippetsByPrefixForScopes(['.source.json'])['snip']
+      jsonSnippet = snippetsService.snippetsForScopes(['.source.json'])['snip']
       expect(jsonSnippet.name).toBe 'Atom Snippet'
       expect(jsonSnippet.prefix).toBe 'snip'
       expect(jsonSnippet.body).toContain '"prefix":'
       expect(jsonSnippet.body).toContain '"body":'
       expect(jsonSnippet.tabStops.length).toBeGreaterThan(0)
 
-      csonSnippet = snippetsService.snippetsByPrefixForScopes(['.source.coffee'])['snip']
+      csonSnippet = snippetsService.snippetsForScopes(['.source.coffee'])['snip']
       expect(csonSnippet.name).toBe 'Atom Snippet'
       expect(csonSnippet.prefix).toBe 'snip'
       expect(csonSnippet.body).toContain "'prefix':"
@@ -52,11 +52,11 @@ describe "Snippet Loading", ->
     activateSnippetsPackage()
 
     runs ->
-      snippet = snippetsService.snippetsByPrefixForScopes(['.test'])['test']
+      snippet = snippetsService.snippetsForScopes(['.test'])['test']
       expect(snippet.prefix).toBe 'test'
       expect(snippet.body).toBe 'testing 123'
 
-      snippet = snippetsService.snippetsByPrefixForScopes(['.test'])['testd']
+      snippet = snippetsService.snippetsForScopes(['.test'])['testd']
       expect(snippet.prefix).toBe 'testd'
       expect(snippet.body).toBe 'testing 456'
       expect(snippet.description).toBe 'a description'
@@ -85,7 +85,7 @@ describe "Snippet Loading", ->
       activateSnippetsPackage()
 
       runs ->
-        snippet = snippetsService.snippetsByPrefixForScopes(['.source.js'])['log']
+        snippet = snippetsService.snippetsForScopes(['.source.js'])['log']
         expect(snippet.body).toBe "from-a-community-package"
 
   describe "::onDidLoadSnippets(callback)", ->
@@ -117,7 +117,7 @@ describe "Snippet Loading", ->
       snippet = null
 
       waitsFor ->
-        snippet = snippetsService.snippetsByPrefixForScopes(['.foo'])['foo']
+        snippet = snippetsService.snippetsForScopes(['.foo'])['foo']
 
       runs ->
         expect(snippet.name).toBe 'foo snippet'
@@ -138,14 +138,14 @@ describe "Snippet Loading", ->
         """
 
         waitsFor "snippets to be changed", ->
-          snippet = snippetsService.snippetsByPrefixForScopes(['.foo'])['foo']
+          snippet = snippetsService.snippetsForScopes(['.foo'])['foo']
           snippet?.body is 'bar2'
 
         runs ->
           fs.writeFileSync path.join(configDirPath, 'snippets.json'), ""
 
         waitsFor "snippets to be removed", ->
-          not snippetsService.snippetsByPrefixForScopes(['.foo'])['foo']
+          not snippetsService.snippetsForScopes(['.foo'])['foo']
 
   describe "when ~/.atom/snippets.cson exists", ->
     beforeEach ->
@@ -161,7 +161,7 @@ describe "Snippet Loading", ->
       snippet = null
 
       waitsFor ->
-        snippet = snippetsService.snippetsByPrefixForScopes(['.foo'])['foo']
+        snippet = snippetsService.snippetsForScopes(['.foo'])['foo']
 
       runs ->
         expect(snippet.name).toBe 'foo snippet'
@@ -178,14 +178,14 @@ describe "Snippet Loading", ->
         """
 
         waitsFor "snippets to be changed", ->
-          snippet = snippetsService.snippetsByPrefixForScopes(['.foo'])['foo']
+          snippet = snippetsService.snippetsForScopes(['.foo'])['foo']
           snippet?.body is 'bar2'
 
         runs ->
           fs.writeFileSync path.join(configDirPath, 'snippets.cson'), ""
 
         waitsFor "snippets to be removed", ->
-          snippet = snippetsService.snippetsByPrefixForScopes(['.foo'])['foo']
+          snippet = snippetsService.snippetsForScopes(['.foo'])['foo']
           not snippet?
 
   it "notifies the user when the user snippets file cannot be loaded", ->

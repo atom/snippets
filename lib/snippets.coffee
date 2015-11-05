@@ -170,15 +170,15 @@ module.exports =
 
   add: (filePath, snippetsBySelector) ->
     for selector, snippetsByName of snippetsBySelector
-      snippetsByPrefix = {}
+      unparsedSnippetsByPrefix = {}
       for name, attributes of snippetsByName
         {prefix, body} = attributes
         if typeof body is 'string'
-          snippetsByPrefix[prefix] = _.extend({name}, attributes)
+          unparsedSnippetsByPrefix[prefix] = _.extend({name}, attributes)
         else if not body?
-          snippetsByPrefix[prefix] = null
+          unparsedSnippetsByPrefix[prefix] = null
 
-      @storeUnparsedSnippetsByPrefix(snippetsByPrefix, filePath, selector)
+      @storeUnparsedSnippets(unparsedSnippetsByPrefix, filePath, selector)
     return
 
   getScopeChain: (object) ->
@@ -190,7 +190,7 @@ module.exports =
         scope
       .join(' ')
 
-  storeUnparsedSnippetsByPrefix: (value, path, selector) ->
+  storeUnparsedSnippets: (value, path, selector) ->
     unparsedSnippets = {}
     unparsedSnippets[selector] = {"snippets": value}
     @scopedPropertyStore.addProperties(path, unparsedSnippets, priority: @priorityForSource(path))
@@ -200,8 +200,8 @@ module.exports =
       settings = @scopedPropertyStore.propertiesForSourceAndSelector(path, scopeSelector)
       @scopedPropertyStore.removePropertiesForSourceAndSelector(path, scopeSelector)
 
-  parsedSnippetsByPrefixForScope: (descriptor) ->
-    unparsedSnippetsByPrefix = @scopedPropertyStore.getPropertyValue(@getScopeChain(descriptor), "snippets")
+  parsedSnippetsForScopes: (scopeDescriptor) ->
+    unparsedSnippetsByPrefix = @scopedPropertyStore.getPropertyValue(@getScopeChain(scopeDescriptor), "snippets")
     unparsedSnippetsByPrefix ?= {}
     snippets = {}
     for prefix, attributes of unparsedSnippetsByPrefix
@@ -268,7 +268,7 @@ module.exports =
     longestPrefixMatch
 
   getSnippets: (editor) ->
-    @parsedSnippetsByPrefixForScope(editor.getLastCursor().getScopeDescriptor())
+    @parsedSnippetsForScopes(editor.getLastCursor().getScopeDescriptor())
 
   snippetToExpandUnderCursor: (editor) ->
     return false unless editor.getLastSelection().isEmpty()
@@ -323,4 +323,4 @@ module.exports =
   provideSnippets: ->
     bundledSnippetsLoaded: => @loaded
     insertSnippet: @insert.bind(this)
-    snippetsByPrefixForScopes: @parsedSnippetsByPrefixForScope.bind(this)
+    snippetsForScopes: @parsedSnippetsForScopes.bind(this)
