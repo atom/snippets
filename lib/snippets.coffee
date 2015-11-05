@@ -118,7 +118,7 @@ module.exports =
   handleUserSnippetsDidChange: ->
     userSnippetsPath = @getUserSnippetsPath()
     atom.config.transact =>
-      @clearSnippetsForPath(userSnippetsPath)
+      @clearUnparsedSnippetsForPath(userSnippetsPath)
       @loadSnippetsFile userSnippetsPath, (result) =>
         @add(userSnippetsPath, result)
 
@@ -179,10 +179,10 @@ module.exports =
         else if not body?
           snippetsByPrefix[prefix] = null
 
-      @storeSnippetsByPrefix(snippetsByPrefix, filePath, selector)
+      @storeUnparsedSnippetsByPrefix(snippetsByPrefix, filePath, selector)
     return
 
-  storeSnippetsByPrefix: (value, path, selector) ->
+  storeUnparsedSnippetsByPrefix: (value, path, selector) ->
     newValue = {}
     setValueAtKeyPath(newValue, "snippets", value)
     value = newValue
@@ -191,17 +191,17 @@ module.exports =
     settingsBySelector[selector] = value
     @scopedPropertyStore.addProperties(path, settingsBySelector, priority: @priorityForSource(path))
 
-  clearSnippetsForPath: (path) ->
+  clearUnparsedSnippetsForPath: (path) ->
     for scopeSelector of @scopedPropertyStore.propertiesForSource(path)
       settings = @scopedPropertyStore.propertiesForSourceAndSelector(path, scopeSelector)
       @scopedPropertyStore.removePropertiesForSourceAndSelector(path, scopeSelector)
 
-  snippetsByPrefixForScopes: (descriptor) ->
+  parsedSnippetsByPrefixForScope: (descriptor) ->
     scopeDescriptor = ScopeDescriptor.fromObject(descriptor)
-    snippetsAttributesByPrefix = @scopedPropertyStore.getPropertyValue(scopeDescriptor.getScopeChain(), "snippets")
-    snippetsAttributesByPrefix ?= {}
+    unparsedSnippetsByPrefix = @scopedPropertyStore.getPropertyValue(scopeDescriptor.getScopeChain(), "snippets")
+    unparsedSnippetsByPrefix ?= {}
     snippets = {}
-    for prefix, attributes of snippetsAttributesByPrefix
+    for prefix, attributes of unparsedSnippetsByPrefix
       continue if typeof attributes?.body isnt 'string'
 
       {name, body, bodyTree, description, descriptionMoreURL} = attributes
@@ -265,7 +265,7 @@ module.exports =
     longestPrefixMatch
 
   getSnippets: (editor) ->
-    @snippetsByPrefixForScopes(editor.getLastCursor().getScopeDescriptor())
+    @parsedSnippetsByPrefixForScope(editor.getLastCursor().getScopeDescriptor())
 
   snippetToExpandUnderCursor: (editor) ->
     return false unless editor.getLastSelection().isEmpty()
@@ -320,4 +320,4 @@ module.exports =
   provideSnippets: ->
     bundledSnippetsLoaded: => @loaded
     insertSnippet: @insert.bind(this)
-    snippetsByPrefixForScopes: @snippetsByPrefixForScopes.bind(this)
+    snippetsByPrefixForScopes: @parsedSnippetsByPrefixForScope.bind(this)
