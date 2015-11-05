@@ -183,7 +183,7 @@ module.exports =
 
   getScopeChain: (object) ->
     scopesArray = object?.getScopesArray?()
-    scopesArray ?= Array.from(object)
+    scopesArray ?= object
     scopesArray
       .map (scope) ->
         scope = ".#{scope}" unless scope[0] is '.'
