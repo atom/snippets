@@ -51,7 +51,7 @@ describe "Snippets extension", ->
     snippets = atom.packages.getActivePackage('snippets').mainModule
 
     invalidSnippets = null
-    spyOn(atom.config, 'get').andCallFake -> invalidSnippets
+    spyOn(snippets.scopedPropertyStore, 'getPropertyValue').andCallFake -> invalidSnippets
     expect(snippets.getSnippets(editor)).toEqual {}
 
     invalidSnippets = 'test'

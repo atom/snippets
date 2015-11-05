@@ -201,8 +201,8 @@ module.exports =
     snippetsAttributesByPrefix = @scopedPropertyStore.getPropertyValue(scopeDescriptor.getScopeChain(), "snippets")
     snippetsAttributesByPrefix ?= {}
     snippets = {}
-    for prefix, attributes of snippetsAttributesByPrefix when attributes?
-      continue if typeof attributes.body isnt 'string'
+    for prefix, attributes of snippetsAttributesByPrefix
+      continue if typeof attributes?.body isnt 'string'
 
       {name, body, bodyTree, description, descriptionMoreURL} = attributes
       bodyTree ?= @getBodyParser().parse(body)
