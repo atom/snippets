@@ -13,6 +13,7 @@ module.exports =
   loaded: false
 
   activate: ->
+    @userSnippetsPath = null
     @scopedPropertyStore = new ScopedPropertyStore
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.workspace.addOpener (uri) =>
@@ -58,8 +59,11 @@ module.exports =
     atom.config.transact => @subscriptions.dispose()
 
   getUserSnippetsPath: ->
-    userSnippetsPath = CSON.resolve(path.join(atom.getConfigDirPath(), 'snippets'))
-    userSnippetsPath ? path.join(atom.getConfigDirPath(), 'snippets.cson')
+    return @userSnippetsPath if @userSnippetsPath?
+
+    @userSnippetsPath = CSON.resolve(path.join(atom.getConfigDirPath(), 'snippets'))
+    @userSnippetsPath ?= path.join(atom.getConfigDirPath(), 'snippets.cson')
+    @userSnippetsPath
 
   loadAll: (callback) ->
     @loadBundledSnippets (bundledSnippets) =>
