@@ -5,7 +5,6 @@ async = require 'async'
 CSON = require 'season'
 fs = require 'fs-plus'
 ScopedPropertyStore = require 'scoped-property-store'
-{getValueAtKeyPath, setValueAtKeyPath} = require 'key-path-helpers'
 
 Snippet = require './snippet'
 SnippetExpansion = require './snippet-expansion'
@@ -183,13 +182,9 @@ module.exports =
     return
 
   storeUnparsedSnippetsByPrefix: (value, path, selector) ->
-    newValue = {}
-    setValueAtKeyPath(newValue, "snippets", value)
-    value = newValue
-
-    settingsBySelector = {}
-    settingsBySelector[selector] = value
-    @scopedPropertyStore.addProperties(path, settingsBySelector, priority: @priorityForSource(path))
+    unparsedSnippets = {}
+    unparsedSnippets[selector] = {"snippets": value}
+    @scopedPropertyStore.addProperties(path, unparsedSnippets, priority: @priorityForSource(path))
 
   clearUnparsedSnippetsForPath: (path) ->
     for scopeSelector of @scopedPropertyStore.propertiesForSource(path)

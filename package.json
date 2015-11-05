@@ -12,7 +12,6 @@
     "async": "~0.2.6",
     "atom-space-pen-views": "^2.0.0",
     "fs-plus": "^2.0.0",
-    "key-path-helpers": "^0.4.0",
     "loophole": "^1",
     "pegjs": "~0.8.0",
     "scoped-property-store": "^0.17.0",
