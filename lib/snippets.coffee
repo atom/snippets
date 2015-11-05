@@ -1,5 +1,5 @@
 path = require 'path'
-{ScopeDescriptor, Emitter, Disposable, CompositeDisposable, File} = require 'atom'
+{Emitter, Disposable, CompositeDisposable, File} = require 'atom'
 _ = require 'underscore-plus'
 async = require 'async'
 CSON = require 'season'
@@ -181,6 +181,15 @@ module.exports =
       @storeUnparsedSnippetsByPrefix(snippetsByPrefix, filePath, selector)
     return
 
+  getScopeChain: (object) ->
+    scopesArray = object?.getScopesArray?()
+    scopesArray ?= Array.from(object)
+    scopesArray
+      .map (scope) ->
+        scope = ".#{scope}" unless scope[0] is '.'
+        scope
+      .join(' ')
+
   storeUnparsedSnippetsByPrefix: (value, path, selector) ->
     unparsedSnippets = {}
     unparsedSnippets[selector] = {"snippets": value}
@@ -192,8 +201,7 @@ module.exports =
       @scopedPropertyStore.removePropertiesForSourceAndSelector(path, scopeSelector)
 
   parsedSnippetsByPrefixForScope: (descriptor) ->
-    scopeDescriptor = ScopeDescriptor.fromObject(descriptor)
-    unparsedSnippetsByPrefix = @scopedPropertyStore.getPropertyValue(scopeDescriptor.getScopeChain(), "snippets")
+    unparsedSnippetsByPrefix = @scopedPropertyStore.getPropertyValue(@getScopeChain(descriptor), "snippets")
     unparsedSnippetsByPrefix ?= {}
     snippets = {}
     for prefix, attributes of unparsedSnippetsByPrefix
