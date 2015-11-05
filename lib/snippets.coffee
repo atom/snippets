@@ -1,9 +1,11 @@
 path = require 'path'
-{Emitter, Disposable, CompositeDisposable, File} = require 'atom'
+{ScopeDescriptor, Emitter, Disposable, CompositeDisposable, File} = require 'atom'
 _ = require 'underscore-plus'
 async = require 'async'
 CSON = require 'season'
 fs = require 'fs-plus'
+ScopedPropertyStore = require 'scoped-property-store'
+{getValueAtKeyPath, setValueAtKeyPath} = require 'key-path-helpers'
 
 Snippet = require './snippet'
 SnippetExpansion = require './snippet-expansion'
@@ -12,8 +14,8 @@ module.exports =
   loaded: false
 
   activate: ->
+    @scopedPropertyStore = new ScopedPropertyStore
     @subscriptions = new CompositeDisposable
-
     @subscriptions.add atom.workspace.addOpener (uri) =>
       if uri is 'atom://.atom/snippets'
         atom.workspace.open(@getUserSnippetsPath())
@@ -116,7 +118,7 @@ module.exports =
   handleUserSnippetsDidChange: ->
     userSnippetsPath = @getUserSnippetsPath()
     atom.config.transact =>
-      atom.config.unset(null, source: userSnippetsPath)
+      @clearSnippetsForPath(userSnippetsPath)
       @loadSnippetsFile userSnippetsPath, (result) =>
         @add(userSnippetsPath, result)
 
@@ -171,17 +173,48 @@ module.exports =
     for selector, snippetsByName of snippetsBySelector
       snippetsByPrefix = {}
       for name, attributes of snippetsByName
-        {prefix, body, bodyTree, description, descriptionMoreURL} = attributes
-
+        {prefix, body} = attributes
         if typeof body is 'string'
-          # if `add` isn't called by the loader task (in specs for example), we need to parse the body
-          bodyTree ?= @getBodyParser().parse(body) if typeof body is 'string'
-          snippet = new Snippet({name, prefix, bodyTree, description, descriptionMoreURL, bodyText: body})
-          snippetsByPrefix[snippet.prefix] = snippet
+          snippetsByPrefix[prefix] = _.extend({name}, attributes)
         else if not body?
           snippetsByPrefix[prefix] = null
-      atom.config.set('snippets', snippetsByPrefix, source: filePath, scopeSelector: selector)
+
+      @storeSnippetsByPrefix(snippetsByPrefix, filePath, selector)
     return
+
+  storeSnippetsByPrefix: (value, path, selector) ->
+    newValue = {}
+    setValueAtKeyPath(newValue, "snippets", value)
+    value = newValue
+
+    settingsBySelector = {}
+    settingsBySelector[selector] = value
+    @scopedPropertyStore.addProperties(path, settingsBySelector, priority: @priorityForSource(path))
+
+  clearSnippetsForPath: (path) ->
+    for scopeSelector of @scopedPropertyStore.propertiesForSource(path)
+      settings = @scopedPropertyStore.propertiesForSourceAndSelector(path, scopeSelector)
+      @scopedPropertyStore.removePropertiesForSourceAndSelector(path, scopeSelector)
+
+  snippetsByPrefixForScopes: (descriptor) ->
+    scopeDescriptor = ScopeDescriptor.fromObject(descriptor)
+    snippetsAttributesByPrefix = @scopedPropertyStore.getPropertyValue(scopeDescriptor.getScopeChain(), "snippets")
+    snippetsAttributesByPrefix ?= {}
+    snippets = {}
+    for prefix, attributes of snippetsAttributesByPrefix when attributes?
+      continue if typeof attributes.body isnt 'string'
+
+      {name, body, bodyTree, description, descriptionMoreURL} = attributes
+      bodyTree ?= @getBodyParser().parse(body)
+      snippet = new Snippet({name, prefix, bodyTree, description, descriptionMoreURL, bodyText: body})
+      snippets[prefix] = snippet
+    snippets
+
+  priorityForSource: (source) ->
+    if source is @getUserSnippetsPath()
+      1000
+    else
+      0
 
   getBodyParser: ->
     @bodyParser ?= require './snippet-body-parser'
@@ -232,11 +265,7 @@ module.exports =
     longestPrefixMatch
 
   getSnippets: (editor) ->
-    snippets = atom.config.get('snippets', scope: editor.getLastCursor().getScopeDescriptor()) ? {}
-    snippets = {} if Array.isArray(snippets) or typeof snippets isnt 'object'
-    for name, snippet of snippets
-      delete snippets[name] unless snippet
-    snippets
+    @snippetsByPrefixForScopes(editor.getLastCursor().getScopeDescriptor())
 
   snippetToExpandUnderCursor: (editor) ->
     return false unless editor.getLastSelection().isEmpty()

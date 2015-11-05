@@ -80,10 +80,9 @@ describe "Snippets extension", ->
             body: null
 
     it "overrides the less-specific defined snippet", ->
-      snippets = atom.config.get('snippets', scope: ['.source.js'])
-      expect(snippets['t1']).not.toBe null
-      snippets = atom.config.get('snippets', scope: ['.source.js .nope.not-today'])
-      expect(snippets['t1']).toBe null
+      snippets = atom.packages.getActivePackage('snippets').mainModule
+      expect(snippets.snippetsByPrefixForScopes(['.source.js'])['t1']).toBeTruthy()
+      expect(snippets.snippetsByPrefixForScopes(['.source.js .nope.not-today'])['t1']).toBeFalsy()
 
   describe "when 'tab' is triggered on the editor", ->
     beforeEach ->
