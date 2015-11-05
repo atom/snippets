@@ -177,8 +177,9 @@ module.exports =
       unparsedSnippetsByPrefix = {}
       for name, attributes of snippetsByName
         {prefix, body} = attributes
+        attributes.name = name
         if typeof body is 'string'
-          unparsedSnippetsByPrefix[prefix] = _.extend({name}, attributes)
+          unparsedSnippetsByPrefix[prefix] = attributes
         else if not body?
           unparsedSnippetsByPrefix[prefix] = null
 
