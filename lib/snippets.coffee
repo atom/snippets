@@ -320,3 +320,4 @@ module.exports =
   provideSnippets: ->
     bundledSnippetsLoaded: => @loaded
     insertSnippet: @insert.bind(this)
+    snippetsByPrefixForScopes: @snippetsByPrefixForScopes.bind(this)

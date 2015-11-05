@@ -80,7 +80,7 @@ describe "Snippets extension", ->
             body: null
 
     it "overrides the less-specific defined snippet", ->
-      snippets = atom.packages.getActivePackage('snippets').mainModule
+      snippets = Snippets.provideSnippets()
       expect(snippets.snippetsByPrefixForScopes(['.source.js'])['t1']).toBeTruthy()
       expect(snippets.snippetsByPrefixForScopes(['.source.js .nope.not-today'])['t1']).toBeFalsy()
 

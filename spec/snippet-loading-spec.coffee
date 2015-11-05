@@ -3,7 +3,7 @@ fs = require 'fs-plus'
 temp = require('temp').track()
 
 describe "Snippet Loading", ->
-  [configDirPath, snippetsModule] = []
+  [configDirPath, snippetsService] = []
 
   beforeEach ->
     configDirPath = temp.mkdirSync('atom-config-dir-')
@@ -24,24 +24,24 @@ describe "Snippet Loading", ->
   activateSnippetsPackage = ->
     waitsForPromise ->
       atom.packages.activatePackage("snippets").then ({mainModule}) ->
-        snippetsModule = mainModule
-        snippetsModule.loaded = false
+        snippetsService = mainModule.provideSnippets()
+        mainModule.loaded = false
 
     waitsFor "all snippets to load", 3000, ->
-      snippetsModule.loaded
+      snippetsService.bundledSnippetsLoaded()
 
   it "loads the bundled snippet template snippets", ->
     activateSnippetsPackage()
 
     runs ->
-      jsonSnippet = snippetsModule.snippetsByPrefixForScopes(['.source.json'])['snip']
+      jsonSnippet = snippetsService.snippetsByPrefixForScopes(['.source.json'])['snip']
       expect(jsonSnippet.name).toBe 'Atom Snippet'
       expect(jsonSnippet.prefix).toBe 'snip'
       expect(jsonSnippet.body).toContain '"prefix":'
       expect(jsonSnippet.body).toContain '"body":'
       expect(jsonSnippet.tabStops.length).toBeGreaterThan(0)
 
-      csonSnippet = snippetsModule.snippetsByPrefixForScopes(['.source.coffee'])['snip']
+      csonSnippet = snippetsService.snippetsByPrefixForScopes(['.source.coffee'])['snip']
       expect(csonSnippet.name).toBe 'Atom Snippet'
       expect(csonSnippet.prefix).toBe 'snip'
       expect(csonSnippet.body).toContain "'prefix':"
@@ -52,11 +52,11 @@ describe "Snippet Loading", ->
     activateSnippetsPackage()
 
     runs ->
-      snippet = snippetsModule.snippetsByPrefixForScopes(['.test'])['test']
+      snippet = snippetsService.snippetsByPrefixForScopes(['.test'])['test']
       expect(snippet.prefix).toBe 'test'
       expect(snippet.body).toBe 'testing 123'
 
-      snippet = snippetsModule.snippetsByPrefixForScopes(['.test'])['testd']
+      snippet = snippetsService.snippetsByPrefixForScopes(['.test'])['testd']
       expect(snippet.prefix).toBe 'testd'
       expect(snippet.body).toBe 'testing 456'
       expect(snippet.description).toBe 'a description'
@@ -85,7 +85,7 @@ describe "Snippet Loading", ->
       activateSnippetsPackage()
 
       runs ->
-        snippet = snippetsModule.snippetsByPrefixForScopes(['.source.js'])['log']
+        snippet = snippetsService.snippetsByPrefixForScopes(['.source.js'])['log']
         expect(snippet.body).toBe "from-a-community-package"
 
   describe "::onDidLoadSnippets(callback)", ->
@@ -117,7 +117,7 @@ describe "Snippet Loading", ->
       snippet = null
 
       waitsFor ->
-        snippet = snippetsModule.snippetsByPrefixForScopes(['.foo'])['foo']
+        snippet = snippetsService.snippetsByPrefixForScopes(['.foo'])['foo']
 
       runs ->
         expect(snippet.name).toBe 'foo snippet'
@@ -138,14 +138,14 @@ describe "Snippet Loading", ->
         """
 
         waitsFor "snippets to be changed", ->
-          snippet = snippetsModule.snippetsByPrefixForScopes(['.foo'])['foo']
+          snippet = snippetsService.snippetsByPrefixForScopes(['.foo'])['foo']
           snippet?.body is 'bar2'
 
         runs ->
           fs.writeFileSync path.join(configDirPath, 'snippets.json'), ""
 
         waitsFor "snippets to be removed", ->
-          not snippetsModule.snippetsByPrefixForScopes(['.foo'])['foo']
+          not snippetsService.snippetsByPrefixForScopes(['.foo'])['foo']
 
   describe "when ~/.atom/snippets.cson exists", ->
     beforeEach ->
@@ -161,7 +161,7 @@ describe "Snippet Loading", ->
       snippet = null
 
       waitsFor ->
-        snippet = snippetsModule.snippetsByPrefixForScopes(['.foo'])['foo']
+        snippet = snippetsService.snippetsByPrefixForScopes(['.foo'])['foo']
 
       runs ->
         expect(snippet.name).toBe 'foo snippet'
@@ -178,14 +178,14 @@ describe "Snippet Loading", ->
         """
 
         waitsFor "snippets to be changed", ->
-          snippet = snippetsModule.snippetsByPrefixForScopes(['.foo'])['foo']
+          snippet = snippetsService.snippetsByPrefixForScopes(['.foo'])['foo']
           snippet?.body is 'bar2'
 
         runs ->
           fs.writeFileSync path.join(configDirPath, 'snippets.cson'), ""
 
         waitsFor "snippets to be removed", ->
-          snippet = snippetsModule.snippetsByPrefixForScopes(['.foo'])['foo']
+          snippet = snippetsService.snippetsByPrefixForScopes(['.foo'])['foo']
           not snippet?
 
   it "notifies the user when the user snippets file cannot be loaded", ->
