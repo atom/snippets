@@ -2,7 +2,7 @@
 
 Expand snippets matching the current prefix with `tab` in Atom.
 
-To add your own snippets, select the _Atom > Open Your Snippets_ menu option if you're using OSX, or the _File > Open Your Snippets_ menu option if you're using Windows, use the _Edit > Open Your Snippets_ menu option if you are using a Linux based operating system.
+To add your own snippets, select the _Atom > Open Your Snippets_ menu option if you're using OSX, or the _File > Open Your Snippets_ menu option if you're using Windows, use _Edit > Open Your Snippets if you are using Linux.
 
 ## Snippet Format
 
