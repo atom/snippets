@@ -456,7 +456,6 @@ describe "Snippets extension", ->
         simulateTabKeyEvent()
         expect(editor.lineTextForBufferRow(0)).toBe "with placeholder test"
         expect(editor.lineTextForBufferRow(1)).toBe "without placeholder var quicksort = function () {"
-        expect(editor.getMarkerCount()).toBe 3
 
         expect(editor.getSelectedBufferRange()).toEqual [[0, 17], [0, 21]]
 
@@ -641,7 +640,6 @@ describe "Snippets extension", ->
       Snippets.insert("hello ${1:world}", editor)
 
       expect(editor.lineTextForBufferRow(0)).toBe "var hello world = function () {"
-      expect(editor.getMarkerCount()).toBe 2
       expect(editor.getSelectedBufferRange()).toEqual [[0, 10], [0, 15]]
 
   describe "when the 'snippets:available' command is triggered", ->
