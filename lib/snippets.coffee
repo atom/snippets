@@ -15,7 +15,7 @@ module.exports =
   activate: ->
     @userSnippetsPath = null
     @snippetIdCounter = 0
-    @snippetsCache = new Map
+    @parsedSnippetsById = new Map
     @scopedPropertyStore = new ScopedPropertyStore
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.workspace.addOpener (uri) =>
@@ -206,7 +206,7 @@ module.exports =
   clearSnippetsForPath: (path) ->
     for scopeSelector of @scopedPropertyStore.propertiesForSource(path)
       for prefix, attributes of @scopedPropertyStore.propertiesForSourceAndSelector(path, scopeSelector)
-        @snippetsCache.delete(attributes.id)
+        @parsedSnippetsById.delete(attributes.id)
 
       @scopedPropertyStore.removePropertiesForSourceAndSelector(path, scopeSelector)
 
@@ -219,12 +219,12 @@ module.exports =
 
       {id, name, body, bodyTree, description, descriptionMoreURL} = attributes
 
-      unless @snippetsCache.has(id)
+      unless @parsedSnippetsById.has(id)
         bodyTree ?= @getBodyParser().parse(body)
         snippet = new Snippet({id, name, prefix, bodyTree, description, descriptionMoreURL, bodyText: body})
-        @snippetsCache.set(id, snippet)
+        @parsedSnippetsById.set(id, snippet)
 
-      snippets[prefix] = @snippetsCache.get(id)
+      snippets[prefix] = @parsedSnippetsById.get(id)
     snippets
 
   priorityForSource: (source) ->
