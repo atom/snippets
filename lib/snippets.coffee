@@ -334,7 +334,11 @@ module.exports =
       snippet = new Snippet({name: '__anonymous', prefix: '', bodyTree, bodyText: snippet})
     new SnippetExpansion(snippet, editor, cursor, this)
 
+  getUnparsedSnippets: ->
+    _.deepClone(@scopedPropertyStore.propertySets)
+
   provideSnippets: ->
     bundledSnippetsLoaded: => @loaded
     insertSnippet: @insert.bind(this)
     snippetsForScopes: @parsedSnippetsForScopes.bind(this)
+    getUnparsedSnippets: @getUnparsedSnippets.bind(this)
