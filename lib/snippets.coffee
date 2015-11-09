@@ -123,7 +123,7 @@ module.exports =
   handleUserSnippetsDidChange: ->
     userSnippetsPath = @getUserSnippetsPath()
     atom.config.transact =>
-      @clearUnparsedSnippetsForPath(userSnippetsPath)
+      @clearSnippetsForPath(userSnippetsPath)
       @loadSnippetsFile userSnippetsPath, (result) =>
         @add(userSnippetsPath, result)
 
@@ -203,9 +203,11 @@ module.exports =
     unparsedSnippets[selector] = {"snippets": value}
     @scopedPropertyStore.addProperties(path, unparsedSnippets, priority: @priorityForSource(path))
 
-  clearUnparsedSnippetsForPath: (path) ->
+  clearSnippetsForPath: (path) ->
     for scopeSelector of @scopedPropertyStore.propertiesForSource(path)
-      settings = @scopedPropertyStore.propertiesForSourceAndSelector(path, scopeSelector)
+      for prefix, attributes of @scopedPropertyStore.propertiesForSourceAndSelector(path, scopeSelector)
+        @snippetsCache.delete(attributes.id)
+
       @scopedPropertyStore.removePropertiesForSourceAndSelector(path, scopeSelector)
 
   parsedSnippetsForScopes: (scopeDescriptor) ->
