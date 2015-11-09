@@ -178,6 +178,35 @@ describe "Snippets extension", ->
               $0one${1} ${2:two} three${3}
             """
 
+          "variables":
+            prefix: "var1"
+            body: """
+              xxx${/basename} yyy ${/extname}zzz ${/line}${/project} ${/dirnamerel} ${:variable-prop1:variable-prop2}
+            """
+
+          "invalid variables":
+            prefix: "var2"
+            body: """
+              ${abc}${:variable-prop1}${:X:variable-prop2}
+            """
+
+    describe "when the snippet contains variables", ->
+      it "evaluates the variables", ->
+        editor.setText('')
+        editor.insertText('var1')
+        atom.commands.dispatch editorElement, 'snippets:expand'
+        expect(editor.getText()).toBe 'xxxsample.js yyy .jszzz     1fixtures . variable-value'
+
+    describe "when the snippet contains invalid variables", ->
+      it "inserts error messages", ->
+        editor.setText('')
+        editor.insertText('var2')
+        atom.commands.dispatch editorElement, 'snippets:expand'
+        expect(editor.getText()).toBe \
+          ' <prefix not one of "-:/" in variable "abc"> ' +
+          ' <expected string for package.json property "variable-prop1"> ' +
+          ' <package.json does not have property "X:variable-prop2"> '
+
     describe "when the snippet body is invalid or missing", ->
       it "does not register the snippet", ->
         editor.setText('')

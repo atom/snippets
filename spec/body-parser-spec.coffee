@@ -24,19 +24,6 @@ describe "Snippet Body Parser", ->
       " dog"
     ]
 
-  it "removes interpolated variables in placeholder text (we don't currently support it)", ->
-    bodyTree = BodyParser.parse """
-      module ${1:ActiveRecord::${TM_FILENAME/(?:\\A|_)([A-Za-z0-9]+)(?:\\.rb)?/(?2::\\u$1)/g}}
-    """
-
-    expect(bodyTree).toEqual [
-      "module ",
-      {
-        "index": 1,
-        "content": ["ActiveRecord::", ""]
-      }
-    ]
-
   it "skips escaped tabstops", ->
     bodyTree = BodyParser.parse """
       snippet $1 escaped \\$2 \\\\$3

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "async": "~0.2.6",
+    "moment": "2.x",
     "atom-space-pen-views": "^2.0.0",
     "fs-plus": "^2.0.0",
     "loophole": "^1",

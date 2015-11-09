@@ -1,5 +1,6 @@
 _ = require 'underscore-plus'
 {CompositeDisposable} = require 'atom'
+variable = require './variable'
 
 module.exports =
 class SnippetExpansion
@@ -14,7 +15,8 @@ class SnippetExpansion
 
     @editor.transact =>
       newRange = @editor.transact =>
-        @cursor.selection.insertText(snippet.body, autoIndent: false)
+        body = variable.fixLineNum(snippet.body, startPosition)
+        @cursor.selection.insertText(body, autoIndent: false)
       if snippet.tabStops.length > 0
         @subscriptions.add @cursor.onDidChangePosition (event) => @cursorMoved(event)
         @subscriptions.add @cursor.onDidDestroy => @cursorDestroyed()
