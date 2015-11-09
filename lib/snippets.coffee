@@ -14,6 +14,8 @@ module.exports =
 
   activate: ->
     @userSnippetsPath = null
+    @snippetIdCounter = 0
+    @snippetsCache = new Map
     @scopedPropertyStore = new ScopedPropertyStore
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.workspace.addOpener (uri) =>
@@ -178,6 +180,7 @@ module.exports =
       for name, attributes of snippetsByName
         {prefix, body} = attributes
         attributes.name = name
+        attributes.id = @snippetIdCounter++
         if typeof body is 'string'
           unparsedSnippetsByPrefix[prefix] = attributes
         else if not body?
@@ -212,10 +215,14 @@ module.exports =
     for prefix, attributes of unparsedSnippetsByPrefix
       continue if typeof attributes?.body isnt 'string'
 
-      {name, body, bodyTree, description, descriptionMoreURL} = attributes
-      bodyTree ?= @getBodyParser().parse(body)
-      snippet = new Snippet({name, prefix, bodyTree, description, descriptionMoreURL, bodyText: body})
-      snippets[prefix] = snippet
+      {id, name, body, bodyTree, description, descriptionMoreURL} = attributes
+
+      unless @snippetsCache.has(id)
+        bodyTree ?= @getBodyParser().parse(body)
+        snippet = new Snippet({id, name, prefix, bodyTree, description, descriptionMoreURL, bodyText: body})
+        @snippetsCache.set(id, snippet)
+
+      snippets[prefix] = @snippetsCache.get(id)
     snippets
 
   priorityForSource: (source) ->
