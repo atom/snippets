@@ -51,7 +51,7 @@ describe "Snippets extension", ->
     snippets = atom.packages.getActivePackage('snippets').mainModule
 
     invalidSnippets = null
-    spyOn(atom.config, 'get').andCallFake -> invalidSnippets
+    spyOn(snippets.scopedPropertyStore, 'getPropertyValue').andCallFake -> invalidSnippets
     expect(snippets.getSnippets(editor)).toEqual {}
 
     invalidSnippets = 'test'
@@ -80,10 +80,9 @@ describe "Snippets extension", ->
             body: null
 
     it "overrides the less-specific defined snippet", ->
-      snippets = atom.config.get('snippets', scope: ['.source.js'])
-      expect(snippets['t1']).not.toBe null
-      snippets = atom.config.get('snippets', scope: ['.source.js .nope.not-today'])
-      expect(snippets['t1']).toBe null
+      snippets = Snippets.provideSnippets()
+      expect(snippets.snippetsForScopes(['.source.js'])['t1']).toBeTruthy()
+      expect(snippets.snippetsForScopes(['.source.js .nope.not-today'])['t1']).toBeFalsy()
 
   describe "when 'tab' is triggered on the editor", ->
     beforeEach ->
@@ -177,6 +176,42 @@ describe "Snippets extension", ->
             body: """
               $0one${1} ${2:two} three${3}
             """
+
+    it "parses snippets once, reusing cached ones on subsequent queries", ->
+      spyOn(Snippets, "getBodyParser").andCallThrough()
+
+      editor.insertText("t1")
+      simulateTabKeyEvent()
+
+      expect(Snippets.getBodyParser).toHaveBeenCalled()
+      expect(editor.lineTextForBufferRow(0)).toBe "this is a testvar quicksort = function () {"
+      expect(editor.getCursorScreenPosition()).toEqual [0, 14]
+
+      Snippets.getBodyParser.reset()
+
+      editor.setText("")
+      editor.insertText("t1")
+      simulateTabKeyEvent()
+
+      expect(Snippets.getBodyParser).not.toHaveBeenCalled()
+      expect(editor.lineTextForBufferRow(0)).toBe "this is a test"
+      expect(editor.getCursorScreenPosition()).toEqual [0, 14]
+
+      Snippets.getBodyParser.reset()
+
+      Snippets.add __filename,
+        ".source.js":
+          "invalidate previous snippet":
+            prefix: "t1"
+            body: "new snippet"
+
+      editor.setText("")
+      editor.insertText("t1")
+      simulateTabKeyEvent()
+
+      expect(Snippets.getBodyParser).toHaveBeenCalled()
+      expect(editor.lineTextForBufferRow(0)).toBe "new snippet"
+      expect(editor.getCursorScreenPosition()).toEqual [0, 11]
 
     describe "when the snippet body is invalid or missing", ->
       it "does not register the snippet", ->

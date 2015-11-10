@@ -4,6 +4,7 @@ _ = require 'underscore-plus'
 async = require 'async'
 CSON = require 'season'
 fs = require 'fs-plus'
+ScopedPropertyStore = require 'scoped-property-store'
 
 Snippet = require './snippet'
 SnippetExpansion = require './snippet-expansion'
@@ -12,8 +13,11 @@ module.exports =
   loaded: false
 
   activate: ->
+    @userSnippetsPath = null
+    @snippetIdCounter = 0
+    @parsedSnippetsById = new Map
+    @scopedPropertyStore = new ScopedPropertyStore
     @subscriptions = new CompositeDisposable
-
     @subscriptions.add atom.workspace.addOpener (uri) =>
       if uri is 'atom://.atom/snippets'
         atom.workspace.open(@getUserSnippetsPath())
@@ -57,8 +61,11 @@ module.exports =
     atom.config.transact => @subscriptions.dispose()
 
   getUserSnippetsPath: ->
-    userSnippetsPath = CSON.resolve(path.join(atom.getConfigDirPath(), 'snippets'))
-    userSnippetsPath ? path.join(atom.getConfigDirPath(), 'snippets.cson')
+    return @userSnippetsPath if @userSnippetsPath?
+
+    @userSnippetsPath = CSON.resolve(path.join(atom.getConfigDirPath(), 'snippets'))
+    @userSnippetsPath ?= path.join(atom.getConfigDirPath(), 'snippets.cson')
+    @userSnippetsPath
 
   loadAll: (callback) ->
     @loadBundledSnippets (bundledSnippets) =>
@@ -116,7 +123,7 @@ module.exports =
   handleUserSnippetsDidChange: ->
     userSnippetsPath = @getUserSnippetsPath()
     atom.config.transact =>
-      atom.config.unset(null, source: userSnippetsPath)
+      @clearSnippetsForPath(userSnippetsPath)
       @loadSnippetsFile userSnippetsPath, (result) =>
         @add(userSnippetsPath, result)
 
@@ -169,19 +176,62 @@ module.exports =
 
   add: (filePath, snippetsBySelector) ->
     for selector, snippetsByName of snippetsBySelector
-      snippetsByPrefix = {}
+      unparsedSnippetsByPrefix = {}
       for name, attributes of snippetsByName
-        {prefix, body, bodyTree, description, descriptionMoreURL} = attributes
-
+        {prefix, body} = attributes
+        attributes.name = name
+        attributes.id = @snippetIdCounter++
         if typeof body is 'string'
-          # if `add` isn't called by the loader task (in specs for example), we need to parse the body
-          bodyTree ?= @getBodyParser().parse(body) if typeof body is 'string'
-          snippet = new Snippet({name, prefix, bodyTree, description, descriptionMoreURL, bodyText: body})
-          snippetsByPrefix[snippet.prefix] = snippet
+          unparsedSnippetsByPrefix[prefix] = attributes
         else if not body?
-          snippetsByPrefix[prefix] = null
-      atom.config.set('snippets', snippetsByPrefix, source: filePath, scopeSelector: selector)
+          unparsedSnippetsByPrefix[prefix] = null
+
+      @storeUnparsedSnippets(unparsedSnippetsByPrefix, filePath, selector)
     return
+
+  getScopeChain: (object) ->
+    scopesArray = object?.getScopesArray?()
+    scopesArray ?= object
+    scopesArray
+      .map (scope) ->
+        scope = ".#{scope}" unless scope[0] is '.'
+        scope
+      .join(' ')
+
+  storeUnparsedSnippets: (value, path, selector) ->
+    unparsedSnippets = {}
+    unparsedSnippets[selector] = {"snippets": value}
+    @scopedPropertyStore.addProperties(path, unparsedSnippets, priority: @priorityForSource(path))
+
+  clearSnippetsForPath: (path) ->
+    for scopeSelector of @scopedPropertyStore.propertiesForSource(path)
+      for prefix, attributes of @scopedPropertyStore.propertiesForSourceAndSelector(path, scopeSelector)
+        @parsedSnippetsById.delete(attributes.id)
+
+      @scopedPropertyStore.removePropertiesForSourceAndSelector(path, scopeSelector)
+
+  parsedSnippetsForScopes: (scopeDescriptor) ->
+    unparsedSnippetsByPrefix = @scopedPropertyStore.getPropertyValue(@getScopeChain(scopeDescriptor), "snippets")
+    unparsedSnippetsByPrefix ?= {}
+    snippets = {}
+    for prefix, attributes of unparsedSnippetsByPrefix
+      continue if typeof attributes?.body isnt 'string'
+
+      {id, name, body, bodyTree, description, descriptionMoreURL} = attributes
+
+      unless @parsedSnippetsById.has(id)
+        bodyTree ?= @getBodyParser().parse(body)
+        snippet = new Snippet({id, name, prefix, bodyTree, description, descriptionMoreURL, bodyText: body})
+        @parsedSnippetsById.set(id, snippet)
+
+      snippets[prefix] = @parsedSnippetsById.get(id)
+    snippets
+
+  priorityForSource: (source) ->
+    if source is @getUserSnippetsPath()
+      1000
+    else
+      0
 
   getBodyParser: ->
     @bodyParser ?= require './snippet-body-parser'
@@ -232,11 +282,7 @@ module.exports =
     longestPrefixMatch
 
   getSnippets: (editor) ->
-    snippets = atom.config.get('snippets', scope: editor.getLastCursor().getScopeDescriptor()) ? {}
-    snippets = {} if Array.isArray(snippets) or typeof snippets isnt 'object'
-    for name, snippet of snippets
-      delete snippets[name] unless snippet
-    snippets
+    @parsedSnippetsForScopes(editor.getLastCursor().getScopeDescriptor())
 
   snippetToExpandUnderCursor: (editor) ->
     return false unless editor.getLastSelection().isEmpty()
@@ -288,6 +334,11 @@ module.exports =
       snippet = new Snippet({name: '__anonymous', prefix: '', bodyTree, bodyText: snippet})
     new SnippetExpansion(snippet, editor, cursor, this)
 
+  getUnparsedSnippets: ->
+    _.deepClone(@scopedPropertyStore.propertySets)
+
   provideSnippets: ->
     bundledSnippetsLoaded: => @loaded
     insertSnippet: @insert.bind(this)
+    snippetsForScopes: @parsedSnippetsForScopes.bind(this)
+    getUnparsedSnippets: @getUnparsedSnippets.bind(this)
