@@ -668,7 +668,8 @@ describe "Snippets extension", ->
         simulateTabKeyEvent()
         expect(editor.lineTextForBufferRow(0)).toBe "go here next:() and finally go here:()"
         expect(editor.lineTextForBufferRow(1)).toBe "go here first:(go here next:() and finally go here:()"
-        expect(editor.lineTextForBufferRow(2)).toBe "go here first:())"
+        expect(editor.lineTextForBufferRow(2)).toBe "go here first:()"
+        expect(editor.lineTextForBufferRow(3)).toBe ")"
         expect(editor.getSelectedBufferRange()).toEqual [[2, 15], [2, 15]]
 
         simulateTabKeyEvent()
@@ -686,7 +687,29 @@ describe "Snippets extension", ->
 
         simulateTabKeyEvent()
         simulateTabKeyEvent()
-        expect(editor.lineTextForBufferRow(0)).toBe "go here next:() and finally go here:(  )"
+        expect(editor.lineTextForBufferRow(0)).toBe "go here next:() and finally go here:( )"
+
+      it "handles multi-tabstops", ->
+        editor.setText 't9b'
+        editor.setCursorScreenPosition [0, 3]
+        simulateTabKeyEvent()
+        editor.insertText 't9b'
+        simulateTabKeyEvent()
+        editor.insertText 't9b'
+        simulateTabKeyEvent()
+        for i in [1..7]
+          editor.insertText "#{i}"
+          simulateTabKeyEvent()
+        expect(editor.lineTextForBufferRow(0)).toBe "with placeholder with placeholder with placeholder 1"
+        expect(editor.lineTextForBufferRow(10)).toBe "without placeholder with placeholder with placeholder 1"
+        expect(editor.lineTextForBufferRow(i)).toBe "without placeholder with placeholder 1" for i in [4, 14]
+        expect(editor.lineTextForBufferRow(i)).toBe "without placeholder 1" for i in [1, 5, 11, 15]
+        expect(editor.lineTextForBufferRow(i)).toBe "second tabstop 2" for i in [2, 6, 12, 16]
+        expect(editor.lineTextForBufferRow(i)).toBe "third tabstop 3" for i in [3, 7, 13, 17]
+        expect(editor.lineTextForBufferRow(i)).toBe "second tabstop 4" for i in [8, 18]
+        expect(editor.lineTextForBufferRow(i)).toBe "third tabstop 5" for i in [9, 19]
+        expect(editor.lineTextForBufferRow(20)).toBe "second tabstop 6"
+        expect(editor.lineTextForBufferRow(21)).toBe "third tabstop 7 "
 
   describe "when atom://.atom/snippets is opened", ->
     it "opens ~/.atom/snippets.cson", ->
