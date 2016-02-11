@@ -651,6 +651,43 @@ describe "Snippets extension", ->
           expect(editor.lineTextForBufferRow(7)).toBe "    }one t1 three"
           expect(editor.lineTextForBufferRow(12)).toBe "};one t1 three"
 
+    describe "when there are nested snippets", ->
+      it "tries to expand before moving to the next tabstop", ->
+        spyOn(Snippets, 'snippetToExpandUnderCursor').andReturn(false)
+        spyOn(Snippets, 'goToNextTabStop').andReturn(true)
+
+        simulateTabKeyEvent()
+        expect(Snippets.snippetToExpandUnderCursor).toHaveBeenCalled()
+        expect(Snippets.goToNextTabStop).toHaveBeenCalled()
+
+      it "moves to surrounding expansions after terminating a snippet", ->
+        editor.setText 't2'
+        editor.setCursorScreenPosition [0, 2]
+        simulateTabKeyEvent()
+        editor.insertText 't2'
+        simulateTabKeyEvent()
+        expect(editor.lineTextForBufferRow(0)).toBe "go here next:() and finally go here:()"
+        expect(editor.lineTextForBufferRow(1)).toBe "go here first:(go here next:() and finally go here:()"
+        expect(editor.lineTextForBufferRow(2)).toBe "go here first:())"
+        expect(editor.getSelectedBufferRange()).toEqual [[2, 15], [2, 15]]
+
+        simulateTabKeyEvent()
+        simulateTabKeyEvent()
+        editor.insertText 't5'
+        simulateTabKeyEvent()
+        simulateTabKeyEvent(shift: true)
+        expect(editor.lineTextForBufferRow(1)).toBe 'go here first:(go here next:() and finally go here:("key": value)'
+        expect(editor.getSelectedBufferRange()).toEqual [[1, 29], [1, 29]]
+
+        simulateTabKeyEvent()
+        simulateTabKeyEvent()
+        expect(editor.lineTextForBufferRow(0)).toBe "go here next:() and finally go here:()"
+        expect(editor.getSelectedBufferRange()).toEqual [[0, 14], [0, 14]]
+
+        simulateTabKeyEvent()
+        simulateTabKeyEvent()
+        expect(editor.lineTextForBufferRow(0)).toBe "go here next:() and finally go here:(  )"
+
   describe "when atom://.atom/snippets is opened", ->
     it "opens ~/.atom/snippets.cson", ->
       jasmine.unspy(Snippets, 'getUserSnippetsPath')
