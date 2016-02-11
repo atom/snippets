@@ -53,7 +53,14 @@ class SnippetExpansion
       false
 
   goToPreviousTabStop: ->
-    @setTabStopIndex(@tabStopIndex - 1) if @tabStopIndex > 0
+    if @tabStopIndex > 0
+      if @setTabStopIndex(@tabStopIndex - 1)
+        true
+      else
+        @goToPreviousTabStop()
+    else
+      @destroy()
+      false
 
   setTabStopIndex: (@tabStopIndex) ->
     @settingTabStop = true
@@ -84,7 +91,7 @@ class SnippetExpansion
     for markers in @tabStopMarkers
       marker.destroy() for marker in markers
     @tabStopMarkers = []
-    @snippets.clearExpansions(@editor)
+    @snippets.clearCurrentExpansions(@editor)
 
   restore: (@editor) ->
     @snippets.addExpansion(@editor, this)

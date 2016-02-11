@@ -32,7 +32,7 @@ module.exports =
       'snippets:expand': (event) ->
         editor = @getModel()
         if snippets.snippetToExpandUnderCursor(editor)
-          snippets.clearExpansions(editor)
+          snippets.newCurrentExpansions(editor)
           snippets.expandSnippetsUnderCursors(editor)
         else
           event.abortKeyBinding()
@@ -306,27 +306,45 @@ module.exports =
 
   goToNextTabStop: (editor) ->
     nextTabStopVisited = false
-    for expansion in @getExpansions(editor)
-      if expansion?.goToNextTabStop()
-        nextTabStopVisited = true
+    while currentExpansions = @getCurrentExpansions(editor)
+      @clearCurrentExpansions(editor) unless currentExpansions.length
+      for expansion in currentExpansions
+        if expansion?.goToNextTabStop()
+          nextTabStopVisited = true
+      break if nextTabStopVisited
     nextTabStopVisited
 
   goToPreviousTabStop: (editor) ->
     previousTabStopVisited = false
-    for expansion in @getExpansions(editor)
-      if expansion?.goToPreviousTabStop()
-        previousTabStopVisited = true
+    while currentExpansions = @getCurrentExpansions(editor)
+      @clearCurrentExpansions(editor) unless currentExpansions.length
+      for expansion in currentExpansions
+        if expansion?.goToPreviousTabStop()
+          previousTabStopVisited = true
+      break if previousTabStopVisited
     previousTabStopVisited
 
   getExpansions: (editor) ->
-    @editorSnippetExpansions?.get(editor) ? []
+    @editorSnippetExpansions.get(editor)
+
+  getCurrentExpansions: (editor) ->
+    expansions = @getExpansions(editor)
+    return expansions[expansions.length - 1] if expansions.length
 
   clearExpansions: (editor) ->
     @editorSnippetExpansions ?= new WeakMap()
     @editorSnippetExpansions.set(editor, [])
 
+  clearCurrentExpansions: (editor) ->
+    expansions = @getExpansions(editor)
+    expansions.pop() if expansions.length
+
   addExpansion: (editor, snippetExpansion) ->
-    @getExpansions(editor).push(snippetExpansion)
+    if not @getCurrentExpansions(editor)?.push(snippetExpansion)
+      @getExpansions(editor).push([snippetExpansion])
+
+  newCurrentExpansions: (editor) ->
+    @getExpansions(editor).push([])
 
   insert: (snippet, editor=atom.workspace.getActiveTextEditor(), cursor=editor.getLastCursor()) ->
     if typeof snippet is 'string'
