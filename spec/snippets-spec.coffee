@@ -267,10 +267,6 @@ describe "Snippets extension", ->
           simulateTabKeyEvent(shift: true)
           expect(editor.getSelectedBufferRange()).toEqual [[3, 15], [3, 15]]
 
-          # shift-tab on first tab-stop does nothing
-          simulateTabKeyEvent(shift: true)
-          expect(editor.getCursorScreenPosition()).toEqual [3, 15]
-
           # tab through all tab stops, then tab on last stop to terminate snippet
           simulateTabKeyEvent()
           simulateTabKeyEvent()
