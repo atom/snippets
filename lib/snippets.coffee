@@ -128,11 +128,63 @@ module.exports =
         @add(userSnippetsPath, result)
 
   loadPackageSnippets: (callback) ->
+    # Sort it *before* mapping it
     packages = atom.packages.getLoadedPackages()
-    snippetsDirPaths = (path.join(pack.path, 'snippets') for pack in packages).sort (a, b) ->
-      if /\/app\.asar\/node_modules\//.test(a) then -1 else 1
-    async.map snippetsDirPaths, @loadSnippetsDirectory.bind(this), (error, results) ->
-      callback(_.extend({}, results...))
+      .sort (pack, b) ->
+        if /\/app\.asar\/node_modules\//.test(pack.path) then -1 else 1
+
+    # So the derived array has the same order
+    snippetsDirPaths = (path.join(pack.path, 'snippets') for pack in packages)
+    async.map snippetsDirPaths, @loadSnippetsDirectory.bind(this), (error, results) =>
+      # Zip it so we can iterate over it and get the package and result
+      zipped = ({result: result, pack: packages[key]} for key, result of results)
+
+      # Only keep the ones that actually have snippets in them
+      packagesWithSnippets = zipped.filter (o) -> Object.keys(o.result).length isnt 0
+
+      packagesConfig = {}
+      # Add a config entry for every package with snippets
+      for o in packagesWithSnippets
+        p = o.pack
+        packagesConfig[p.name] =
+          title: "#{p.name}"
+          description: "Enable snippets for #{p.name}"
+          type: "boolean"
+          default: true
+
+      # I don't know where I should get this name from :s
+      # (@name didn't work... even though I had fat arrow)
+      name = 'snippets'
+
+      # Update the config schema so you see it in the settings tab
+      atom.config.setSchema(name,
+        type: 'object',
+        properties: packagesConfig
+      )
+
+      ###
+      TODO:
+      Make it not require a reload to apply config.
+      Right now, when you change the config, it requires you to reload
+      atom as there is no way to remove snippets that belong to a certain package.
+      Best I can do for now is notifying the user about the fact they should
+      reload/restart atom
+      ###
+      atom.config.onDidChange(name, ->
+        atom.notifications.addInfo("""
+          You should restart atom for the snippet settings to take effect,
+          I'm sorry but that is the way we built it... We're on it ;)
+        """)
+      )
+
+      packagesNotDisabled = packagesWithSnippets
+        # Filter out packages disabled by the user
+        .filter (o) -> atom.config.get("#{name}.#{o.pack.name}")
+        # And map it back to just the results (unzip)
+        .map (o) -> o.result
+
+      # Pass the enabled packages with snippets forward
+      callback(_.extend({}, packagesNotDisabled...))
 
   doneLoading: ->
     @loaded = true
