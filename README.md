@@ -43,7 +43,7 @@ These parameters are meant to provide extra information about your snippet to [a
 
 * `leftLabel` will add text to the left part of the autocomplete results box.
 * `leftLabelHTML` will overwrite what's in `leftLabel` and allow you to use a bit of CSS such as `color`.
-* `rightLabelHTML`. By default, in th right part of the results box you will see the name of the snippet. When using `rightLabelHTML` the name of the snippet will no longer be displayed, and you will be able to use a bit of CSS.
+* `rightLabelHTML`. By default, in the right part of the results box you will see the name of the snippet. When using `rightLabelHTML` the name of the snippet will no longer be displayed, and you will be able to use a bit of CSS.
 * `description` will add text to a description box under the autocomplete results list.
 * `descriptionMoreURL` URL to the documentation of the snippet.
 
