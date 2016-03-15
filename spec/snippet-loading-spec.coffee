@@ -62,6 +62,17 @@ describe "Snippet Loading", ->
       expect(snippet.description).toBe 'a description'
       expect(snippet.descriptionMoreURL).toBe 'http://google.com'
 
+      snippet = snippetsService.snippetsForScopes(['.test'])['testlabelleft']
+      expect(snippet.prefix).toBe 'testlabelleft'
+      expect(snippet.body).toBe 'testing 456'
+      expect(snippet.leftLabel).toBe 'a label'
+
+      snippet = snippetsService.snippetsForScopes(['.test'])['testhtmllabels']
+      expect(snippet.prefix).toBe 'testhtmllabels'
+      expect(snippet.body).toBe 'testing 456'
+      expect(snippet.leftLabelHTML).toBe '<span style=\"color:red\">Label</span>'
+      expect(snippet.rightLabelHTML).toBe '<span style=\"color:white\">Label</span>'
+
   it "logs a warning if package snippets files cannot be parsed", ->
     activateSnippetsPackage()
 
