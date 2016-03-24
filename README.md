@@ -38,6 +38,27 @@ console.log("crash");
 The string `"crash"` would be initially selected and pressing tab again would
 place the cursor after the `;`
 
+### Optional parameters
+These parameters are meant to provide extra information about your snippet to [autocomplete-plus](https://github.com/atom/autocomplete-plus/wiki/Provider-API).
+
+* `leftLabel` will add text to the left part of the autocomplete results box.
+* `leftLabelHTML` will overwrite what's in `leftLabel` and allow you to use a bit of CSS such as `color`.
+* `rightLabelHTML`. By default, in the right part of the results box you will see the name of the snippet. When using `rightLabelHTML` the name of the snippet will no longer be displayed, and you will be able to use a bit of CSS.
+* `description` will add text to a description box under the autocomplete results list.
+* `descriptionMoreURL` URL to the documentation of the snippet.
+
+![autocomplete-description](http://i.imgur.com/cvI2lOq.png)
+
+Example:
+```coffee
+'.source.js':
+  'console.log':
+    'prefix': 'log'
+    'body': 'console.log(${1:"crash"});$2'
+    'description': 'Output data to the console'
+    'rightLabelHTML': '<span style="color:#ff0">JS</span>'
+```
+
 ### Determining the correct scope for a snippet
 
 The outmost key of a snippet is the "scope" that you want the descendent snippets
