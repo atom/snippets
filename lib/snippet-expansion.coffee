@@ -16,17 +16,27 @@ class SnippetExpansion
       newRange = @editor.transact =>
         @cursor.selection.insertText(snippet.body, autoIndent: false)
       if snippet.tabStops.length > 0
-        @subscriptions.add @cursor.onDidChangePosition (event) => @cursorMoved(event)
-        @subscriptions.add @cursor.onDidDestroy => @cursorDestroyed()
+        if @editor.onDidUpdateSelections?
+          @subscriptions.add @editor.onDidUpdateSelections ({updated, touched, destroyed}) =>
+            for selection in @selections
+              if updated.has(selection) and not touched.has(selection)
+                @cursorMoved(selection.cursor.getBufferPosition())
+
+            if destroyed.size isnt 0
+              @cursorDestroyed()
+        else
+          @subscriptions.add @cursor.onDidChangePosition (event) => @cursorMoved(event.newBufferPosition) unless event.textChanged
+          @subscriptions.add @cursor.onDidDestroy => @cursorDestroyed()
         @placeTabStopMarkers(startPosition, snippet.tabStops)
         @snippets.addExpansion(@editor, this)
         @editor.normalizeTabsInBufferRange(newRange)
       @indentSubsequentLines(startPosition.row, snippet) if snippet.lineCount > 1
 
-  cursorMoved: ({oldBufferPosition, newBufferPosition, textChanged}) ->
-    return if @settingTabStop or textChanged
+  cursorMoved: (position) ->
+    return if @settingTabStop
+
     @destroy() unless @tabStopMarkers[@tabStopIndex].some (marker) ->
-      marker.getBufferRange().containsPoint(newBufferPosition)
+      marker.getBufferRange().containsPoint(position)
 
   cursorDestroyed: -> @destroy() unless @settingTabStop
 
@@ -58,24 +68,24 @@ class SnippetExpansion
   setTabStopIndex: (@tabStopIndex) ->
     @settingTabStop = true
     markerSelected = false
+    @editor.transact =>
+      ranges = []
+      for marker in @tabStopMarkers[@tabStopIndex] when marker.isValid()
+        ranges.push(marker.getBufferRange())
 
-    ranges = []
-    for marker in @tabStopMarkers[@tabStopIndex] when marker.isValid()
-      ranges.push(marker.getBufferRange())
-
-    if ranges.length > 0
-      selection.destroy() for selection in @selections[ranges.length...]
-      @selections = @selections[...ranges.length]
-      for range, i in ranges
-        if @selections[i]
-          @selections[i].setBufferRange(range)
-        else
-          newSelection = @editor.addSelectionForBufferRange(range)
-          @subscriptions.add newSelection.cursor.onDidChangePosition (event) => @cursorMoved(event)
-          @subscriptions.add newSelection.cursor.onDidDestroy => @cursorDestroyed()
-          @selections.push newSelection
-      markerSelected = true
-
+      if ranges.length > 0
+        selection.destroy() for selection in @selections[ranges.length...]
+        @selections = @selections[...ranges.length]
+        for range, i in ranges
+          if @selections[i]
+            @selections[i].setBufferRange(range)
+          else
+            selection = @editor.addSelectionForBufferRange(range)
+            @selections.push(selection)
+            unless @editor.onDidUpdateSelections?
+              @subscriptions.add selection.cursor.onDidChangePosition (event) => @cursorMoved(event.newBufferPosition) unless event.textChanged
+              @subscriptions.add selection.cursor.onDidDestroy => @cursorDestroyed()
+        markerSelected = true
     @settingTabStop = false
     markerSelected
 
