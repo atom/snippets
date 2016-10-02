@@ -1,9 +1,9 @@
 # Snippets package
-[![OS X Build Status](https://travis-ci.org/atom/snippets.svg?branch=master)](https://travis-ci.org/atom/snippets) [![Windows Build Status](https://ci.appveyor.com/api/projects/status/8hlc0onofkgbxw53/branch/master?svg=true)](https://ci.appveyor.com/project/Atom/snippets/branch/master) [![Dependency Status](https://david-dm.org/atom/snippets.svg)](https://david-dm.org/atom/snippets)
+[![macOS Build Status](https://travis-ci.org/atom/snippets.svg?branch=master)](https://travis-ci.org/atom/snippets) [![Windows Build Status](https://ci.appveyor.com/api/projects/status/8hlc0onofkgbxw53/branch/master?svg=true)](https://ci.appveyor.com/project/Atom/snippets/branch/master) [![Dependency Status](https://david-dm.org/atom/snippets.svg)](https://david-dm.org/atom/snippets)
 
 Expand snippets matching the current prefix with <kbd>tab</kbd> in Atom.
 
-To add your own snippets, select the _Atom > Snippets..._ menu option if you're using OS X, or the _File > Snippets..._ menu option if you're using Windows, or the _Edit > Snippets..._ menu option if you are using Linux.
+To add your own snippets, select the _Atom > Snippets..._ menu option if you're using macOS, or the _File > Snippets..._ menu option if you're using Windows, or the _Edit > Snippets..._ menu option if you are using Linux.
 
 ## Snippet Format
 
@@ -55,7 +55,7 @@ Example:
 
 ### Determining the correct scope for a snippet
 
-The outmost key of a snippet is the "scope" that you want the descendent snippets to be available in. The key should be prefixed with a period (`text.html.basic` => `.text.html.basic`). You can find out the correct scope by opening the Settings (<kbd>cmd-,</kbd> on OS X) and selecting the corresponding *Language [xxx]* package, e.g. for *Language Html*:
+The outmost key of a snippet is the "scope" that you want the descendent snippets to be available in. The key should be prefixed with a period (`text.html.basic` => `.text.html.basic`). You can find out the correct scope by opening the Settings (<kbd>cmd-,</kbd> on macOS) and selecting the corresponding *Language [xxx]* package, e.g. for *Language Html*:
 
 ![Screenshot of Language Html settings](https://cloud.githubusercontent.com/assets/1038121/5137632/126beb66-70f2-11e4-839b-bc7e84103f67.png)
 
@@ -100,4 +100,4 @@ Including a literal closing brace inside the text provided by a snippet's tab st
 
 ### Multiple snippets for the same scope
 
-Snippets for the same scope must be placed within the same key. See [this section of the Atom Flight Manual](https://atom.io/docs/latest/using-atom-basic-customization#configuring-with-cson) for more information.
+Snippets for the same scope must be placed within the same key. See [this section of the Atom Flight Manual](http://flight-manual.atom.io/using-atom/sections/basic-customization/#configuring-with-cson) for more information.
