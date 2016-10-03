@@ -48,6 +48,15 @@ describe "Snippet Loading", ->
       expect(csonSnippet.body).toContain "'body':"
       expect(csonSnippet.tabStops.length).toBeGreaterThan(0)
 
+  it "doesn't load the bundled snippets when they are disabled", ->
+    atom.config.set "snippets.loadIncludedSnippets", false
+    activateSnippetsPackage()
+
+    runs ->
+      # Checks that they are empty objects (no snippets available)
+      expect(snippetsService.snippetsForScopes(['.source.json'])).toEqual({})
+      expect(snippetsService.snippetsForScopes(['.source.coffee'])).toEqual({})
+
   it "loads non-hidden snippet files from atom packages with snippets directories", ->
     activateSnippetsPackage()
 

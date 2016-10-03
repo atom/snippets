@@ -78,11 +78,14 @@ module.exports =
           @doneLoading()
 
   loadBundledSnippets: (callback) ->
-    bundledSnippetsPath = CSON.resolve(path.join(__dirname, 'snippets'))
-    @loadSnippetsFile bundledSnippetsPath, (snippets) ->
-      snippetsByPath = {}
-      snippetsByPath[bundledSnippetsPath] = snippets
-      callback(snippetsByPath)
+    if atom.config.get 'snippets.loadIncludedSnippets'
+      bundledSnippetsPath = CSON.resolve(path.join(__dirname, 'snippets'))
+      @loadSnippetsFile bundledSnippetsPath, (snippets) ->
+        snippetsByPath = {}
+        snippetsByPath[bundledSnippetsPath] = snippets
+        callback(snippetsByPath)
+    else
+      callback({})
 
   loadUserSnippets: (callback) ->
     userSnippetsPath = @getUserSnippetsPath()
@@ -128,11 +131,14 @@ module.exports =
         @add(userSnippetsPath, result)
 
   loadPackageSnippets: (callback) ->
-    packages = atom.packages.getLoadedPackages()
-    snippetsDirPaths = (path.join(pack.path, 'snippets') for pack in packages).sort (a, b) ->
-      if /\/app\.asar\/node_modules\//.test(a) then -1 else 1
-    async.map snippetsDirPaths, @loadSnippetsDirectory.bind(this), (error, results) ->
-      callback(_.extend({}, results...))
+    if atom.config.get 'snippets.loadIncludedSnippets'
+      packages = atom.packages.getLoadedPackages()
+      snippetsDirPaths = (path.join(pack.path, 'snippets') for pack in packages).sort (a, b) ->
+        if /\/app\.asar\/node_modules\//.test(a) then -1 else 1
+      async.map snippetsDirPaths, @loadSnippetsDirectory.bind(this), (error, results) ->
+        callback(_.extend({}, results...))
+    else
+      callback({})
 
   doneLoading: ->
     @loaded = true
@@ -342,3 +348,10 @@ module.exports =
     insertSnippet: @insert.bind(this)
     snippetsForScopes: @parsedSnippetsForScopes.bind(this)
     getUnparsedSnippets: @getUnparsedSnippets.bind(this)
+
+  config:
+    loadIncludedSnippets:
+      type: 'boolean'
+      default: true
+      title: 'Load Included Snippets'
+      description: 'Load snippets included in packages.'
