@@ -7,6 +7,15 @@
     body: "testing 456"
     description: "a description"
     descriptionMoreURL: "http://google.com"
+  "Test Snippet With A Label On The Left":
+    prefix: "testlabelleft"
+    body: "testing 456"
+    leftLabel: "a label"
+  "Test Snippet With HTML Labels":
+    prefix: "testhtmllabels"
+    body: "testing 456"
+    leftLabelHTML: "<span style=\"color:red\">Label</span>"
+    rightLabelHTML: "<span style=\"color:white\">Label</span>"
 
 ".source.js":
   "Overrides a core package's snippet":

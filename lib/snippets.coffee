@@ -269,11 +269,11 @@ module.exports =
     for prefix, attributes of unparsedSnippetsByPrefix
       continue if typeof attributes?.body isnt 'string'
 
-      {id, name, body, bodyTree, description, descriptionMoreURL} = attributes
+      {id, name, body, bodyTree, description, descriptionMoreURL, rightLabelHTML, leftLabel, leftLabelHTML} = attributes
 
       unless @parsedSnippetsById.has(id)
         bodyTree ?= @getBodyParser().parse(body)
-        snippet = new Snippet({id, name, prefix, bodyTree, description, descriptionMoreURL, bodyText: body})
+        snippet = new Snippet({id, name, prefix, bodyTree, description, descriptionMoreURL, rightLabelHTML, leftLabel, leftLabelHTML, bodyText: body})
         @parsedSnippetsById.set(id, snippet)
 
       snippets[prefix] = @parsedSnippetsById.get(id)

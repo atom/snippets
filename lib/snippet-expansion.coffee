@@ -1,4 +1,3 @@
-_ = require 'underscore-plus'
 {CompositeDisposable} = require 'atom'
 
 module.exports =
@@ -14,14 +13,14 @@ class SnippetExpansion
 
     @editor.transact =>
       newRange = @editor.transact =>
-        @cursor.selection.insertText(snippet.body, autoIndent: false)
-      if snippet.tabStops.length > 0
+        @cursor.selection.insertText(@snippet.body, autoIndent: false)
+      if @snippet.tabStops.length > 0
         @subscriptions.add @cursor.onDidChangePosition (event) => @cursorMoved(event)
         @subscriptions.add @cursor.onDidDestroy => @cursorDestroyed()
-        @placeTabStopMarkers(startPosition, snippet.tabStops)
+        @placeTabStopMarkers(startPosition, @snippet.tabStops)
         @snippets.addExpansion(@editor, this)
         @editor.normalizeTabsInBufferRange(newRange)
-      @indentSubsequentLines(startPosition.row, snippet) if snippet.lineCount > 1
+      @indentSubsequentLines(startPosition.row, @snippet) if @snippet.lineCount > 1
 
   cursorMoved: ({oldBufferPosition, newBufferPosition, textChanged}) ->
     return if @settingTabStop or textChanged

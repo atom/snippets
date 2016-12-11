@@ -3,7 +3,7 @@ _ = require 'underscore-plus'
 
 module.exports =
 class Snippet
-  constructor: ({@name, @prefix, @bodyText, @description, @descriptionMoreURL, bodyTree}) ->
+  constructor: ({@name, @prefix, @bodyText, @description, @descriptionMoreURL, @rightLabelHTML, @leftLabel, @leftLabelHTML, bodyTree}) ->
     @body = @extractTabStops(bodyTree)
 
   extractTabStops: (bodyTree) ->
