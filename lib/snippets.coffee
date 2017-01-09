@@ -20,7 +20,7 @@ module.exports =
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.workspace.addOpener (uri) =>
       if uri is 'atom://.atom/snippets'
-        atom.workspace.open(@getUserSnippetsPath())
+        atom.workspace.openTextFile(@getUserSnippetsPath())
 
     @loadAll()
     @watchUserSnippets (watchDisposable) =>
