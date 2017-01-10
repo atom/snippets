@@ -4,7 +4,3 @@
 'atom-text-editor:not([mini])':
   'tab': 'snippets:next-tab-stop'
   'shift-tab': 'snippets:previous-tab-stop'
-  'alt-shift-s': 'snippets:available'
-
-'.available-snippets atom-text-editor[mini]':
-  'alt-shift-s': 'snippets:available'

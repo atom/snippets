@@ -481,7 +481,6 @@ describe "Snippets extension", ->
 
     describe "when snippet contains tabstops with or without placeholder", ->
       it "should create two markers", ->
-        markerCountBefore = editor.getMarkerCount()
         editor.setCursorScreenPosition([0, 0])
         editor.insertText('t8')
         simulateTabKeyEvent()
