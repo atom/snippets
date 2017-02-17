@@ -693,24 +693,31 @@ describe "Snippets extension", ->
       delete Snippets.availableSnippetsView
 
       atom.commands.dispatch(editorElement, "snippets:available")
-      availableSnippetsView = atom.workspace.getModalPanels()[0].getItem()
+
+      waitsFor ->
+        atom.workspace.getModalPanels().length is 1
+
+      runs ->
+        availableSnippetsView = atom.workspace.getModalPanels()[0].getItem()
 
     it "renders a select list of all available snippets", ->
-      expect(availableSnippetsView.getSelectedItem().prefix).toBe 'test'
-      expect(availableSnippetsView.getSelectedItem().name).toBe 'test'
-      expect(availableSnippetsView.getSelectedItem().bodyText).toBe '${1:Test pass you will}, young '
+      expect(availableSnippetsView.selectListView.getSelectedItem().prefix).toBe 'test'
+      expect(availableSnippetsView.selectListView.getSelectedItem().name).toBe 'test'
+      expect(availableSnippetsView.selectListView.getSelectedItem().bodyText).toBe '${1:Test pass you will}, young '
 
-      atom.commands.dispatch availableSnippetsView.filterEditorView[0], 'core:move-down'
-      expect(availableSnippetsView.getSelectedItem().prefix).toBe 'chal'
-      expect(availableSnippetsView.getSelectedItem().name).toBe 'challenge'
-      expect(availableSnippetsView.getSelectedItem().bodyText).toBe '$1: ${2:To pass this challenge}'
+      availableSnippetsView.selectListView.selectNext()
+
+      expect(availableSnippetsView.selectListView.getSelectedItem().prefix).toBe 'chal'
+      expect(availableSnippetsView.selectListView.getSelectedItem().name).toBe 'challenge'
+      expect(availableSnippetsView.selectListView.getSelectedItem().bodyText).toBe '$1: ${2:To pass this challenge}'
 
     it "writes the selected snippet to the editor as snippet", ->
-      atom.commands.dispatch availableSnippetsView.filterEditorView[0], 'core:confirm'
+      availableSnippetsView.selectListView.confirmSelection()
+
       expect(editor.getCursorScreenPosition()).toEqual [0, 18]
       expect(editor.getSelectedText()).toBe 'Test pass you will'
       expect(editor.lineTextForBufferRow(0)).toBe 'Test pass you will, young var quicksort = function () {'
 
     it "closes the dialog when triggered again", ->
-      atom.commands.dispatch availableSnippetsView.filterEditorView[0], 'snippets:available'
+      atom.commands.dispatch availableSnippetsView.selectListView.refs.queryEditor.element, 'snippets:available'
       expect(atom.workspace.getModalPanels().length).toBe 0
