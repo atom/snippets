@@ -654,6 +654,14 @@ describe "Snippets extension", ->
           expect(editor.lineTextForBufferRow(7)).toBe "    }one t1 three"
           expect(editor.lineTextForBufferRow(12)).toBe "};one t1 three"
 
+    describe "when the snippet does not explicitly define an end tab stop", ->
+      it "sets ending tab stop to the end of snippet", ->
+        editor.setCursorScreenPosition([2, 0])
+        editor.insertText('t3')
+        simulateTabKeyEvent()
+        simulateTabKeyEvent()
+        expect(editor.getSelectedBufferRange()).toEqual [[4, 0], [4, 0]]
+
   describe "when atom://.atom/snippets is opened", ->
     it "opens ~/.atom/snippets.cson", ->
       jasmine.unspy(Snippets, 'getUserSnippetsPath')
