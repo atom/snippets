@@ -27,7 +27,8 @@ describe "Snippets extension", ->
       editorElement = atom.views.getView(editor)
 
   afterEach ->
-    atom.packages.deactivatePackage("snippets")
+    waitsForPromise ->
+      Promise.resolve(atom.packages.deactivatePackage("snippets"))
 
   describe "provideSnippets interface", ->
     snippetsInterface = null

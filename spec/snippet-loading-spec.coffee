@@ -18,8 +18,10 @@ describe "Snippet Loading", ->
     ]
 
   afterEach ->
-    atom.packages.deactivatePackages('snippets')
-    jasmine.unspy(atom.packages, 'getLoadedPackages')
+    waitsForPromise ->
+      Promise.resolve(atom.packages.deactivatePackages('snippets'))
+    runs ->
+      jasmine.unspy(atom.packages, 'getLoadedPackages')
 
   activateSnippetsPackage = ->
     waitsForPromise ->
