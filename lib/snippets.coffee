@@ -162,19 +162,11 @@ module.exports =
         properties: packagesConfig
       )
 
-      ###
-      TODO:
-      Make it not require a reload to apply config.
-      Right now, when you change the config, it requires you to reload
-      atom as there is no way to remove snippets that belong to a certain package.
-      Best I can do for now is notifying the user about the fact they should
-      reload/restart atom
-      ###
-      atom.config.onDidChange(name, ->
-        atom.notifications.addInfo("""
-          You should restart atom for the snippet settings to take effect,
-          I'm sorry but that is the way we built it... We're on it ;)
-        """)
+      # when snippets package settings changes, reload all package snippets
+      atom.config.onDidChange(name, =>
+        @unloadPackageSnippets()
+        @loadAll()
+        @getEmitter().emit 'did-reload-snippets'
       )
 
       packagesNotDisabled = packagesWithSnippets
@@ -192,6 +184,9 @@ module.exports =
 
   onDidLoadSnippets: (callback) ->
     @getEmitter().on 'did-load-snippets', callback
+
+  onDidReloadSnippets: (callback) ->
+    @getEmitter().on 'did-reload-snippets', callback
 
   getEmitter: ->
     @emitter ?= new Emitter
@@ -254,6 +249,16 @@ module.exports =
     unparsedSnippets = {}
     unparsedSnippets[selector] = {"snippets": value}
     @scopedPropertyStore.addProperties(path, unparsedSnippets, priority: @priorityForSource(path))
+
+  unloadPackageSnippets: (callback) ->
+    packages = atom.packages.getLoadedPackages()
+    snippetsDirPaths = (path.join(pack.path, 'snippets') for pack in packages).sort (a, b) ->
+      if /\/app\.asar\/node_modules\//.test(a) then -1 else 1
+    async.map snippetsDirPaths, @loadSnippetsDirectory.bind(this), (error, results) =>
+      for snippetSet in results
+        for filepath, _snippetsBySelector of snippetSet
+          @clearSnippetsForPath(filepath)
+
 
   clearSnippetsForPath: (path) ->
     for scopeSelector of @scopedPropertyStore.propertiesForSource(path)
