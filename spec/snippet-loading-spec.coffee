@@ -1,6 +1,7 @@
 path = require 'path'
 fs = require 'fs-plus'
 temp = require('temp').track()
+
 describe "Snippet Loading", ->
   [configDirPath, snippetsService] = []
 
@@ -59,7 +60,7 @@ describe "Snippet Loading", ->
   it "reloads a package snippets if snippets package settings changes", ->
     atom.config.set "snippets.package-with-snippets", false
     activateSnippetsPackage()
-    
+
     waitsFor "snippets to be changed", ->
       atom.config.set "snippets.package-with-snippets", true
       snippet = snippetsService.snippetsForScopes(['.source.js'])['log']
@@ -68,7 +69,6 @@ describe "Snippet Loading", ->
     runs ->
       snippet = snippetsService.snippetsForScopes(['.source.js'])['log']
       expect(snippet.body).toBe "from-a-community-package"
-
 
   it "loads non-hidden snippet files from atom packages with snippets directories", ->
     activateSnippetsPackage()

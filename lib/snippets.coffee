@@ -129,9 +129,8 @@ module.exports =
 
   loadPackageSnippets: (callback) ->
     # Sort it *before* mapping it
-    packages = atom.packages.getLoadedPackages()
-      .sort (pack, b) ->
-        if /\/app\.asar\/node_modules\//.test(pack.path) then -1 else 1
+    packages = atom.packages.getLoadedPackages().sort (pack, b) ->
+      if /\/app\.asar\/node_modules\//.test(pack.path) then -1 else 1
 
     # So the derived array has the same order
     snippetsDirPaths = (path.join(pack.path, 'snippets') for pack in packages)
@@ -145,38 +144,34 @@ module.exports =
       packagesConfig = {}
       # Add a config entry for every package with snippets
       for o in packagesWithSnippets
-        p = o.pack
-        packagesConfig[p.name] =
-          title: "#{p.name}"
-          description: "Enable snippets for #{p.name}"
+        {pack} = o
+        packagesConfig[pack.name] =
+          title: pack.name
+          description: "Enable snippets for #{pack.name}"
           type: "boolean"
           default: true
 
-      # I don't know where I should get this name from :s
-      # (@name didn't work... even though I had fat arrow)
-      name = 'snippets'
-
       # Update the config schema so you see it in the settings tab
-      atom.config.setSchema(name,
+      atom.config.setSchema('snippets',
         type: 'object',
         properties: packagesConfig
       )
 
       # when snippets package settings changes, reload all package snippets
-      atom.config.onDidChange(name, =>
+      atom.config.onDidChange('snippets', =>
         @unloadPackageSnippets()
         @loadAll()
         @getEmitter().emit 'did-reload-snippets'
       )
 
-      packagesNotDisabled = packagesWithSnippets
+      enabledPackages = packagesWithSnippets
         # Filter out packages disabled by the user
-        .filter (o) -> atom.config.get("#{name}.#{o.pack.name}")
+        .filter (o) -> atom.config.get("snippets.#{o.pack.name}")
         # And map it back to just the results (unzip)
         .map (o) -> o.result
 
       # Pass the enabled packages with snippets forward
-      callback(_.extend({}, packagesNotDisabled...))
+      callback(_.extend({}, enabledPackages...))
 
   doneLoading: ->
     @loaded = true
