@@ -30,9 +30,10 @@ module.exports =
 
     # when snippets package settings changes, reload all package snippets
     atom.config.onDidChange('snippets', =>
-      @unloadPackageSnippets()
-      @loadAll()
-      @getEmitter().emit 'did-reload-snippets'
+      if @loaded
+        @unloadPackageSnippets()
+        @loadAll()
+        @getEmitter().emit 'did-reload-snippets'
     )
 
     @subscriptions.add atom.commands.add 'atom-text-editor',
