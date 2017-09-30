@@ -10,17 +10,36 @@ class SnippetExpansion
     @selections = [@cursor.selection]
 
     startPosition = @cursor.selection.getBufferRange().start
+    body = @snippet.body
+    indent = ""
+    tabStopRanges = []
+    if @snippet.lineCount > 1
+      lines = body.split('\n')
+      indent = @editor.lineTextForBufferRow(startPosition.row).match(/^\s*/)[0]
+      for line, index in lines when index isnt 0 # Do not include initial line
+        # Match first line's indent
+        lines[index] = indent + line
+      body = lines.join('\n')
+
+    for tabStop in @snippet.tabStops
+      ranges = []
+      for range in tabStop
+        unless startPosition.row is range.start.row
+          # Add on the indent offset so that the tab stops are placed at the correct position
+          range.start.column += indent.length
+          range.end.column += indent.length
+        ranges.push(range)
+      tabStopRanges.push(ranges)
 
     @editor.transact =>
       newRange = @editor.transact =>
-        @cursor.selection.insertText(@snippet.body, autoIndent: false)
+        @cursor.selection.insertText(body, autoIndent: false)
       if @snippet.tabStops.length > 0
         @subscriptions.add @cursor.onDidChangePosition (event) => @cursorMoved(event)
         @subscriptions.add @cursor.onDidDestroy => @cursorDestroyed()
-        @placeTabStopMarkers(startPosition, @snippet.tabStops)
+        @placeTabStopMarkers(startPosition, tabStopRanges)
         @snippets.addExpansion(@editor, this)
         @editor.normalizeTabsInBufferRange(newRange)
-      @indentSubsequentLines(startPosition.row, @snippet) if @snippet.lineCount > 1
 
   cursorMoved: ({oldBufferPosition, newBufferPosition, textChanged}) ->
     return if @settingTabStop or textChanged
@@ -34,11 +53,6 @@ class SnippetExpansion
       @tabStopMarkers.push ranges.map ({start, end}) =>
         @editor.markBufferRange([startPosition.traverse(start), startPosition.traverse(end)])
     @setTabStopIndex(0)
-
-  indentSubsequentLines: (startRow, snippet) ->
-    initialIndent = @editor.lineTextForBufferRow(startRow).match(/^\s*/)[0]
-    for row in [startRow + 1...startRow + snippet.lineCount]
-      @editor.buffer.insert([row, 0], initialIndent)
 
   goToNextTabStop: ->
     nextIndex = @tabStopIndex + 1
