@@ -4,7 +4,7 @@ module.exports =
 class SnippetExpansion
   settingTabStop: false
 
-  constructor: (@snippet, @editor, @cursor, @snippets) ->
+  constructor: (@snippet, @editor, @cursor, @snippets, @group) ->
     @subscriptions = new CompositeDisposable
     @tabStopMarkers = []
     @selections = [@cursor.selection]
@@ -18,7 +18,7 @@ class SnippetExpansion
         @subscriptions.add @cursor.onDidChangePosition (event) => @cursorMoved(event)
         @subscriptions.add @cursor.onDidDestroy => @cursorDestroyed()
         @placeTabStopMarkers(startPosition, @snippet.tabStops)
-        @snippets.addExpansion(@editor, this)
+        @group.expansions.push(this)
         @editor.normalizeTabsInBufferRange(newRange)
       @indentSubsequentLines(startPosition.row, @snippet) if @snippet.lineCount > 1
 
@@ -52,7 +52,14 @@ class SnippetExpansion
       false
 
   goToPreviousTabStop: ->
-    @setTabStopIndex(@tabStopIndex - 1) if @tabStopIndex > 0
+    if @tabStopIndex > 0
+      if @setTabStopIndex(@tabStopIndex - 1)
+        true
+      else
+        @goToPreviousTabStop()
+    else
+      @destroy()
+      false
 
   setTabStopIndex: (@tabStopIndex) ->
     @settingTabStop = true
@@ -83,7 +90,4 @@ class SnippetExpansion
     for markers in @tabStopMarkers
       marker.destroy() for marker in markers
     @tabStopMarkers = []
-    @snippets.clearExpansions(@editor)
-
-  restore: (@editor) ->
-    @snippets.addExpansion(@editor, this)
+    @group.expansions = []

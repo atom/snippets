@@ -32,11 +32,7 @@ module.exports =
     @subscriptions.add atom.commands.add 'atom-text-editor',
       'snippets:expand': (event) ->
         editor = @getModel()
-        if snippets.snippetToExpandUnderCursor(editor)
-          snippets.clearExpansions(editor)
-          snippets.expandSnippetsUnderCursors(editor)
-        else
-          event.abortKeyBinding()
+        event.abortKeyBinding() unless snippets.expandSnippetsUnderCursors(editor)
 
       'snippets:next-tab-stop': (event) ->
         editor = @getModel()
@@ -298,42 +294,56 @@ module.exports =
 
     editor.transact =>
       cursors = editor.getCursors()
+      group = @newExpansionGroup(editor)
       for cursor in cursors
         cursorPosition = cursor.getBufferPosition()
         startPoint = cursorPosition.translate([0, -snippet.prefix.length], [0, 0])
         cursor.selection.setBufferRange([startPoint, cursorPosition])
-        @insert(snippet, editor, cursor)
+        @insert(snippet, editor, cursor, group)
     true
 
   goToNextTabStop: (editor) ->
-    nextTabStopVisited = false
-    for expansion in @getExpansions(editor)
-      if expansion?.goToNextTabStop()
-        nextTabStopVisited = true
-    nextTabStopVisited
+    group = @getExpansionGroup(editor)
+    while group
+      for expansion in group.expansions
+        expansion.goToNextTabStop()
+      return true if group.expansions.length
+      group = @nextExpansionGroup(editor)
+    false
 
   goToPreviousTabStop: (editor) ->
-    previousTabStopVisited = false
-    for expansion in @getExpansions(editor)
-      if expansion?.goToPreviousTabStop()
-        previousTabStopVisited = true
-    previousTabStopVisited
-
-  getExpansions: (editor) ->
-    @editorSnippetExpansions?.get(editor) ? []
+    group = @getExpansionGroup(editor)
+    while group
+      for expansion in group.expansions
+        expansion.goToPreviousTabStop()
+      return true if group.expansions.length
+      group = @nextExpansionGroup(editor)
+    false
 
   clearExpansions: (editor) ->
     @editorSnippetExpansions ?= new WeakMap()
-    @editorSnippetExpansions.set(editor, [])
+    @editorSnippetExpansions.set(editor, null)
 
-  addExpansion: (editor, snippetExpansion) ->
-    @getExpansions(editor).push(snippetExpansion)
+  getExpansionGroup: (editor) ->
+    @editorSnippetExpansions.get(editor)
 
-  insert: (snippet, editor=atom.workspace.getActiveTextEditor(), cursor=editor.getLastCursor()) ->
+  nextExpansionGroup: (editor) ->
+    group = @editorSnippetExpansions.get(editor)?.parent
+    @editorSnippetExpansions.set(editor, group)
+    group
+
+  newExpansionGroup: (editor) ->
+    group =
+      parent: @editorSnippetExpansions.get(editor)
+      expansions: []
+    @editorSnippetExpansions.set(editor, group)
+    group
+
+  insert: (snippet, editor=atom.workspace.getActiveTextEditor(), cursor=editor.getLastCursor(), group=@newExpansionGroup(editor)) ->
     if typeof snippet is 'string'
       bodyTree = @getBodyParser().parse(snippet)
       snippet = new Snippet({name: '__anonymous', prefix: '', bodyTree, bodyText: snippet})
-    new SnippetExpansion(snippet, editor, cursor, this)
+    new SnippetExpansion(snippet, editor, cursor, this, group)
 
   getUnparsedSnippets: ->
     _.deepClone(@scopedPropertyStore.propertySets)
