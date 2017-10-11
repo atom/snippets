@@ -8,6 +8,7 @@ ScopedPropertyStore = require 'scoped-property-store'
 
 Snippet = require './snippet'
 SnippetExpansion = require './snippet-expansion'
+{getPackageRoot} = require './helpers'
 
 module.exports =
   loaded: false
@@ -78,7 +79,7 @@ module.exports =
           @doneLoading()
 
   loadBundledSnippets: (callback) ->
-    bundledSnippetsPath = CSON.resolve(path.join(__dirname, 'snippets'))
+    bundledSnippetsPath = CSON.resolve(path.join(getPackageRoot(), 'lib', 'snippets'))
     @loadSnippetsFile bundledSnippetsPath, (snippets) ->
       snippetsByPath = {}
       snippetsByPath[bundledSnippetsPath] = snippets
