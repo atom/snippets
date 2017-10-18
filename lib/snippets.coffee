@@ -68,7 +68,7 @@ module.exports =
     @userSnippetsPath ?= path.join(atom.getConfigDirPath(), 'snippets.cson')
     @userSnippetsPath
 
-  loadAll: (callback) ->
+  loadAll: ->
     @loadBundledSnippets (bundledSnippets) =>
       @loadPackageSnippets (packageSnippets) =>
         @loadUserSnippets (userSnippets) =>
@@ -76,6 +76,7 @@ module.exports =
             for snippetSet in [bundledSnippets, packageSnippets, userSnippets]
               for filepath, snippetsBySelector of snippetSet
                 @add(filepath, snippetsBySelector)
+            return
           @doneLoading()
 
   loadBundledSnippets: (callback) ->
@@ -156,7 +157,7 @@ module.exports =
 
         async.map(
           entries,
-          (entry, done)  =>
+          (entry, done) =>
             filePath = path.join(snippetsDirPath, entry)
             @loadSnippetsFile filePath, (snippets) ->
               done(null, {filePath, snippets})
@@ -172,7 +173,7 @@ module.exports =
     CSON.readFile filePath, (error, object={}) ->
       if error?
         console.warn "Error reading snippets file '#{filePath}': #{error.stack ? error}"
-        atom.notifications?.addError("Failed to load snippets from '#{filePath}'", {detail: error.message, dismissable: true})
+        atom.notifications.addError("Failed to load snippets from '#{filePath}'", {detail: error.message, dismissable: true})
       callback(object)
 
   add: (filePath, snippetsBySelector) ->
@@ -210,6 +211,7 @@ module.exports =
         @parsedSnippetsById.delete(attributes.id)
 
       @scopedPropertyStore.removePropertiesForSourceAndSelector(path, scopeSelector)
+    return
 
   parsedSnippetsForScopes: (scopeDescriptor) ->
     unparsedSnippetsByPrefix = @scopedPropertyStore.getPropertyValue(@getScopeChain(scopeDescriptor), "snippets")
@@ -267,6 +269,7 @@ module.exports =
 
     for prefix of snippets
       prefixes[character] = true for character in prefix
+
     prefixCharacters = Object.keys(prefixes).join('')
     new RegExp("[#{_.escapeRegExp(prefixCharacters)}]+")
 
@@ -276,7 +279,7 @@ module.exports =
     longestPrefixMatch = null
 
     for snippetPrefix, snippet of snippets
-      if _.endsWith(prefix, snippetPrefix) and wordPrefix.length <= snippetPrefix.length
+      if prefix.endsWith(snippetPrefix) and wordPrefix.length <= snippetPrefix.length
         if not longestPrefixMatch? or snippetPrefix.length > longestPrefixMatch.prefix.length
           longestPrefixMatch = snippet
 
@@ -288,7 +291,7 @@ module.exports =
   snippetToExpandUnderCursor: (editor) ->
     return false unless editor.getLastSelection().isEmpty()
     snippets = @getSnippets(editor)
-    return false if _.isEmpty(snippets)
+    return false if snippets is {}
 
     if prefixData = @getPrefixText(snippets, editor)
       @snippetForPrefix(snippets, prefixData.snippetPrefix, prefixData.wordPrefix)
@@ -303,6 +306,7 @@ module.exports =
         startPoint = cursorPosition.translate([0, -snippet.prefix.length], [0, 0])
         cursor.selection.setBufferRange([startPoint, cursorPosition])
         @insert(snippet, editor, cursor)
+      return
     true
 
   goToNextTabStop: (editor) ->
