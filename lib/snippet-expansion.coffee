@@ -1,4 +1,4 @@
-{CompositeDisposable} = require 'atom'
+{CompositeDisposable, Range} = require 'atom'
 
 module.exports =
 class SnippetExpansion
@@ -17,18 +17,19 @@ class SnippetExpansion
       lines = body.split('\n')
       indent = @editor.lineTextForBufferRow(startPosition.row).match(/^\s*/)[0]
       for line, index in lines when index isnt 0 # Do not include initial line
-        # Match first line's indent
+        # Match initial line's indent
         lines[index] = indent + line
       body = lines.join('\n')
 
     for tabStop in @snippet.tabStops
       ranges = []
       for range in tabStop
-        unless startPosition.row is range.start.row
+        newRange = Range.fromObject(range, true) # Don't overwrite the existing range
+        if newRange.start.row # a non-zero start row means that we're not on the initial line
           # Add on the indent offset so that the tab stops are placed at the correct position
-          range.start.column += indent.length
-          range.end.column += indent.length
-        ranges.push(range)
+          newRange.start.column += indent.length
+          newRange.end.column += indent.length
+        ranges.push(newRange)
       tabStopRanges.push(ranges)
 
     @editor.transact =>
