@@ -1,4 +1,3 @@
-_ = require 'underscore-plus'
 {Range} = require 'atom'
 
 module.exports =
@@ -21,7 +20,7 @@ class Snippet
           extractTabStops(content)
           tabStopsByIndex[index] ?= []
           tabStopsByIndex[index].push new Range(start, [row, column])
-        else if _.isString(segment)
+        else if typeof segment is 'string'
           bodyText.push(segment)
           segmentLines = segment.split('\n')
           column += segmentLines.shift().length
@@ -32,7 +31,7 @@ class Snippet
     extractTabStops(bodyTree)
     @lineCount = row + 1
     @tabStops = []
-    for index in _.keys(tabStopsByIndex).sort(((arg1, arg2) -> arg1-arg2))
+    for index in Object.keys(tabStopsByIndex).sort(((arg1, arg2) -> arg1 - arg2))
       @tabStops.push tabStopsByIndex[index]
 
     bodyText.join('')
