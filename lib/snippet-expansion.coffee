@@ -10,22 +10,20 @@ class SnippetExpansion
     @selections = [@cursor.selection]
 
     startPosition = @cursor.selection.getBufferRange().start
-    # Get leading indentation level
-    indent = @editor.lineTextForBufferRow(startPosition.row).match(/^\s*/)[0]
-    # Add proper indentation to the snippet
-    body = @snippet.body.replace(/\n/g, '\n' + indent)
+    if @snippet.lineCount > 1 and indent = @editor.lineTextForBufferRow(startPosition.row).match(/^\s*/)[0]
+      # Add proper leading indentation to the snippet
+      body = @snippet.body.replace(/\n/g, '\n' + indent)
 
-    tabStopRanges = []
-    for tabStop in @snippet.tabStops
-      ranges = []
-      for range in tabStop
-        newRange = Range.fromObject(range, true) # Don't overwrite the existing range
-        if newRange.start.row # a non-zero start row means that we're not on the initial line
-          # Add on the indent offset so that the tab stops are placed at the correct position
-          newRange.start.column += indent.length
-          newRange.end.column += indent.length
-        ranges.push(newRange)
-      tabStopRanges.push(ranges)
+      tabStops = @snippet.tabStops.map (tabStop) ->
+        tabStop.map (range) ->
+          newRange = Range.fromObject(range, true) # Don't overwrite the existing range
+          if newRange.start.row # a non-zero start row means that we're not on the initial line
+            # Add on the indent offset so that the tab stops are placed at the correct position
+            newRange.start.column += indent.length
+            newRange.end.column += indent.length
+          newRange
+    else
+      {body, tabStops} = @snippet
 
     @editor.transact =>
       newRange = @editor.transact =>
@@ -33,7 +31,7 @@ class SnippetExpansion
       if @snippet.tabStops.length > 0
         @subscriptions.add @cursor.onDidChangePosition (event) => @cursorMoved(event)
         @subscriptions.add @cursor.onDidDestroy => @cursorDestroyed()
-        @placeTabStopMarkers(startPosition, tabStopRanges)
+        @placeTabStopMarkers(startPosition, tabStops)
         @snippets.addExpansion(@editor, this)
         @editor.normalizeTabsInBufferRange(newRange)
 
@@ -44,9 +42,9 @@ class SnippetExpansion
 
   cursorDestroyed: -> @destroy() unless @settingTabStop
 
-  placeTabStopMarkers: (startPosition, tabStopRanges) ->
-    for ranges in tabStopRanges
-      @tabStopMarkers.push ranges.map ({start, end}) =>
+  placeTabStopMarkers: (startPosition, tabStops) ->
+    for tabStop in tabStops
+      @tabStopMarkers.push tabStop.map ({start, end}) =>
         @editor.markBufferRange([startPosition.traverse(start), startPosition.traverse(end)])
     @setTabStopIndex(0)
 
