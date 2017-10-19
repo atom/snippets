@@ -10,17 +10,12 @@ class SnippetExpansion
     @selections = [@cursor.selection]
 
     startPosition = @cursor.selection.getBufferRange().start
-    body = @snippet.body
-    indent = ""
-    tabStopRanges = []
-    if @snippet.lineCount > 1
-      lines = body.split('\n')
-      indent = @editor.lineTextForBufferRow(startPosition.row).match(/^\s*/)[0]
-      for line, index in lines when index isnt 0 # Do not include initial line
-        # Match initial line's indent
-        lines[index] = indent + line
-      body = lines.join('\n')
+    # Get leading indentation level
+    indent = @editor.lineTextForBufferRow(startPosition.row).match(/^\s*/)[0]
+    # Add proper indentation to the snippet
+    body = @snippet.body.replace(/\n/g, '\n' + indent)
 
+    tabStopRanges = []
     for tabStop in @snippet.tabStops
       ranges = []
       for range in tabStop
