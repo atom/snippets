@@ -114,7 +114,7 @@ describe "Snippets extension", ->
             body: """
               line 1
               \tline 2$1
-
+              $2
             """
 
           "nested tab stops":
@@ -395,6 +395,19 @@ describe "Snippets extension", ->
             expect(editor.lineTextForBufferRow(2)).toBe "    if (items.length <= 1) return items; line 1"
             expect(editor.lineTextForBufferRow(3)).toBe "      line 2"
             expect(editor.getCursorBufferPosition()).toEqual [3, 12]
+
+          it "places tab stops correctly", ->
+            expect(editor.getSoftTabs()).toBeTruthy()
+            editor.setCursorScreenPosition([2, Infinity])
+            editor.insertText ' t3'
+            atom.commands.dispatch editorElement, 'snippets:expand'
+
+            markers = editor.getMarkers()
+            expect(markers.length).toBe 2
+            expect(markers[0].getBufferRange().start).toEqual row: 3, column: 12
+            expect(markers[0].getBufferRange().end).toEqual markers[0].getBufferRange().start
+            expect(markers[1].getBufferRange().start).toEqual row: 4, column: 4
+            expect(markers[1].getBufferRange().end).toEqual markers[1].getBufferRange().start
 
       describe "when multiple snippets match the prefix", ->
         it "expands the snippet that is the longest match for the prefix", ->
