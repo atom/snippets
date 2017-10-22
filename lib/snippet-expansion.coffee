@@ -10,11 +10,12 @@ class SnippetExpansion
     @selections = [@cursor.selection]
 
     startPosition = @cursor.selection.getBufferRange().start
+    {body, tabStops} = @snippet
     if @snippet.lineCount > 1 and indent = @editor.lineTextForBufferRow(startPosition.row).match(/^\s*/)[0]
       # Add proper leading indentation to the snippet
-      body = @snippet.body.replace(/\n/g, '\n' + indent)
+      body = body.replace(/\n/g, '\n' + indent)
 
-      tabStops = @snippet.tabStops.map (tabStop) ->
+      tabStops = tabStops.map (tabStop) ->
         tabStop.map (range) ->
           newRange = Range.fromObject(range, true) # Don't overwrite the existing range
           if newRange.start.row # a non-zero start row means that we're not on the initial line
@@ -22,8 +23,6 @@ class SnippetExpansion
             newRange.start.column += indent.length
             newRange.end.column += indent.length
           newRange
-    else
-      {body, tabStops} = @snippet
 
     @editor.transact =>
       newRange = @editor.transact =>
