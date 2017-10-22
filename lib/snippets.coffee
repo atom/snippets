@@ -170,7 +170,7 @@ module.exports =
 
   loadSnippetsFile: (filePath, callback) ->
     return callback({}) unless CSON.isObjectPath(filePath)
-    CSON.readFile filePath, (error, object={}) ->
+    CSON.readFile filePath, {allowDuplicateKeys: false}, (error, object={}) ->
       if error?
         console.warn "Error reading snippets file '#{filePath}': #{error.stack ? error}"
         atom.notifications.addError("Failed to load snippets from '#{filePath}'", {detail: error.message, dismissable: true})
