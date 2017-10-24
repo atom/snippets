@@ -124,6 +124,14 @@ describe "Snippets extension", ->
                 ${2:body...}
             """
 
+          "multiline starting with tabstop":
+            prefix: "t4b"
+            body: """
+              $1 = line 1 {
+                line 2
+              }
+            """
+
           "nested tab stops":
             prefix: "t5"
             body: '${1:"${2:key}"}: ${3:value}'
@@ -403,53 +411,65 @@ describe "Snippets extension", ->
             expect(editor.lineTextForBufferRow(3)).toBe "      line 2"
             expect(editor.getCursorBufferPosition()).toEqual [3, 12]
 
-          it "places tab stops correctly", ->
-            expect(editor.getSoftTabs()).toBeTruthy()
-            editor.setCursorScreenPosition([2, Infinity])
-            editor.insertText ' t3'
-            atom.commands.dispatch editorElement, 'snippets:expand'
+      describe "when the snippet spans multiple lines", ->
+        it "places tab stops correctly", ->
+          expect(editor.getSoftTabs()).toBeTruthy()
+          editor.setCursorScreenPosition([2, Infinity])
+          editor.insertText ' t3'
+          atom.commands.dispatch editorElement, 'snippets:expand'
 
-            markers = editor.getMarkers()
-            expect(markers.length).toBe 2
-            expect(markers[0].getBufferRange().start).toEqual row: 3, column: 12
-            expect(markers[0].getBufferRange().end).toEqual markers[0].getBufferRange().start
-            expect(markers[1].getBufferRange().start).toEqual row: 4, column: 4
-            expect(markers[1].getBufferRange().end).toEqual markers[1].getBufferRange().start
+          markers = editor.getMarkers()
+          expect(markers.length).toBe 2
+          expect(markers[0].getBufferRange().start).toEqual row: 3, column: 12
+          expect(markers[0].getBufferRange().end).toEqual markers[0].getBufferRange().start
+          expect(markers[1].getBufferRange().start).toEqual row: 4, column: 4
+          expect(markers[1].getBufferRange().end).toEqual markers[1].getBufferRange().start
 
-          it "does not change the relative positioning of the tab stops when inserted multiple times", ->
-            editor.setCursorScreenPosition([2, Infinity])
-            editor.insertNewline()
-            editor.insertText 't4'
-            atom.commands.dispatch editorElement, 'snippets:expand'
+        it "indents the subsequent lines of the snippet based on the indent level before the snippet is inserted", ->
+          editor.setCursorScreenPosition([2, Infinity])
+          editor.insertNewline()
+          editor.insertText 't4b'
+          atom.commands.dispatch editorElement, 'snippets:expand'
 
-            markers = editor.getMarkers()
-            expect(markers.length).toBe 2
-            expect(markers[0].getBufferRange().start).toEqual row: 3, column: 9
-            expect(markers[0].getBufferRange().end).toEqual row: 3, column: 10
-            expect(markers[1].getBufferRange().start).toEqual row: 4, column: 6
-            expect(markers[1].getBufferRange().end).toEqual row: 4, column: 13
+          expect(editor.lineTextForBufferRow(3)).toBe "     = line 1 {" # 4 + 1 spaces (because the tab stop is invisible)
+          expect(editor.lineTextForBufferRow(4)).toBe "      line 2"
+          expect(editor.lineTextForBufferRow(5)).toBe "    }"
+          expect(editor.getCursorBufferPosition()).toEqual [3, 4]
 
-            atom.commands.dispatch editorElement, 'snippets:next-tab-stop'
-            editor.insertText 't4'
-            atom.commands.dispatch editorElement, 'snippets:expand'
+        it "does not change the relative positioning of the tab stops when inserted multiple times", ->
+          editor.setCursorScreenPosition([2, Infinity])
+          editor.insertNewline()
+          editor.insertText 't4'
+          atom.commands.dispatch editorElement, 'snippets:expand'
 
-            markers = editor.getMarkers()
-            expect(markers.length).toBe 4
-            expect(markers[2].getBufferRange().start).toEqual row: 4, column: 11
-            expect(markers[2].getBufferRange().end).toEqual row: 4, column: 12
-            expect(markers[3].getBufferRange().start).toEqual row: 5, column: 8
-            expect(markers[3].getBufferRange().end).toEqual row: 5, column: 15
+          markers = editor.getMarkers()
+          expect(markers.length).toBe 2
+          expect(markers[0].getBufferRange().start).toEqual row: 3, column: 9
+          expect(markers[0].getBufferRange().end).toEqual row: 3, column: 10
+          expect(markers[1].getBufferRange().start).toEqual row: 4, column: 6
+          expect(markers[1].getBufferRange().end).toEqual row: 4, column: 13
 
-            editor.setText('') # Clear editor
-            editor.insertText 't4'
-            atom.commands.dispatch editorElement, 'snippets:expand'
+          atom.commands.dispatch editorElement, 'snippets:next-tab-stop'
+          editor.insertText 't4'
+          atom.commands.dispatch editorElement, 'snippets:expand'
 
-            markers = editor.getMarkers()
-            expect(markers.length).toBe 6
-            expect(markers[4].getBufferRange().start).toEqual row: 0, column: 5
-            expect(markers[4].getBufferRange().end).toEqual row: 0, column: 6
-            expect(markers[5].getBufferRange().start).toEqual row: 1, column: 2
-            expect(markers[5].getBufferRange().end).toEqual row: 1, column: 9
+          markers = editor.getMarkers()
+          expect(markers.length).toBe 4
+          expect(markers[2].getBufferRange().start).toEqual row: 4, column: 11
+          expect(markers[2].getBufferRange().end).toEqual row: 4, column: 12
+          expect(markers[3].getBufferRange().start).toEqual row: 5, column: 8
+          expect(markers[3].getBufferRange().end).toEqual row: 5, column: 15
+
+          editor.setText('') # Clear editor
+          editor.insertText 't4'
+          atom.commands.dispatch editorElement, 'snippets:expand'
+
+          markers = editor.getMarkers()
+          expect(markers.length).toBe 6
+          expect(markers[4].getBufferRange().start).toEqual row: 0, column: 5
+          expect(markers[4].getBufferRange().end).toEqual row: 0, column: 6
+          expect(markers[5].getBufferRange().start).toEqual row: 1, column: 2
+          expect(markers[5].getBufferRange().end).toEqual row: 1, column: 9
 
       describe "when multiple snippets match the prefix", ->
         it "expands the snippet that is the longest match for the prefix", ->
