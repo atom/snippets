@@ -291,7 +291,7 @@ module.exports =
   snippetToExpandUnderCursor: (editor) ->
     return false unless editor.getLastSelection().isEmpty()
     snippets = @getSnippets(editor)
-    return false if snippets is {}
+    return false if _.isEmpty(snippets)
 
     if prefixData = @getPrefixText(snippets, editor)
       @snippetForPrefix(snippets, prefixData.snippetPrefix, prefixData.wordPrefix)
