@@ -48,6 +48,10 @@ describe "Snippets extension", ->
         snippetsInterface.insertSnippet("hello ${1:world}", editor)
         expect(editor.lineTextForBufferRow(0)).toBe "var hello world = function () {"
 
+  it "returns false for snippetToExpandUnderCursor if getSnippets returns {}", ->
+    snippets = atom.packages.getActivePackage('snippets').mainModule
+    expect(snippets.snippetToExpandUnderCursor(editor)).toEqual false
+
   it "ignores invalid snippets in the config", ->
     snippets = atom.packages.getActivePackage('snippets').mainModule
 
