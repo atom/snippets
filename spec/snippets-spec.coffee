@@ -416,6 +416,9 @@ describe "Snippets extension", ->
             expect(editor.getCursorBufferPosition()).toEqual [3, 12]
 
       describe "when the snippet spans multiple lines", ->
+        beforeEach ->
+          editor.update({autoIndent: true})
+
         it "places tab stops correctly", ->
           expect(editor.getSoftTabs()).toBeTruthy()
           editor.setCursorScreenPosition([2, Infinity])
