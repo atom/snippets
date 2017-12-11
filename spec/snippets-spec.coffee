@@ -20,7 +20,7 @@ describe "Snippets extension", ->
       atom.packages.activatePackage('language-javascript')
 
     waitsForPromise ->
-      atom.packages.activatePackage("snippets")
+      atom.packages.activatePackage('snippets')
 
     runs ->
       editor = atom.workspace.getActiveTextEditor()
@@ -28,7 +28,7 @@ describe "Snippets extension", ->
 
   afterEach ->
     waitsForPromise ->
-      Promise.resolve(atom.packages.deactivatePackage("snippets"))
+      atom.packages.deactivatePackage('snippets')
 
   describe "provideSnippets interface", ->
     snippetsInterface = null
@@ -38,11 +38,24 @@ describe "Snippets extension", ->
 
     describe "bundledSnippetsLoaded", ->
       it "indicates the loaded state of the bundled snippets", ->
-        Snippets.loaded = false
         expect(snippetsInterface.bundledSnippetsLoaded()).toBe false
         Snippets.doneLoading()
         expect(snippetsInterface.bundledSnippetsLoaded()).toBe true
 
+      it "resets the loaded state after snippets is deactivated", ->
+        expect(snippetsInterface.bundledSnippetsLoaded()).toBe false
+        Snippets.doneLoading()
+        expect(snippetsInterface.bundledSnippetsLoaded()).toBe true
+
+        waitsForPromise -> atom.packages.deactivatePackage('snippets')
+        waitsForPromise -> atom.packages.activatePackage('snippets')
+
+        runs ->
+          expect(snippetsInterface.bundledSnippetsLoaded()).toBe false
+          Snippets.doneLoading()
+          expect(snippetsInterface.bundledSnippetsLoaded()).toBe true
+
+    describe "insertSnippet", ->
       it "can insert a snippet", ->
         editor.setSelectedBufferRange([[0, 4], [0, 13]])
         snippetsInterface.insertSnippet("hello ${1:world}", editor)
