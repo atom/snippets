@@ -11,9 +11,8 @@ SnippetExpansion = require './snippet-expansion'
 {getPackageRoot} = require './helpers'
 
 module.exports =
-  loaded: false
-
   activate: ->
+    @loaded = false
     @userSnippetsPath = null
     @snippetIdCounter = 0
     @parsedSnippetsById = new Map
