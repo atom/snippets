@@ -1,6 +1,60 @@
 BodyParser = require '../lib/snippet-body-parser'
 
 describe "Snippet Body Parser", ->
+  it "parses a snippet with transformations", ->
+    bodyTree = BodyParser.parse """
+    <${1:p}>$0</${1/f/F/}>
+    """
+    expect(bodyTree).toEqual [
+      '<',
+      { index: 1, content: ['p'] },
+      '>',
+      { index: 0, content: [] },
+      '</',
+      { index: 1, content: [], substitution: { find: /f/g, replace: ['F'] } },
+      '>'
+    ]
+
+  it "parses a snippet with transformations and placeholder values", ->
+    bodyTree = BodyParser.parse """
+    <${1:p}>$0</${1/f/F/:whatever}>
+    """
+    expect(bodyTree).toEqual [
+      '<',
+      { index: 1, content: ['p'] },
+      '>',
+      { index: 0, content: [] },
+      '</',
+      { index: 1, content: ['whatever'], substitution: { find: /f/g, replace: ['F'] } },
+      '>'
+    ]
+
+  it "parses a snippet with a format string and case-control flags", ->
+    bodyTree = BodyParser.parse """
+    <${1:p}>$0</${1/(.)(.*)/\\u$1$2/}>
+    """
+
+    expect(bodyTree).toEqual [
+      '<',
+      { index: 1, content: ['p'] },
+      '>',
+      { index: 0, content: [] },
+      '</',
+      {
+        index: 1,
+        content: [],
+        substitution: {
+          find: /(.)(.*)/g,
+          replace: [
+            { escape: 'u' },
+            { backreference: 1 },
+            { backreference: 2 }
+          ]
+        }
+      },
+      '>'
+    ]
+
   it "breaks a snippet body into lines, with each line containing tab stops at the appropriate position", ->
     bodyTree = BodyParser.parse """
       the quick brown $1fox ${2:jumped ${3:over}
