@@ -9,11 +9,10 @@ class SnippetExpansion
   constructor: (@snippet, @editor, @cursor, @snippets) ->
     @subscriptions = new CompositeDisposable
     @tabStopMarkers = []
-    @transforms = []
     @selections = [@cursor.selection]
 
     startPosition = @cursor.selection.getBufferRange().start
-    {body, tabStopList, transforms} = @snippet
+    {body, tabStopList} = @snippet
     tabStops = tabStopList.toArray();
     if @snippet.lineCount > 1 and indent = @editor.lineTextForBufferRow(startPosition.row).match(/^\s*/)[0]
       # Add proper leading indentation to the snippet
@@ -30,8 +29,6 @@ class SnippetExpansion
         @subscriptions.add @editor.onDidChange (event) => @editorChanged(event, tabStops)
         @subscriptions.add @cursor.onDidChangePosition (event) => @cursorMoved(event)
         @subscriptions.add @cursor.onDidDestroy => @cursorDestroyed()
-        @transforms = transforms
-        @transformsByIndex = @snippet.transforms
         @placeTabStopMarkers(startPosition, tabStops)
         @snippets.addExpansion(@editor, this)
         @editor.normalizeTabsInBufferRange(newRange)
@@ -46,11 +43,9 @@ class SnippetExpansion
 
   editorChanged: (event, tabStops) ->
     return if @ignoringBufferChanges
-    if event.oldText && !event.newText
-      @destroy()
     @editor.transact => @applyTransformations()
 
-  applyTransformations: () ->
+  applyTransformations: (initial = false) ->
     items = [@tabStopMarkers[@tabStopIndex]...]
     return if items.length == 0
 
@@ -64,6 +59,10 @@ class SnippetExpansion
     for item, index in items
       {marker, insertion} = item
       range = marker.getBufferRange()
+      # On the initial expansion pass, we only want to manipulate text on tab
+      # stops that have transforms. Otherwise `${1:foo}` will apply its
+      # placeholder text to `$1`.
+      continue if initial and !insertion.isTransformation()
       outputText = insertion.transform(inputText)
       @editor.setTextInBufferRange(range, outputText)
       # Make sure the range for this marker gets updated to reflect the extent
@@ -87,7 +86,6 @@ class SnippetExpansion
           startPosition.traverse(start),
           startPosition.traverse(end)
         ], {
-          invalidate: 'never',
           exclusive: false
         })
         @tabStopMarkers[index].push({
@@ -95,8 +93,10 @@ class SnippetExpansion
           marker: marker,
           insertion: insertion
         })
-    @setTabStopIndex(0)
-    @applyTransformations()
+    unless @setTabStopIndex(0)
+      @destroy()
+      return
+    @applyTransformations(true)
 
   goToNextTabStop: ->
     nextIndex = @tabStopIndex + 1
@@ -116,25 +116,31 @@ class SnippetExpansion
     console.log 'setTabStopIndex:', @tabStopIndex
     @settingTabStop = true
     markerSelected = false
+    # @selectionDisposable.dispose() if @selectionDisposable
+    # @selectionDisposable = new CompositeDisposable
+    # @subscriptions.add @selectionDisposable
 
     items = @tabStopMarkers[@tabStopIndex]
     return false unless items
 
     ranges = []
     for item in items
-      {marker} = item
+      {marker, insertion} = item
       continue unless marker.isValid()
+      continue if insertion.isTransformation()
       ranges.push(marker.getBufferRange())
 
-    # Place one cursor on the initial insertion range for this tab stop.
     if ranges.length > 0
       selection.destroy() for selection in @selections[1...]
-      @selections[0].setBufferRange(ranges[0])
-      # else
-      #   newSelection = @editor.addSelectionForBufferRange(ranges[0])
-      #   @subscriptions.add newSelection.cursor.onDidChangePosition (event) => @cursorMoved(event)
-      #   @subscriptions.add newSelection.cursor.onDidDestroy => @cursorDestroyed()
-      #   @selections.push(newSelection)
+      @selections = @selections[...ranges.length]
+      for range, i in ranges
+        if @selections[i]
+          @selections[i].setBufferRange(range)
+        else
+          newSelection = @editor.addSelectionForBufferRange(ranges[0])
+          @subscriptions.add newSelection.cursor.onDidChangePosition (event) => @cursorMoved(event)
+          @subscriptions.add newSelection.cursor.onDidDestroy => @cursorDestroyed()
+          @selections.push newSelection
 
       markerSelected = true
 
