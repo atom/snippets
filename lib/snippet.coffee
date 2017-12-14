@@ -1,36 +1,9 @@
 {Range} = require 'atom'
-TabStop = require './tab-stop'
-
-class TabStopList
-  constructor: (@snippet) ->
-    @list = {}
-    @length = 0
-
-  toArray: () ->
-    results = []
-    @forEachIndex (index) =>
-      results.push(@list[index])
-    results
-
-  findOrCreate: ({ index, snippet }) ->
-    @list[index] = new TabStop({ index, snippet }) unless @list[index]
-    @length = Object.keys(@list).length
-    @list[index]
-
-  forEachIndex: (iterator) ->
-    indices = Object.keys(@list).sort (a1, a2) -> a1 - a2
-    indices.forEach(iterator)
-
-  getInsertions: () ->
-    results = []
-    @forEachIndex (index) =>
-      results.push(@list[index].insertions...)
-    results
-
+TabStopList = require './tab-stop-list'
 
 module.exports =
 class Snippet
-  constructor: ({@id, @name, @prefix, @bodyText, @description, @descriptionMoreURL, @rightLabelHTML, @leftLabel, @leftLabelHTML, bodyTree}) ->
+  constructor: ({@name, @prefix, @bodyText, @description, @descriptionMoreURL, @rightLabelHTML, @leftLabel, @leftLabelHTML, bodyTree}) ->
     @tabStopList = new TabStopList(this)
     @body = @extractTabStops(bodyTree)
 
@@ -43,16 +16,15 @@ class Snippet
     extractTabStops = (bodyTree) =>
       for segment in bodyTree
         if segment.index?
-          {index, content} = segment
+          {index, content, substitution} = segment
           index = Infinity if index is 0
           start = [row, column]
           extractTabStops(content)
           range = new Range(start, [row, column])
-          substitution = segment.substitution || null
           tabStop = @tabStopList.findOrCreate({
             index: index,
             snippet: this
-          })
+          });
           tabStop.addInsertion({
             range: range,
             substitution: substitution

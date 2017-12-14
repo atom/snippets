@@ -15,6 +15,69 @@ describe "Snippet Body Parser", ->
       '>'
     ]
 
+  it "parses a snippet with multiple tab stops with transformations", ->
+    bodyTree = BodyParser.parse """
+    ${1:placeholder} ${1/(.)/\\u$1/} $1 ${2:ANOTHER} ${2/^(.*)$/\\L$1/} $2
+    """
+
+    expect(bodyTree).toEqual [
+      { index: 1, content: ['placeholder'] },
+      ' ',
+      {
+        index: 1,
+        content: [],
+        substitution: {
+          find: /(.)/g,
+          replace: [
+            { escape: 'u' },
+            { backreference: 1 }
+          ]
+        }
+      },
+      ' ',
+      { index: 1, content: [] },
+      ' ',
+      { index: 2, content: ['ANOTHER'] },
+      ' ',
+      {
+        index: 2,
+        content: [],
+        substitution: {
+          find: /^(.*)$/g,
+          replace: [
+            { escape: 'L' },
+            { backreference: 1 }
+          ]
+        }
+      },
+      ' ',
+      { index: 2, content: [] },
+    ]
+
+
+  it "parses a snippet with transformations and mirrors", ->
+    bodyTree = BodyParser.parse """
+    ${1:placeholder}\n${1/(.)/\\u$1/}\n$1
+    """
+
+    expect(bodyTree).toEqual [
+      { index: 1, content: ['placeholder'] },
+      '\n',
+      {
+        index: 1,
+        content: [],
+        substitution: {
+          find: /(.)/g,
+          replace: [
+            { escape: 'u' },
+            { backreference: 1 }
+          ]
+        }
+      },
+      '\n',
+      { index: 1, content: [] }
+    ]
+
   it "parses a snippet with transformations and placeholder values", ->
     bodyTree = BodyParser.parse """
     <${1:p}>$0</${1/f/F/:whatever}>

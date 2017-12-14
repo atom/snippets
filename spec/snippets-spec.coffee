@@ -28,7 +28,7 @@ describe "Snippets extension", ->
 
   afterEach ->
     waitsForPromise ->
-      atom.packages.deactivatePackage('snippets')
+      Promise.resolve(atom.packages.deactivatePackage('snippets'))
 
   describe "provideSnippets interface", ->
     snippetsInterface = null
@@ -208,6 +208,22 @@ describe "Snippets extension", ->
             prefix: "t11"
             body: """
               $0one${1} ${2:two} three${3}
+            """
+
+          "simple transform":
+            prefix: "t12"
+            body: """
+              [${1:b}][/${1/[ ]+.*$//}]
+            """
+          "transform with non-transforming mirrors":
+            prefix: "t13"
+            body: """
+              ${1:placeholder}\n${1/(.)/\\u$1/}\n$1
+            """
+          "multiple tab stops, some with transforms and some without":
+            prefix: "t14"
+            body: """
+              ${1:placeholder} ${1/(.)/\\u$1/} $1 ${2:ANOTHER} ${2/^(.*)$/\\L$1/} $2
             """
 
     it "parses snippets once, reusing cached ones on subsequent queries", ->
@@ -639,6 +655,54 @@ describe "Snippets extension", ->
         editor.insertText('line 3')
 
         expect(editor.lineTextForBufferRow(2).indexOf("line 2 ")).toBe -1
+
+    describe "when the snippet contains tab stops with transformations", ->
+      it "transforms the text typed into the first tab stop before setting it in the transformed tab stop", ->
+        editor.setText('t12')
+        editor.setCursorScreenPosition([0, 3])
+        simulateTabKeyEvent()
+        expect(editor.getText()).toBe("[b][/b]")
+        # We need to bundle insertions into transactions in order to trigger
+        # the `onDidChangeText` callback.
+        editor.transact ->
+          editor.insertText('img src')
+        expect(editor.getText()).toBe("[img src][/img]")
+
+    describe "when the snippet contains mirrored tab stops and tab stops with transformations", ->
+      it "adds cursors for the mirrors but not the transformations", ->
+        editor.setText('t13')
+        editor.setCursorScreenPosition([0, 3])
+        simulateTabKeyEvent()
+        expect(editor.getCursors().length).toBe(2)
+        expect(editor.getText()).toBe """
+          placeholder
+          PLACEHOLDER
+
+        """
+
+        editor.transact ->
+          editor.insertText('foo')
+
+        expect(editor.getText()).toBe """
+          foo
+          FOO
+          foo
+        """
+
+    describe "when the snippet contains multiple tab stops, some with transformations and some without", ->
+      it "does not get confused", ->
+        editor.setText('t14')
+        editor.setCursorScreenPosition([0, 3])
+        simulateTabKeyEvent()
+        expect(editor.getCursors().length).toBe(2)
+        expect(editor.getText()).toBe "placeholder PLACEHOLDER  ANOTHER another "
+        simulateTabKeyEvent()
+        expect(editor.getCursors().length).toBe(2)
+        editor.transact ->
+          editor.insertText('FOO')
+        expect(editor.getText()).toBe """
+          placeholder PLACEHOLDER  FOO foo FOO
+        """
 
     describe "when the snippet contains tab stops with an index >= 10", ->
       it "parses and orders the indices correctly", ->
