@@ -28,7 +28,7 @@ describe "Snippets extension", ->
 
   afterEach ->
     waitsForPromise ->
-      Promise.resolve(atom.packages.deactivatePackage('snippets'))
+      atom.packages.deactivatePackage('snippets')
 
   describe "provideSnippets interface", ->
     snippetsInterface = null
@@ -225,6 +225,22 @@ describe "Snippets extension", ->
             body: """
               ${1:placeholder} ${1/(.)/\\u$1/} $1 ${2:ANOTHER} ${2/^(.*)$/\\L$1/} $2
             """
+          "has a transformed tab stop without a corresponding ordinary tab stop":
+            prefix: 't15'
+            body: """
+            ${1/(.)/\\u$1/} & $2
+            """
+          "has a transformed tab stop that occurs before the corresponding ordinary tab stop":
+            prefix: 't16'
+            body: """
+            & ${1/(.)/\\u$1/} & ${1:q}
+            """
+
+
+    it "performs a sanity check", ->
+      editor.setText("")
+      simulateTabKeyEvent()
+      expect(editor.getText()).toBe("  ")
 
     it "parses snippets once, reusing cached ones on subsequent queries", ->
       spyOn(Snippets, "getBodyParser").andCallThrough()
@@ -619,13 +635,25 @@ describe "Snippets extension", ->
         expect(editor.lineTextForBufferRow(0)).toBe "with placeholder hello"
         expect(editor.lineTextForBufferRow(1)).toBe "without placeholder hellovar quicksort = function () {"
 
-      it "terminates the snippet when cursors are destroyed", ->
+      fit "terminates the snippet when cursors are destroyed", ->
+        console.log 'beginning of test'
         editor.setCursorScreenPosition([0, 0])
         editor.insertText('t9b')
+        console.log 'before first TAB'
         simulateTabKeyEvent()
+        console.log 'cursors:', editor.getCursors()
+        editor.getCursors().forEach (cursor) ->
+          console.log 'BUF:', cursor.getBufferPosition()
+        console.log 'destroying cursor'
         editor.getCursors()[0].destroy()
+        console.log 'cursor destroyed'
+        console.log 'BEFORE TAB'
+        buf = editor.getCursorBufferPosition()
+        console.log 'cursors:', editor.getCursors(), buf
         simulateTabKeyEvent()
+        console.log 'AFTER TAB'
 
+        console.log 'we are done. tab was pressed.'
         expect(editor.lineTextForBufferRow(1)).toEqual("without placeholder   ")
 
       it "terminates the snippet expansion if a new cursor moves outside the bounds of the tab stops", ->
@@ -680,6 +708,25 @@ describe "Snippets extension", ->
 
         editor.redo()
         expect(editor.getText()).toBe("[img src][/img]")
+
+      it "can pick the right insertion to use as the primary even if a transformed insertion occurs first in the snippet", ->
+        editor.setText('t16')
+        editor.setCursorScreenPosition([0, 3])
+        simulateTabKeyEvent()
+        expect(editor.lineTextForBufferRow(0)).toBe("& Q & q")
+        expect(editor.getCursorBufferPosition()).toEqual([0, 7])
+
+        editor.insertText('rst')
+        expect(editor.lineTextForBufferRow(0)).toBe("& RST & rst")
+
+      it "silently ignores a tab stop without a non-transformed insertion to use as the primary", ->
+        editor.setText('t15')
+        editor.setCursorScreenPosition([0, 3])
+        simulateTabKeyEvent()
+        editor.insertText('a')
+        expect(editor.lineTextForBufferRow(0)).toBe(" & a")
+        expect(editor.getCursorBufferPosition()).toEqual([0, 4])
+
 
 
     describe "when the snippet contains mirrored tab stops and tab stops with transformations", ->
@@ -768,7 +815,7 @@ describe "Snippets extension", ->
           expect(editor.lineTextForBufferRow(0)).toBe "testing TESTING testing AGAIN again AGAIN"
           expect(editor.lineTextForBufferRow(1)).toBe "testing TESTING testing AGAIN again AGAIN"
 
-        fit "bundles transform-induced mutations into a single history entry along with their triggering edit, even across multiple snippets", ->
+        it "bundles transform-induced mutations into a single history entry along with their triggering edit, even across multiple snippets", ->
           editor.setText('t14\nt14')
           editor.setCursorBufferPosition([1, 3])
           editor.addCursorAtBufferPosition([0, 3])

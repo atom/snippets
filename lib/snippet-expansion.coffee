@@ -92,18 +92,24 @@ class SnippetExpansion
         marker.setBufferRange(newRange)
 
   placeTabStopMarkers: (startPosition, tabStops) ->
-    for tabStop, index in tabStops
+    for tabStop in tabStops
       {insertions} = tabStop
-      @tabStopMarkers[index] ?= []
+      markers = []
+
+      continue unless tabStop.isValid()
+
       for insertion in insertions
         {range} = insertion
         {start, end} = range
         marker = @editor.markBufferRange([startPosition.traverse(start), startPosition.traverse(end)])
-        @tabStopMarkers[index].push({
-          index: index,
+        markers.push({
+          index: markers.length,
           marker: marker,
           insertion: insertion
         })
+
+      @tabStopMarkers.push(markers)
+
     @setTabStopIndex(0)
     @applyAllTransformations()
 
@@ -126,7 +132,7 @@ class SnippetExpansion
     markerSelected = false
 
     items = @tabStopMarkers[@tabStopIndex]
-    return false unless items
+    return false if items.length == 0
 
     ranges = []
     @hasTransforms = false

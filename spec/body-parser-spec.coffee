@@ -78,20 +78,6 @@ describe "Snippet Body Parser", ->
       { index: 1, content: [] }
     ]
 
-  it "parses a snippet with transformations and placeholder values", ->
-    bodyTree = BodyParser.parse """
-    <${1:p}>$0</${1/f/F/:whatever}>
-    """
-    expect(bodyTree).toEqual [
-      '<',
-      { index: 1, content: ['p'] },
-      '>',
-      { index: 0, content: [] },
-      '</',
-      { index: 1, content: ['whatever'], substitution: { find: /f/g, replace: ['F'] } },
-      '>'
-    ]
-
   it "parses a snippet with a format string and case-control flags", ->
     bodyTree = BodyParser.parse """
     <${1:p}>$0</${1/(.)(.*)/\\u$1$2/}>
