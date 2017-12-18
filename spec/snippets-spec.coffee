@@ -662,11 +662,25 @@ describe "Snippets extension", ->
         editor.setCursorScreenPosition([0, 3])
         simulateTabKeyEvent()
         expect(editor.getText()).toBe("[b][/b]")
-        # We need to bundle insertions into transactions in order to trigger
-        # the `onDidChangeText` callback.
-        editor.transact ->
-          editor.insertText('img src')
+        editor.insertText('img src')
         expect(editor.getText()).toBe("[img src][/img]")
+
+      it "bundles the transform mutations along with the original manual mutation for the purposes of undo and redo", ->
+        editor.setText('t12')
+        editor.setCursorScreenPosition([0, 3])
+        simulateTabKeyEvent()
+        editor.insertText('i')
+        expect(editor.getText()).toBe("[i][/i]")
+
+        editor.insertText('mg src')
+        expect(editor.getText()).toBe("[img src][/img]")
+
+        editor.undo()
+        expect(editor.getText()).toBe("[i][/i]")
+
+        editor.redo()
+        expect(editor.getText()).toBe("[img src][/img]")
+
 
     describe "when the snippet contains mirrored tab stops and tab stops with transformations", ->
       it "adds cursors for the mirrors but not the transformations", ->
@@ -680,8 +694,7 @@ describe "Snippets extension", ->
 
         """
 
-        editor.transact ->
-          editor.insertText('foo')
+        editor.insertText('foo')
 
         expect(editor.getText()).toBe """
           foo
@@ -698,8 +711,7 @@ describe "Snippets extension", ->
         expect(editor.getText()).toBe "placeholder PLACEHOLDER  ANOTHER another "
         simulateTabKeyEvent()
         expect(editor.getCursors().length).toBe(2)
-        editor.transact ->
-          editor.insertText('FOO')
+        editor.insertText('FOO')
         expect(editor.getText()).toBe """
           placeholder PLACEHOLDER  FOO foo FOO
         """
@@ -735,6 +747,63 @@ describe "Snippets extension", ->
           expect(editor.lineTextForBufferRow(1)).toBe "without placeholder hellovar quicksort = function () {"
           expect(editor.lineTextForBufferRow(13)).toBe "}; with placeholder hello"
           expect(editor.lineTextForBufferRow(14)).toBe "without placeholder hello"
+
+        it "applies transformations identically to single-expansion mode", ->
+          editor.setText('t14\nt14')
+          editor.setCursorBufferPosition([1, 3])
+          editor.addCursorAtBufferPosition([0, 3])
+          simulateTabKeyEvent()
+
+          expect(editor.lineTextForBufferRow(0)).toBe "placeholder PLACEHOLDER  ANOTHER another "
+          expect(editor.lineTextForBufferRow(1)).toBe "placeholder PLACEHOLDER  ANOTHER another "
+
+          editor.insertText "testing"
+
+          expect(editor.lineTextForBufferRow(0)).toBe "testing TESTING testing ANOTHER another "
+          expect(editor.lineTextForBufferRow(1)).toBe "testing TESTING testing ANOTHER another "
+
+          simulateTabKeyEvent()
+          editor.insertText "AGAIN"
+
+          expect(editor.lineTextForBufferRow(0)).toBe "testing TESTING testing AGAIN again AGAIN"
+          expect(editor.lineTextForBufferRow(1)).toBe "testing TESTING testing AGAIN again AGAIN"
+
+        fit "bundles transform-induced mutations into a single history entry along with their triggering edit, even across multiple snippets", ->
+          editor.setText('t14\nt14')
+          editor.setCursorBufferPosition([1, 3])
+          editor.addCursorAtBufferPosition([0, 3])
+          simulateTabKeyEvent()
+
+          expect(editor.lineTextForBufferRow(0)).toBe "placeholder PLACEHOLDER  ANOTHER another "
+          expect(editor.lineTextForBufferRow(1)).toBe "placeholder PLACEHOLDER  ANOTHER another "
+
+          editor.insertText "testing"
+
+          expect(editor.lineTextForBufferRow(0)).toBe "testing TESTING testing ANOTHER another "
+          expect(editor.lineTextForBufferRow(1)).toBe "testing TESTING testing ANOTHER another "
+
+          simulateTabKeyEvent()
+          editor.insertText "AGAIN"
+
+          expect(editor.lineTextForBufferRow(0)).toBe "testing TESTING testing AGAIN again AGAIN"
+          expect(editor.lineTextForBufferRow(1)).toBe "testing TESTING testing AGAIN again AGAIN"
+
+          editor.undo()
+          expect(editor.lineTextForBufferRow(0)).toBe "testing TESTING testing ANOTHER another "
+          expect(editor.lineTextForBufferRow(1)).toBe "testing TESTING testing ANOTHER another "
+
+          editor.undo()
+          expect(editor.lineTextForBufferRow(0)).toBe "placeholder PLACEHOLDER  ANOTHER another "
+          expect(editor.lineTextForBufferRow(1)).toBe "placeholder PLACEHOLDER  ANOTHER another "
+
+          editor.redo()
+          expect(editor.lineTextForBufferRow(0)).toBe "testing TESTING testing ANOTHER another "
+          expect(editor.lineTextForBufferRow(1)).toBe "testing TESTING testing ANOTHER another "
+
+          editor.redo()
+          expect(editor.lineTextForBufferRow(0)).toBe "testing TESTING testing AGAIN again AGAIN"
+          expect(editor.lineTextForBufferRow(1)).toBe "testing TESTING testing AGAIN again AGAIN"
+
 
         describe "when there are many tabstops", ->
           it "moves the cursors between the tab stops for their corresponding snippet when tab and shift-tab are pressed", ->

@@ -8,6 +8,7 @@ ScopedPropertyStore = require 'scoped-property-store'
 
 Snippet = require './snippet'
 SnippetExpansion = require './snippet-expansion'
+EditorStore = require './editor-store'
 {getPackageRoot} = require './helpers'
 
 module.exports =
@@ -298,6 +299,13 @@ module.exports =
   expandSnippetsUnderCursors: (editor) ->
     return false unless snippet = @snippetToExpandUnderCursor(editor)
 
+    @getStore(editor).observeHistory({
+      undo: (event) =>
+        @onUndoOrRedo(editor, event, true)
+      redo: (event) =>
+        @onUndoOrRedo(editor, event, false)
+    })
+
     editor.transact =>
       cursors = editor.getCursors()
       for cursor in cursors
@@ -322,15 +330,60 @@ module.exports =
         previousTabStopVisited = true
     previousTabStopVisited
 
+  getStore: (editor) ->
+    EditorStore.findOrCreate(editor)
+
   getExpansions: (editor) ->
-    @editorSnippetExpansions?.get(editor) ? []
+    @getStore(editor).getExpansions()
 
   clearExpansions: (editor) ->
-    @editorSnippetExpansions ?= new WeakMap()
-    @editorSnippetExpansions.set(editor, [])
+    store = @getStore(editor)
+    store.clearExpansions()
+    # There are no more active instances of this expansion, so we should undo
+    # the spying we set up on this editor.
+    store.stopObserving()
+    store.stopObservingHistory()
 
   addExpansion: (editor, snippetExpansion) ->
-    @getExpansions(editor).push(snippetExpansion)
+    @getStore(editor).addExpansion(snippetExpansion)
+
+  observeEditor: (editor) ->
+    @getStore(editor).observeEditor()
+
+  stopObservingEditor: (editor) ->
+    @getStore(editor).stopObservingEditor()
+
+  textChanged: (editor, event) ->
+    store = @getStore(editor)
+    activeExpansions = store.getExpansions()
+
+    return if activeExpansions.length == 0 or activeExpansions[0].isIgnoringBufferChanges
+
+    @ignoringTextChangesForEditor editor, ->
+      editor.transact ->
+        for expansion in activeExpansions
+          expansion.textChanged(event)
+
+    # Create a checkpoint here to consolidate all the changes we just made into
+    # the transaction that prompted them.
+    @makeCheckpoint(editor)
+
+  # Perform an action inside the editor without triggering our `textChanged`
+  # callback.
+  ignoringTextChangesForEditor: (editor, callback) ->
+    @stopObservingEditor(editor)
+    callback()
+    @observeEditor(editor)
+
+  observeEditor: (editor) ->
+    @getStore(editor).observe (event) =>
+      @textChanged(editor, event)
+
+  stopObservingEditor: (editor) ->
+    @getStore(editor).stopObserving()
+
+  makeCheckpoint: (editor) ->
+    @getStore(editor).makeCheckpoint()
 
   insert: (snippet, editor=atom.workspace.getActiveTextEditor(), cursor=editor.getLastCursor()) ->
     if typeof snippet is 'string'
@@ -346,3 +399,8 @@ module.exports =
     insertSnippet: @insert.bind(this)
     snippetsForScopes: @parsedSnippetsForScopes.bind(this)
     getUnparsedSnippets: @getUnparsedSnippets.bind(this)
+
+  onUndoOrRedo: (editor, isUndo) ->
+    activeExpansions = @getExpansions(editor)
+    for expansion in activeExpansions
+      expansion.onUndoOrRedo(isUndo)

@@ -1,5 +1,4 @@
 {CompositeDisposable, Range, Point} = require 'atom'
-SnippetHistoryProvider = require './snippet-history-provider';
 
 module.exports =
 class SnippetExpansion
@@ -10,7 +9,6 @@ class SnippetExpansion
     @subscriptions = new CompositeDisposable
     @tabStopMarkers = []
     @selections = [@cursor.selection]
-    @observeHistory(true)
 
     startPosition = @cursor.selection.getBufferRange().start
     {body, tabStopList} = @snippet
@@ -20,7 +18,7 @@ class SnippetExpansion
       body = body.replace(/\n/g, '\n' + indent)
 
       tabStops = tabStops.map (tabStop) ->
-        tabStop.copyWithIndent(indent);
+        tabStop.copyWithIndent(indent)
 
     @editor.transact =>
       @ignoringBufferChanges =>
@@ -33,23 +31,8 @@ class SnippetExpansion
           @snippets.addExpansion(@editor, this)
           @editor.normalizeTabsInBufferRange(newRange)
 
-  # Spy on the TextBuffer's history provider so that we know when a buffer
-  # change is because of an undo or redo. In these situations we shouldn't try
-  # to apply transformations because any changes to the transformation are
-  # already part of the history.
-  observeHistory: (bool) ->
-    buffer = @editor.getBuffer()
-    @existingProvider = buffer.historyProvider unless @existingProvider?
-    if bool
-      newProvider = SnippetHistoryProvider(@existingProvider, {
-        undo: => @onUndoOrRedo(true)
-        redo: => @onUndoOrRedo(false)
-      })
-      buffer.setHistoryProvider(newProvider)
-    else
-      buffer.setHistoryProvider(@existingProvider)
-      @existingProvider = null
-
+  # Set a flag on undo or redo so that we know not to re-apply transforms.
+  # They're already accounted for in the history.
   onUndoOrRedo: (isUndo) =>
     @isUndoingOrRedoing = true
 
@@ -72,33 +55,15 @@ class SnippetExpansion
     @applyTransformations(@tabStopIndex)
 
   ignoringBufferChanges: (callback) ->
-    hadChangeListener = !!@editorListeners
     wasIgnoringBufferChanges = @isIgnoringBufferChanges
-
-    @setEditorListener(false)
     @isIgnoringBufferChanges = true
-
     callback()
-
     @isIgnoringBufferChanges = wasIgnoringBufferChanges
-    @setEditorListener(true) if hadChangeListener
-
-  setEditorListener: (bool) ->
-    buffer = @editor.getBuffer()
-    if bool
-      unless @editorListener
-        @editorListeners = new CompositeDisposable
-        @editorListeners.add buffer.onDidChangeText (event) =>
-          @textChanged(event)
-        @subscriptions.add(@editorListeners)
-    else
-      if @editorListeners
-        @editorListeners.dispose()
-        @editorListeners = null
 
   applyAllTransformations: ->
-    for item, index in @tabStopMarkers
-      @applyTransformations(index, true)
+    @editor.transact =>
+      for item, index in @tabStopMarkers
+        @applyTransformations(index, true)
 
   applyTransformations: (tabStop, initial = false) ->
     items = [@tabStopMarkers[tabStop]...]
@@ -125,9 +90,6 @@ class SnippetExpansion
           range.start.traverse(new Point(0, outputText.length))
         )
         marker.setBufferRange(newRange)
-
-    @editor.groupChangesSinceCheckpoint(@checkpoint) if @checkpoint
-    @checkpoint = @editor.createCheckpoint()
 
   placeTabStopMarkers: (startPosition, tabStops) ->
     for tabStop, index in tabStops
@@ -192,7 +154,7 @@ class SnippetExpansion
     @settingTabStop = false
     # If this snippet has at least one transform, we need to observe changes
     # made to the editor so that we can update the transformed tab stops.
-    @setEditorListener(@hasTransforms)
+    @snippets.observeEditor(@editor) if @hasTransforms
     markerSelected
 
   destroy: ->
@@ -200,8 +162,8 @@ class SnippetExpansion
     for items in @tabStopMarkers
       item.marker.destroy() for item in items
     @tabStopMarkers = []
+    @snippets.stopObservingEditor(@editor)
     @snippets.clearExpansions(@editor)
-    @observeHistory(false)
 
   restore: (@editor) ->
     @snippets.addExpansion(@editor, this)
