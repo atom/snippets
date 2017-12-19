@@ -1,5 +1,4 @@
-SnippetHistoryProvider = require './snippet-history-provider';
-
+SnippetHistoryProvider = require './snippet-history-provider'
 
 class EditorStore
   constructor: (@editor) ->
@@ -10,13 +9,13 @@ class EditorStore
     @existingHistoryProvider = null
 
 
-  getExpansions: () ->
+  getExpansions: ->
     @expansions
 
   setExpansions: (list) ->
     @expansions = list
 
-  clearExpansions: () ->
+  clearExpansions: ->
     @expansions = []
 
   addExpansion: (snippetExpansion) ->
@@ -38,13 +37,13 @@ class EditorStore
     @observer.dispose() if @observer?
     @observer = @buffer.onDidChangeText(callback)
 
-  stopObserving: () ->
+  stopObserving: ->
     return false unless @observer?
     @observer.dispose()
     @observer = null
     true
 
-  makeCheckpoint: () ->
+  makeCheckpoint: ->
     existing = @checkpoint
     if existing
       # changes = @buffer.getChangesSinceCheckpoint(existing)

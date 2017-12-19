@@ -24,7 +24,7 @@ class Snippet
           tabStop = @tabStopList.findOrCreate({
             index: index,
             snippet: this
-          });
+          })
           tabStop.addInsertion({
             range: range,
             substitution: substitution

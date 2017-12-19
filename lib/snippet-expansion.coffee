@@ -12,7 +12,7 @@ class SnippetExpansion
 
     startPosition = @cursor.selection.getBufferRange().start
     {body, tabStopList} = @snippet
-    tabStops = tabStopList.toArray();
+    tabStops = tabStopList.toArray()
     if @snippet.lineCount > 1 and indent = @editor.lineTextForBufferRow(startPosition.row).match(/^\s*/)[0]
       # Add proper leading indentation to the snippet
       body = body.replace(/\n/g, '\n' + indent)
@@ -67,7 +67,7 @@ class SnippetExpansion
 
   applyTransformations: (tabStop, initial = false) ->
     items = [@tabStopMarkers[tabStop]...]
-    return if items.length == 0
+    return if items.length is 0
 
     primary = items.shift()
     primaryRange = primary.marker.getBufferRange()
@@ -80,7 +80,7 @@ class SnippetExpansion
 
         # Don't transform mirrored tab stops. They have their own cursors, so
         # mirroring happens automatically.
-        continue if !insertion.isTransformation()
+        continue unless insertion.isTransformation()
 
         outputText = insertion.transform(inputText)
         @editor.transact =>
@@ -132,7 +132,7 @@ class SnippetExpansion
     markerSelected = false
 
     items = @tabStopMarkers[@tabStopIndex]
-    return false if items.length == 0
+    return false if items.length is 0
 
     ranges = []
     @hasTransforms = false

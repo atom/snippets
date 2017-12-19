@@ -347,17 +347,11 @@ module.exports =
   addExpansion: (editor, snippetExpansion) ->
     @getStore(editor).addExpansion(snippetExpansion)
 
-  observeEditor: (editor) ->
-    @getStore(editor).observeEditor()
-
-  stopObservingEditor: (editor) ->
-    @getStore(editor).stopObservingEditor()
-
   textChanged: (editor, event) ->
     store = @getStore(editor)
     activeExpansions = store.getExpansions()
 
-    return if activeExpansions.length == 0 or activeExpansions[0].isIgnoringBufferChanges
+    return if activeExpansions.length is 0 or activeExpansions[0].isIgnoringBufferChanges
 
     @ignoringTextChangesForEditor editor, ->
       editor.transact ->
