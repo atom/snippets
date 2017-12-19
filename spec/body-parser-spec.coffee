@@ -7,11 +7,11 @@ describe "Snippet Body Parser", ->
     """
     expect(bodyTree).toEqual [
       '<',
-      { index: 1, content: ['p'] },
+      {index: 1, content: ['p']},
       '>',
-      { index: 0, content: [] },
+      {index: 0, content: []},
       '</',
-      { index: 1, content: [], substitution: { find: /f/g, replace: ['F'] } },
+      {index: 1, content: [], substitution: {find: /f/g, replace: ['F']}},
       '>'
     ]
 
@@ -21,7 +21,7 @@ describe "Snippet Body Parser", ->
     """
 
     expect(bodyTree).toEqual [
-      { index: 1, content: ['placeholder'] },
+      {index: 1, content: ['placeholder']},
       ' ',
       {
         index: 1,
@@ -29,15 +29,15 @@ describe "Snippet Body Parser", ->
         substitution: {
           find: /(.)/g,
           replace: [
-            { escape: 'u' },
-            { backreference: 1 }
+            {escape: 'u'},
+            {backreference: 1}
           ]
         }
       },
       ' ',
-      { index: 1, content: [] },
+      {index: 1, content: []},
       ' ',
-      { index: 2, content: ['ANOTHER'] },
+      {index: 2, content: ['ANOTHER']},
       ' ',
       {
         index: 2,
@@ -45,13 +45,13 @@ describe "Snippet Body Parser", ->
         substitution: {
           find: /^(.*)$/g,
           replace: [
-            { escape: 'L' },
-            { backreference: 1 }
+            {escape: 'L'},
+            {backreference: 1}
           ]
         }
       },
       ' ',
-      { index: 2, content: [] },
+      {index: 2, content: []},
     ]
 
 
@@ -61,7 +61,7 @@ describe "Snippet Body Parser", ->
     """
 
     expect(bodyTree).toEqual [
-      { index: 1, content: ['placeholder'] },
+      {index: 1, content: ['placeholder']},
       '\n',
       {
         index: 1,
@@ -69,13 +69,13 @@ describe "Snippet Body Parser", ->
         substitution: {
           find: /(.)/g,
           replace: [
-            { escape: 'u' },
-            { backreference: 1 }
+            {escape: 'u'},
+            {backreference: 1}
           ]
         }
       },
       '\n',
-      { index: 1, content: [] }
+      {index: 1, content: []}
     ]
 
   it "parses a snippet with a format string and case-control flags", ->
@@ -85,9 +85,9 @@ describe "Snippet Body Parser", ->
 
     expect(bodyTree).toEqual [
       '<',
-      { index: 1, content: ['p'] },
+      {index: 1, content: ['p']},
       '>',
-      { index: 0, content: [] },
+      {index: 0, content: []},
       '</',
       {
         index: 1,
@@ -95,9 +95,9 @@ describe "Snippet Body Parser", ->
         substitution: {
           find: /(.)(.*)/g,
           replace: [
-            { escape: 'u' },
-            { backreference: 1 },
-            { backreference: 2 }
+            {escape: 'u'},
+            {backreference: 1},
+            {backreference: 2}
           ]
         }
       },
