@@ -180,9 +180,9 @@ describe "Snippet Body Parser", ->
 
     expect(bodyTree).toEqual [
       '<',
-      { index: 1, content: ['p'] },
+      {index: 1, content: ['p']},
       '>',
-      { index: 0, content: [] },
+      {index: 0, content: []},
       '</',
       {
         index: 1,
@@ -190,9 +190,9 @@ describe "Snippet Body Parser", ->
         substitution: {
           find: /(.)\/(.*)/g,
           replace: [
-            { escape: 'u' },
-            { backreference: 1 },
-            { backreference: 2 }
+            {escape: 'u'},
+            {backreference: 1},
+            {backreference: 2}
           ]
         }
       },
