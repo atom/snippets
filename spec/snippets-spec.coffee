@@ -634,7 +634,7 @@ describe "Snippets extension", ->
         editor.insertText('t9b')
         simulateTabKeyEvent()
         editor.getCursors()[0].destroy()
-        buf = editor.getCursorBufferPosition()
+        editor.getCursorBufferPosition()
         simulateTabKeyEvent()
 
         expect(editor.lineTextForBufferRow(1)).toEqual("without placeholder   ")
@@ -709,8 +709,6 @@ describe "Snippets extension", ->
         editor.insertText('a')
         expect(editor.lineTextForBufferRow(0)).toBe(" & a")
         expect(editor.getCursorBufferPosition()).toEqual([0, 4])
-
-
 
     describe "when the snippet contains mirrored tab stops and tab stops with transformations", ->
       it "adds cursors for the mirrors but not the transformations", ->
@@ -833,7 +831,6 @@ describe "Snippets extension", ->
           editor.redo()
           expect(editor.lineTextForBufferRow(0)).toBe "testing TESTING testing AGAIN again AGAIN"
           expect(editor.lineTextForBufferRow(1)).toBe "testing TESTING testing AGAIN again AGAIN"
-
 
         describe "when there are many tabstops", ->
           it "moves the cursors between the tab stops for their corresponding snippet when tab and shift-tab are pressed", ->
