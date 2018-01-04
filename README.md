@@ -62,6 +62,16 @@ The outmost key of a snippet is the "scope" that you want the descendent snippet
 If it's difficult to determine the package handling the file type in question (for example, for `.md`-documents), you can also proceed as following. Put your cursor in a file in which you want the snippet to be available, open the [Command Palette](https://github.com/atom/command-palette)
 (<kbd>cmd-shift-p</kbd>), and run the `Editor: Log Cursor Scope` command. This will trigger a notification which will contain a list of scopes. The first scope that's listed is the scope for that language. Here are some examples: `source.coffee`, `text.plain`, `text.html.basic`.
 
+### Snippet syntax
+
+This package supports a subset of the features of TextMate snippets, [documented here](http://manual.macromates.com/en/snippets#transformations).
+
+The following features are not yet supported:
+
+* Variables
+* Interpolated shell code
+* Conditional insertions in transformations
+
 ### Multi-line Snippet Body
 
 You can also use multi-line syntax using `"""` for larger templates:

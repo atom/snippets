@@ -1,8 +1,10 @@
 {Range} = require 'atom'
+TabStopList = require './tab-stop-list'
 
 module.exports =
 class Snippet
   constructor: ({@name, @prefix, @bodyText, @description, @descriptionMoreURL, @rightLabelHTML, @leftLabel, @leftLabelHTML, bodyTree}) ->
+    @tabStopList = new TabStopList(this)
     @body = @extractTabStops(bodyTree)
 
   extractTabStops: (bodyTree) ->
@@ -11,15 +13,22 @@ class Snippet
     [row, column] = [0, 0]
 
     # recursive helper function; mutates vars above
-    extractTabStops = (bodyTree) ->
+    extractTabStops = (bodyTree) =>
       for segment in bodyTree
         if segment.index?
-          {index, content} = segment
+          {index, content, substitution} = segment
           index = Infinity if index is 0
           start = [row, column]
           extractTabStops(content)
-          tabStopsByIndex[index] ?= []
-          tabStopsByIndex[index].push new Range(start, [row, column])
+          range = new Range(start, [row, column])
+          tabStop = @tabStopList.findOrCreate({
+            index: index,
+            snippet: this
+          })
+          tabStop.addInsertion({
+            range: range,
+            substitution: substitution
+          })
         else if typeof segment is 'string'
           bodyText.push(segment)
           segmentLines = segment.split('\n')
@@ -30,8 +39,6 @@ class Snippet
 
     extractTabStops(bodyTree)
     @lineCount = row + 1
-    @tabStops = []
-    for index in Object.keys(tabStopsByIndex).sort(((arg1, arg2) -> arg1 - arg2))
-      @tabStops.push tabStopsByIndex[index]
+    @insertions = @tabStopList.getInsertions()
 
     bodyText.join('')

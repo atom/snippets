@@ -1,8 +1,9 @@
-{CompositeDisposable, Range} = require 'atom'
+{CompositeDisposable, Range, Point} = require 'atom'
 
 module.exports =
 class SnippetExpansion
   settingTabStop: false
+  isIgnoringBufferChanges: false
 
   constructor: (@snippet, @editor, @cursor, @snippets) ->
     @subscriptions = new CompositeDisposable
@@ -10,42 +11,107 @@ class SnippetExpansion
     @selections = [@cursor.selection]
 
     startPosition = @cursor.selection.getBufferRange().start
-    {body, tabStops} = @snippet
+    {body, tabStopList} = @snippet
+    tabStops = tabStopList.toArray()
     if @snippet.lineCount > 1 and indent = @editor.lineTextForBufferRow(startPosition.row).match(/^\s*/)[0]
       # Add proper leading indentation to the snippet
       body = body.replace(/\n/g, '\n' + indent)
 
       tabStops = tabStops.map (tabStop) ->
-        tabStop.map (range) ->
-          newRange = Range.fromObject(range, true) # Don't overwrite the existing range
-          if newRange.start.row # a non-zero start row means that we're not on the initial line
-            # Add on the indent offset so that the tab stops are placed at the correct position
-            newRange.start.column += indent.length
-            newRange.end.column += indent.length
-          newRange
+        tabStop.copyWithIndent(indent)
 
     @editor.transact =>
-      newRange = @editor.transact =>
-        @cursor.selection.insertText(body, autoIndent: false)
-      if @snippet.tabStops.length > 0
-        @subscriptions.add @cursor.onDidChangePosition (event) => @cursorMoved(event)
-        @subscriptions.add @cursor.onDidDestroy => @cursorDestroyed()
-        @placeTabStopMarkers(startPosition, tabStops)
-        @snippets.addExpansion(@editor, this)
-        @editor.normalizeTabsInBufferRange(newRange)
+      @ignoringBufferChanges =>
+        newRange = @editor.transact =>
+          @cursor.selection.insertText(body, autoIndent: false)
+        if @snippet.tabStopList.length > 0
+          @subscriptions.add @cursor.onDidChangePosition (event) => @cursorMoved(event)
+          @subscriptions.add @cursor.onDidDestroy => @cursorDestroyed()
+          @placeTabStopMarkers(startPosition, tabStops)
+          @snippets.addExpansion(@editor, this)
+          @editor.normalizeTabsInBufferRange(newRange)
+
+  # Set a flag on undo or redo so that we know not to re-apply transforms.
+  # They're already accounted for in the history.
+  onUndoOrRedo: (isUndo) =>
+    @isUndoingOrRedoing = true
 
   cursorMoved: ({oldBufferPosition, newBufferPosition, textChanged}) ->
     return if @settingTabStop or textChanged
-    @destroy() unless @tabStopMarkers[@tabStopIndex].some (marker) ->
-      marker.getBufferRange().containsPoint(newBufferPosition)
+    @destroy() unless @tabStopMarkers[@tabStopIndex].some (item) ->
+      item.marker.getBufferRange().containsPoint(newBufferPosition)
 
   cursorDestroyed: -> @destroy() unless @settingTabStop
 
+  textChanged: (event) ->
+    return if @isIgnoringBufferChanges
+
+    # Don't try to alter the buffer if all we're doing is restoring a
+    # snapshot from history.
+    if @isUndoingOrRedoing
+      @isUndoingOrRedoing = false
+      return
+
+    @applyTransformations(@tabStopIndex)
+
+  ignoringBufferChanges: (callback) ->
+    wasIgnoringBufferChanges = @isIgnoringBufferChanges
+    @isIgnoringBufferChanges = true
+    callback()
+    @isIgnoringBufferChanges = wasIgnoringBufferChanges
+
+  applyAllTransformations: ->
+    @editor.transact =>
+      for item, index in @tabStopMarkers
+        @applyTransformations(index, true)
+
+  applyTransformations: (tabStop, initial = false) ->
+    items = [@tabStopMarkers[tabStop]...]
+    return if items.length is 0
+
+    primary = items.shift()
+    primaryRange = primary.marker.getBufferRange()
+    inputText = @editor.getTextInBufferRange(primaryRange)
+
+    @ignoringBufferChanges =>
+      for item, index in items
+        {marker, insertion} = item
+        range = marker.getBufferRange()
+
+        # Don't transform mirrored tab stops. They have their own cursors, so
+        # mirroring happens automatically.
+        continue unless insertion.isTransformation()
+
+        outputText = insertion.transform(inputText)
+        @editor.transact =>
+          @editor.setTextInBufferRange(range, outputText)
+        newRange = new Range(
+          range.start,
+          range.start.traverse(new Point(0, outputText.length))
+        )
+        marker.setBufferRange(newRange)
+
   placeTabStopMarkers: (startPosition, tabStops) ->
     for tabStop in tabStops
-      @tabStopMarkers.push tabStop.map ({start, end}) =>
-        @editor.markBufferRange([startPosition.traverse(start), startPosition.traverse(end)])
+      {insertions} = tabStop
+      markers = []
+
+      continue unless tabStop.isValid()
+
+      for insertion in insertions
+        {range} = insertion
+        {start, end} = range
+        marker = @editor.markBufferRange([startPosition.traverse(start), startPosition.traverse(end)])
+        markers.push({
+          index: markers.length,
+          marker: marker,
+          insertion: insertion
+        })
+
+      @tabStopMarkers.push(markers)
+
     @setTabStopIndex(0)
+    @applyAllTransformations()
 
   goToNextTabStop: ->
     nextIndex = @tabStopIndex + 1
@@ -65,8 +131,17 @@ class SnippetExpansion
     @settingTabStop = true
     markerSelected = false
 
+    items = @tabStopMarkers[@tabStopIndex]
+    return false if items.length is 0
+
     ranges = []
-    for marker in @tabStopMarkers[@tabStopIndex] when marker.isValid()
+    @hasTransforms = false
+    for item in items
+      {marker, insertion} = item
+      continue unless marker.isValid()
+      if insertion.isTransformation()
+        @hasTransforms = true
+        continue
       ranges.push(marker.getBufferRange())
 
     if ranges.length > 0
@@ -83,13 +158,17 @@ class SnippetExpansion
       markerSelected = true
 
     @settingTabStop = false
+    # If this snippet has at least one transform, we need to observe changes
+    # made to the editor so that we can update the transformed tab stops.
+    @snippets.observeEditor(@editor) if @hasTransforms
     markerSelected
 
   destroy: ->
     @subscriptions.dispose()
-    for markers in @tabStopMarkers
-      marker.destroy() for marker in markers
+    for items in @tabStopMarkers
+      item.marker.destroy() for item in items
     @tabStopMarkers = []
+    @snippets.stopObservingEditor(@editor)
     @snippets.clearExpansions(@editor)
 
   restore: (@editor) ->

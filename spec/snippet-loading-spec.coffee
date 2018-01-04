@@ -41,14 +41,14 @@ describe "Snippet Loading", ->
       expect(jsonSnippet.prefix).toBe 'snip'
       expect(jsonSnippet.body).toContain '"prefix":'
       expect(jsonSnippet.body).toContain '"body":'
-      expect(jsonSnippet.tabStops.length).toBeGreaterThan(0)
+      expect(jsonSnippet.tabStopList.length).toBeGreaterThan(0)
 
       csonSnippet = snippetsService.snippetsForScopes(['.source.coffee'])['snip']
       expect(csonSnippet.name).toBe 'Atom Snippet'
       expect(csonSnippet.prefix).toBe 'snip'
       expect(csonSnippet.body).toContain "'prefix':"
       expect(csonSnippet.body).toContain "'body':"
-      expect(csonSnippet.tabStops.length).toBeGreaterThan(0)
+      expect(csonSnippet.tabStopList.length).toBeGreaterThan(0)
 
   it "loads non-hidden snippet files from atom packages with snippets directories", ->
     activateSnippetsPackage()

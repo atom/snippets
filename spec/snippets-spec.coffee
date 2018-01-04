@@ -210,6 +210,32 @@ describe "Snippets extension", ->
               $0one${1} ${2:two} three${3}
             """
 
+          "simple transform":
+            prefix: "t12"
+            body: """
+              [${1:b}][/${1/[ ]+.*$//}]
+            """
+          "transform with non-transforming mirrors":
+            prefix: "t13"
+            body: """
+              ${1:placeholder}\n${1/(.)/\\u$1/}\n$1
+            """
+          "multiple tab stops, some with transforms and some without":
+            prefix: "t14"
+            body: """
+              ${1:placeholder} ${1/(.)/\\u$1/} $1 ${2:ANOTHER} ${2/^(.*)$/\\L$1/} $2
+            """
+          "has a transformed tab stop without a corresponding ordinary tab stop":
+            prefix: 't15'
+            body: """
+            ${1/(.)/\\u$1/} & $2
+            """
+          "has a transformed tab stop that occurs before the corresponding ordinary tab stop":
+            prefix: 't16'
+            body: """
+            & ${1/(.)/\\u$1/} & ${1:q}
+            """
+
     it "parses snippets once, reusing cached ones on subsequent queries", ->
       spyOn(Snippets, "getBodyParser").andCallThrough()
 
@@ -608,6 +634,7 @@ describe "Snippets extension", ->
         editor.insertText('t9b')
         simulateTabKeyEvent()
         editor.getCursors()[0].destroy()
+        editor.getCursorBufferPosition()
         simulateTabKeyEvent()
 
         expect(editor.lineTextForBufferRow(1)).toEqual("without placeholder   ")
@@ -640,6 +667,83 @@ describe "Snippets extension", ->
 
         expect(editor.lineTextForBufferRow(2).indexOf("line 2 ")).toBe -1
 
+    describe "when the snippet contains tab stops with transformations", ->
+      it "transforms the text typed into the first tab stop before setting it in the transformed tab stop", ->
+        editor.setText('t12')
+        editor.setCursorScreenPosition([0, 3])
+        simulateTabKeyEvent()
+        expect(editor.getText()).toBe("[b][/b]")
+        editor.insertText('img src')
+        expect(editor.getText()).toBe("[img src][/img]")
+
+      it "bundles the transform mutations along with the original manual mutation for the purposes of undo and redo", ->
+        editor.setText('t12')
+        editor.setCursorScreenPosition([0, 3])
+        simulateTabKeyEvent()
+        editor.insertText('i')
+        expect(editor.getText()).toBe("[i][/i]")
+
+        editor.insertText('mg src')
+        expect(editor.getText()).toBe("[img src][/img]")
+
+        editor.undo()
+        expect(editor.getText()).toBe("[i][/i]")
+
+        editor.redo()
+        expect(editor.getText()).toBe("[img src][/img]")
+
+      it "can pick the right insertion to use as the primary even if a transformed insertion occurs first in the snippet", ->
+        editor.setText('t16')
+        editor.setCursorScreenPosition([0, 3])
+        simulateTabKeyEvent()
+        expect(editor.lineTextForBufferRow(0)).toBe("& Q & q")
+        expect(editor.getCursorBufferPosition()).toEqual([0, 7])
+
+        editor.insertText('rst')
+        expect(editor.lineTextForBufferRow(0)).toBe("& RST & rst")
+
+      it "silently ignores a tab stop without a non-transformed insertion to use as the primary", ->
+        editor.setText('t15')
+        editor.setCursorScreenPosition([0, 3])
+        simulateTabKeyEvent()
+        editor.insertText('a')
+        expect(editor.lineTextForBufferRow(0)).toBe(" & a")
+        expect(editor.getCursorBufferPosition()).toEqual([0, 4])
+
+    describe "when the snippet contains mirrored tab stops and tab stops with transformations", ->
+      it "adds cursors for the mirrors but not the transformations", ->
+        editor.setText('t13')
+        editor.setCursorScreenPosition([0, 3])
+        simulateTabKeyEvent()
+        expect(editor.getCursors().length).toBe(2)
+        expect(editor.getText()).toBe """
+          placeholder
+          PLACEHOLDER
+
+        """
+
+        editor.insertText('foo')
+
+        expect(editor.getText()).toBe """
+          foo
+          FOO
+          foo
+        """
+
+    describe "when the snippet contains multiple tab stops, some with transformations and some without", ->
+      it "does not get confused", ->
+        editor.setText('t14')
+        editor.setCursorScreenPosition([0, 3])
+        simulateTabKeyEvent()
+        expect(editor.getCursors().length).toBe(2)
+        expect(editor.getText()).toBe "placeholder PLACEHOLDER  ANOTHER another "
+        simulateTabKeyEvent()
+        expect(editor.getCursors().length).toBe(2)
+        editor.insertText('FOO')
+        expect(editor.getText()).toBe """
+          placeholder PLACEHOLDER  FOO foo FOO
+        """
+
     describe "when the snippet contains tab stops with an index >= 10", ->
       it "parses and orders the indices correctly", ->
         editor.setText('t10')
@@ -671,6 +775,62 @@ describe "Snippets extension", ->
           expect(editor.lineTextForBufferRow(1)).toBe "without placeholder hellovar quicksort = function () {"
           expect(editor.lineTextForBufferRow(13)).toBe "}; with placeholder hello"
           expect(editor.lineTextForBufferRow(14)).toBe "without placeholder hello"
+
+        it "applies transformations identically to single-expansion mode", ->
+          editor.setText('t14\nt14')
+          editor.setCursorBufferPosition([1, 3])
+          editor.addCursorAtBufferPosition([0, 3])
+          simulateTabKeyEvent()
+
+          expect(editor.lineTextForBufferRow(0)).toBe "placeholder PLACEHOLDER  ANOTHER another "
+          expect(editor.lineTextForBufferRow(1)).toBe "placeholder PLACEHOLDER  ANOTHER another "
+
+          editor.insertText "testing"
+
+          expect(editor.lineTextForBufferRow(0)).toBe "testing TESTING testing ANOTHER another "
+          expect(editor.lineTextForBufferRow(1)).toBe "testing TESTING testing ANOTHER another "
+
+          simulateTabKeyEvent()
+          editor.insertText "AGAIN"
+
+          expect(editor.lineTextForBufferRow(0)).toBe "testing TESTING testing AGAIN again AGAIN"
+          expect(editor.lineTextForBufferRow(1)).toBe "testing TESTING testing AGAIN again AGAIN"
+
+        it "bundles transform-induced mutations into a single history entry along with their triggering edit, even across multiple snippets", ->
+          editor.setText('t14\nt14')
+          editor.setCursorBufferPosition([1, 3])
+          editor.addCursorAtBufferPosition([0, 3])
+          simulateTabKeyEvent()
+
+          expect(editor.lineTextForBufferRow(0)).toBe "placeholder PLACEHOLDER  ANOTHER another "
+          expect(editor.lineTextForBufferRow(1)).toBe "placeholder PLACEHOLDER  ANOTHER another "
+
+          editor.insertText "testing"
+
+          expect(editor.lineTextForBufferRow(0)).toBe "testing TESTING testing ANOTHER another "
+          expect(editor.lineTextForBufferRow(1)).toBe "testing TESTING testing ANOTHER another "
+
+          simulateTabKeyEvent()
+          editor.insertText "AGAIN"
+
+          expect(editor.lineTextForBufferRow(0)).toBe "testing TESTING testing AGAIN again AGAIN"
+          expect(editor.lineTextForBufferRow(1)).toBe "testing TESTING testing AGAIN again AGAIN"
+
+          editor.undo()
+          expect(editor.lineTextForBufferRow(0)).toBe "testing TESTING testing ANOTHER another "
+          expect(editor.lineTextForBufferRow(1)).toBe "testing TESTING testing ANOTHER another "
+
+          editor.undo()
+          expect(editor.lineTextForBufferRow(0)).toBe "placeholder PLACEHOLDER  ANOTHER another "
+          expect(editor.lineTextForBufferRow(1)).toBe "placeholder PLACEHOLDER  ANOTHER another "
+
+          editor.redo()
+          expect(editor.lineTextForBufferRow(0)).toBe "testing TESTING testing ANOTHER another "
+          expect(editor.lineTextForBufferRow(1)).toBe "testing TESTING testing ANOTHER another "
+
+          editor.redo()
+          expect(editor.lineTextForBufferRow(0)).toBe "testing TESTING testing AGAIN again AGAIN"
+          expect(editor.lineTextForBufferRow(1)).toBe "testing TESTING testing AGAIN again AGAIN"
 
         describe "when there are many tabstops", ->
           it "moves the cursors between the tab stops for their corresponding snippet when tab and shift-tab are pressed", ->
