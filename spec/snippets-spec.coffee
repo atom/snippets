@@ -334,7 +334,7 @@ describe "Snippets extension", ->
           simulateTabKeyEvent()
           simulateTabKeyEvent()
           simulateTabKeyEvent()
-          expect(editor.lineTextForBufferRow(2)).toBe "go here next:(abc) and finally go here:(  )"
+          expect(editor.lineTextForBufferRow(2)).toBe "go here next:(abc) and finally go here:()"
           expect(editor.getMarkerCount()).toBe markerCountBefore
 
         describe "when tab stops are nested", ->

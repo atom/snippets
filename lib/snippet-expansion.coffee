@@ -121,8 +121,9 @@ class SnippetExpansion
       else
         @goToNextTabStop()
     else
+      @goToEndOfLastTabStop()
       @destroy()
-      false
+      true
 
   goToPreviousTabStop: ->
     @setTabStopIndex(@tabStopIndex - 1) if @tabStopIndex > 0
@@ -162,6 +163,13 @@ class SnippetExpansion
     # made to the editor so that we can update the transformed tab stops.
     @snippets.observeEditor(@editor) if @hasTransforms
     markerSelected
+
+  goToEndOfLastTabStop: ->
+    return unless @tabStopMarkers.length > 0
+    markers = @tabStopMarkers[@tabStopMarkers.length - 1]
+    return unless markers.length > 0
+    lastMarker = markers[markers.length - 1]
+    @editor.setCursorBufferPosition(lastMarker.getEndBufferPosition())
 
   destroy: ->
     @subscriptions.dispose()
