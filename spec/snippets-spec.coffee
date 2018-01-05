@@ -463,13 +463,9 @@ describe "Snippets extension", ->
           editor.setCursorScreenPosition([2, Infinity])
           editor.insertText ' t3'
           atom.commands.dispatch editorElement, 'snippets:expand'
-
-          markers = editor.getMarkers()
-          expect(markers.length).toBe 2
-          expect(markers[0].getBufferRange().start).toEqual row: 3, column: 12
-          expect(markers[0].getBufferRange().end).toEqual markers[0].getBufferRange().start
-          expect(markers[1].getBufferRange().start).toEqual row: 4, column: 4
-          expect(markers[1].getBufferRange().end).toEqual markers[1].getBufferRange().start
+          expect(editor.getCursorBufferPosition()).toEqual [3, 12]
+          atom.commands.dispatch editorElement, 'snippets:next-tab-stop'
+          expect(editor.getCursorBufferPosition()).toEqual [4, 4]
 
         it "indents the subsequent lines of the snippet based on the indent level before the snippet is inserted", ->
           editor.setCursorScreenPosition([2, Infinity])
@@ -488,34 +484,24 @@ describe "Snippets extension", ->
           editor.insertText 't4'
           atom.commands.dispatch editorElement, 'snippets:expand'
 
-          markers = editor.getMarkers()
-          expect(markers.length).toBe 2
-          expect(markers[0].getBufferRange().start).toEqual row: 3, column: 9
-          expect(markers[0].getBufferRange().end).toEqual row: 3, column: 10
-          expect(markers[1].getBufferRange().start).toEqual row: 4, column: 6
-          expect(markers[1].getBufferRange().end).toEqual row: 4, column: 13
-
+          expect(editor.getSelectedBufferRange()).toEqual [[3, 9], [3, 10]]
           atom.commands.dispatch editorElement, 'snippets:next-tab-stop'
+          expect(editor.getSelectedBufferRange()).toEqual [[4, 6], [4, 13]]
+
           editor.insertText 't4'
           atom.commands.dispatch editorElement, 'snippets:expand'
 
-          markers = editor.getMarkers()
-          expect(markers.length).toBe 4
-          expect(markers[2].getBufferRange().start).toEqual row: 4, column: 11
-          expect(markers[2].getBufferRange().end).toEqual row: 4, column: 12
-          expect(markers[3].getBufferRange().start).toEqual row: 5, column: 8
-          expect(markers[3].getBufferRange().end).toEqual row: 5, column: 15
+          expect(editor.getSelectedBufferRange()).toEqual [[4, 11], [4, 12]]
+          atom.commands.dispatch editorElement, 'snippets:next-tab-stop'
+          expect(editor.getSelectedBufferRange()).toEqual [[5, 8], [5, 15]]
 
           editor.setText('') # Clear editor
           editor.insertText 't4'
           atom.commands.dispatch editorElement, 'snippets:expand'
 
-          markers = editor.getMarkers()
-          expect(markers.length).toBe 6
-          expect(markers[4].getBufferRange().start).toEqual row: 0, column: 5
-          expect(markers[4].getBufferRange().end).toEqual row: 0, column: 6
-          expect(markers[5].getBufferRange().start).toEqual row: 1, column: 2
-          expect(markers[5].getBufferRange().end).toEqual row: 1, column: 9
+          expect(editor.getSelectedBufferRange()).toEqual [[0, 5], [0, 6]]
+          atom.commands.dispatch editorElement, 'snippets:next-tab-stop'
+          expect(editor.getSelectedBufferRange()).toEqual [[1, 2], [1, 9]]
 
       describe "when multiple snippets match the prefix", ->
         it "expands the snippet that is the longest match for the prefix", ->

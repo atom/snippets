@@ -22,14 +22,14 @@ class SnippetExpansion
 
     @editor.transact =>
       @ignoringBufferChanges =>
-        newRange = @editor.transact =>
-          @cursor.selection.insertText(body, autoIndent: false)
-        if @snippet.tabStopList.length > 0
-          @subscriptions.add @cursor.onDidChangePosition (event) => @cursorMoved(event)
-          @subscriptions.add @cursor.onDidDestroy => @cursorDestroyed()
-          @placeTabStopMarkers(startPosition, tabStops)
-          @snippets.addExpansion(@editor, this)
-          @editor.normalizeTabsInBufferRange(newRange)
+        @editor.transact =>
+          newRange = @cursor.selection.insertText(body, autoIndent: false)
+          if @snippet.tabStopList.length > 0
+            @subscriptions.add @cursor.onDidChangePosition (event) => @cursorMoved(event)
+            @subscriptions.add @cursor.onDidDestroy => @cursorDestroyed()
+            @placeTabStopMarkers(startPosition, tabStops)
+            @snippets.addExpansion(@editor, this)
+            @editor.normalizeTabsInBufferRange(newRange)
 
   # Set a flag on undo or redo so that we know not to re-apply transforms.
   # They're already accounted for in the history.
@@ -101,7 +101,7 @@ class SnippetExpansion
       for insertion in insertions
         {range} = insertion
         {start, end} = range
-        marker = @editor.markBufferRange([startPosition.traverse(start), startPosition.traverse(end)])
+        marker = @snippets.getMarkerLayer(@editor).markBufferRange([startPosition.traverse(start), startPosition.traverse(end)])
         markers.push({
           index: markers.length,
           marker: marker,
@@ -121,9 +121,9 @@ class SnippetExpansion
       else
         @goToNextTabStop()
     else
-      @goToEndOfLastTabStop()
+      succeeded = @goToEndOfLastTabStop()
       @destroy()
-      true
+      succeeded
 
   goToPreviousTabStop: ->
     @setTabStopIndex(@tabStopIndex - 1) if @tabStopIndex > 0
@@ -139,6 +139,7 @@ class SnippetExpansion
     @hasTransforms = false
     for item in items
       {marker, insertion} = item
+      continue if marker.isDestroyed()
       continue unless marker.isValid()
       if insertion.isTransformation()
         @hasTransforms = true
@@ -166,15 +167,18 @@ class SnippetExpansion
 
   goToEndOfLastTabStop: ->
     return unless @tabStopMarkers.length > 0
-    markers = @tabStopMarkers[@tabStopMarkers.length - 1]
-    return unless markers.length > 0
-    lastMarker = markers[markers.length - 1]
-    @editor.setCursorBufferPosition(lastMarker.getEndBufferPosition())
+    items = @tabStopMarkers[@tabStopMarkers.length - 1]
+    return unless items.length > 0
+    {marker: lastMarker} = items[items.length - 1]
+    if lastMarker.isDestroyed()
+      false
+    else
+      @editor.setCursorBufferPosition(lastMarker.getEndBufferPosition())
+      true
 
   destroy: ->
     @subscriptions.dispose()
-    for items in @tabStopMarkers
-      item.marker.destroy() for item in items
+    @snippets.getMarkerLayer(@editor).clear()
     @tabStopMarkers = []
     @snippets.stopObservingEditor(@editor)
     @snippets.clearExpansions(@editor)
