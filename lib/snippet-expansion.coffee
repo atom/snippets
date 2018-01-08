@@ -178,10 +178,13 @@ class SnippetExpansion
 
   destroy: ->
     @subscriptions.dispose()
-    @snippets.getMarkerLayer(@editor).clear()
+    @getMarkerLayer(@editor).clear()
     @tabStopMarkers = []
     @snippets.stopObservingEditor(@editor)
     @snippets.clearExpansions(@editor)
+
+  getMarkerLayer: ->
+    @snippets.getMarkerLayer(@editor)
 
   restore: (@editor) ->
     @snippets.addExpansion(@editor, this)
