@@ -17,6 +17,7 @@ module.exports =
     @userSnippetsPath = null
     @snippetIdCounter = 0
     @parsedSnippetsById = new Map
+    @editorMarkerLayers = new WeakMap
     @scopedPropertyStore = new ScopedPropertyStore
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.workspace.addOpener (uri) =>
@@ -53,6 +54,7 @@ module.exports =
         snippets.availableSnippetsView.toggle(editor)
 
     @subscriptions.add atom.workspace.observeTextEditors (editor) =>
+      @createMarkerLayer(editor)
       @clearExpansions(editor)
 
   deactivate: ->
@@ -332,6 +334,12 @@ module.exports =
 
   getStore: (editor) ->
     EditorStore.findOrCreate(editor)
+
+  createMarkerLayer: (editor) ->
+    @editorMarkerLayers.set(editor, editor.addMarkerLayer({maintainHistory: true}))
+
+  getMarkerLayer: (editor) ->
+    @editorMarkerLayers.get(editor)
 
   getExpansions: (editor) ->
     @getStore(editor).getExpansions()
