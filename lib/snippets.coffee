@@ -217,6 +217,10 @@ module.exports =
 
   parsedSnippetsForScopes: (scopeDescriptor) ->
     unparsedSnippetsByPrefix = @scopedPropertyStore.getPropertyValue(@getScopeChain(scopeDescriptor), "snippets")
+    unless unparsedSnippetsByPrefix?
+      legacyScopeDescriptor = atom.config.getLegacyScopeDescriptorForNewScopeDescriptor?(scopeDescriptor)
+      if legacyScopeDescriptor?
+        unparsedSnippetsByPrefix = @scopedPropertyStore.getPropertyValue(@getScopeChain(legacyScopeDescriptor), "snippets")
     unparsedSnippetsByPrefix ?= {}
     snippets = {}
     for prefix, attributes of unparsedSnippetsByPrefix
