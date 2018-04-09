@@ -205,13 +205,13 @@ describe "Snippet Body Parser", ->
     """
 
     expect(bodyTree).toEqual [
-      {index: 4, content: [] },
+      {index: 4, content: []},
       'console.',
-      {index: 3, content: ['log'] },
+      {index: 3, content: ['log']},
       '(\'',
       {
         index: 2, content: [
-          { index: 1, content: [] }
+          {index: 1, content: []}
         ]
       },
       '\', ',
@@ -226,14 +226,14 @@ describe "Snippet Body Parser", ->
     """
 
     expect(bodyTree).toEqual [
-      {index: 4, content: [] },
+      {index: 4, content: []},
       'console.',
-      {index: 3, content: ['log'] },
+      {index: 3, content: ['log']},
       '(\'',
       {
         index: 2, content: [
           'uh ',
-          { index: 1, content: [] }
+          {index: 1, content: []}
         ]
       },
       '\', ',
