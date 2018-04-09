@@ -198,3 +198,46 @@ describe "Snippet Body Parser", ->
       },
       '>'
     ]
+
+  it "parses a snippet with a placeholder that mirrors another tab stop's content", ->
+    bodyTree = BodyParser.parse """
+    $4console.${3:log}('${2:$1}', $1);$0
+    """
+
+    expect(bodyTree).toEqual [
+      {index: 4, content: [] },
+      'console.',
+      {index: 3, content: ['log'] },
+      '(\'',
+      {
+        index: 2, content: [
+          { index: 1, content: [] }
+        ]
+      },
+      '\', ',
+      {index: 1, content: []},
+      ');',
+      {index: 0, content: []}
+    ]
+
+  it "parses a snippet with a placeholder that mixes text and tab stop references", ->
+    bodyTree = BodyParser.parse """
+    $4console.${3:log}('${2:uh $1}', $1);$0
+    """
+
+    expect(bodyTree).toEqual [
+      {index: 4, content: [] },
+      'console.',
+      {index: 3, content: ['log'] },
+      '(\'',
+      {
+        index: 2, content: [
+          'uh ',
+          { index: 1, content: [] }
+        ]
+      },
+      '\', ',
+      {index: 1, content: []},
+      ');',
+      {index: 0, content: []}
+    ]

@@ -248,6 +248,9 @@ describe "Snippets extension", ->
             body: """
             & ${1/(.)/\\u$1/} & ${1:q}
             """
+          "has a placeholder that mirrors another tab stop's content":
+            prefix: 't17'
+            body: "$4console.${3:log}('${2:uh $1}', $1);$0"
 
     it "parses snippets once, reusing cached ones on subsequent queries", ->
       spyOn(Snippets, "getBodyParser").andCallThrough()
@@ -665,6 +668,16 @@ describe "Snippets extension", ->
         editor.insertText('line 3')
 
         expect(editor.lineTextForBufferRow(2).indexOf("line 2 ")).toBe -1
+
+      it "mirrors input properly when a tabstop's placeholder refers to another tabstop", ->
+        editor.setText('t17')
+        editor.setCursorScreenPosition([0, 3])
+        simulateTabKeyEvent()
+        editor.insertText("foo")
+        expect(editor.getText()).toBe "console.log('uh foo', foo);"
+        simulateTabKeyEvent()
+        editor.insertText("bar")
+        expect(editor.getText()).toBe "console.log('bar', foo);"
 
     describe "when the snippet contains tab stops with transformations", ->
       it "transforms the text typed into the first tab stop before setting it in the transformed tab stop", ->
