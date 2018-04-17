@@ -53,10 +53,6 @@ module.exports =
         snippets.availableSnippetsView ?= new SnippetsAvailable(snippets)
         snippets.availableSnippetsView.toggle(editor)
 
-    @subscriptions.add atom.workspace.observeTextEditors (editor) =>
-      @createMarkerLayer(editor)
-      @clearExpansions(editor)
-
   deactivate: ->
     @emitter?.dispose()
     @emitter = null
@@ -312,6 +308,7 @@ module.exports =
         @onUndoOrRedo(editor, event, false)
     })
 
+    @findOrCreateMarkerLayer(editor)
     editor.transact =>
       cursors = editor.getCursors()
       for cursor in cursors
@@ -342,8 +339,12 @@ module.exports =
   createMarkerLayer: (editor) ->
     @editorMarkerLayers.set(editor, editor.addMarkerLayer({maintainHistory: true}))
 
-  getMarkerLayer: (editor) ->
-    @editorMarkerLayers.get(editor)
+  findOrCreateMarkerLayer: (editor) ->
+    layer = @editorMarkerLayers.get(editor)
+    unless layer?
+      layer = editor.addMarkerLayer({maintainHistory: true})
+      @editorMarkerLayers.set(editor, layer)
+    layer
 
   getExpansions: (editor) ->
     @getStore(editor).getExpansions()

@@ -101,7 +101,10 @@ class SnippetExpansion
       for insertion in insertions
         {range} = insertion
         {start, end} = range
-        marker = @snippets.getMarkerLayer(@editor).markBufferRange([startPosition.traverse(start), startPosition.traverse(end)])
+        marker = @getMarkerLayer(@editor).markBufferRange([
+          startPosition.traverse(start),
+          startPosition.traverse(end)
+        ])
         markers.push({
           index: markers.length,
           marker: marker,
@@ -184,7 +187,7 @@ class SnippetExpansion
     @snippets.clearExpansions(@editor)
 
   getMarkerLayer: ->
-    @snippets.getMarkerLayer(@editor)
+    @snippets.findOrCreateMarkerLayer(@editor)
 
   restore: (@editor) ->
     @snippets.addExpansion(@editor, this)
