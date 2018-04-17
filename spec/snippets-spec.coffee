@@ -1,6 +1,7 @@
 path = require 'path'
 temp = require('temp').track()
 Snippets = require '../lib/snippets'
+{TextEditor} = require 'atom'
 
 describe "Snippets extension", ->
   [editorElement, editor] = []
@@ -921,6 +922,24 @@ describe "Snippets extension", ->
           expect(editor.lineTextForBufferRow(0)).toBe "one t1 threevar quicksort = function () {"
           expect(editor.lineTextForBufferRow(7)).toBe "    }one t1 three"
           expect(editor.lineTextForBufferRow(12)).toBe "};one t1 three"
+
+    describe "when the editor is not a pane item (regression)", ->
+      it "handles tab stops correctly", ->
+        editor = new TextEditor()
+        atom.grammars.assignLanguageMode(editor, 'source.js')
+        editorElement = editor.getElement()
+
+        editor.insertText('t2')
+        simulateTabKeyEvent()
+        editor.insertText('ABC')
+        expect(editor.getText()).toContain('go here first:(ABC)')
+
+        editor.undo()
+        editor.undo()
+        expect(editor.getText()).toBe('t2')
+        simulateTabKeyEvent()
+        editor.insertText('ABC')
+        expect(editor.getText()).toContain('go here first:(ABC)')
 
   describe "when atom://.atom/snippets is opened", ->
     it "opens ~/.atom/snippets.cson", ->
