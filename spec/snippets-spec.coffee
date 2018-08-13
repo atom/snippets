@@ -103,18 +103,22 @@ describe "Snippets extension", ->
       expect(snippets.snippetsForScopes(['.source.js'])['t1']).toBeTruthy()
       expect(snippets.snippetsForScopes(['.source.js .nope.not-today'])['t1']).toBeFalsy()
 
-  if atom.config.setLegacyScopeAliasForNewScope?
-    it "reads snippets using the scope name's legacy alias if available", ->
-      Snippets.add __filename,
-        '.source.js':
-          "some snippet":
-            prefix: "t1"
-            body: "this is a test"
+  it "reads snippets using the scope name's legacy alias if available", ->
+    Snippets.add __filename,
+      '.source.js':
+        "some snippet":
+          prefix: "t1"
+          body: "this is a test"
+      '*':
+        "a basic snippet":
+          prefix: "t2"
+          body: "this is not a test"
 
-      atom.config.setLegacyScopeAliasForNewScope('javascript', 'source.js')
+    atom.config.setLegacyScopeAliasForNewScope('javascript', 'source.js')
 
-      snippets = Snippets.provideSnippets()
-      expect(snippets.snippetsForScopes(['javascript'])['t1'].name).toEqual('some snippet')
+    snippets = Snippets.provideSnippets()
+    expect(snippets.snippetsForScopes(['javascript'])['t1'].name).toEqual('some snippet')
+    expect(snippets.snippetsForScopes(['javascript'])['t2'].name).toEqual('a basic snippet')
 
   describe "when 'tab' is triggered on the editor", ->
     beforeEach ->

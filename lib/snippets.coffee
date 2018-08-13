@@ -212,25 +212,41 @@ module.exports =
     return
 
   parsedSnippetsForScopes: (scopeDescriptor) ->
-    unparsedSnippetsByPrefix = @scopedPropertyStore.getPropertyValue(@getScopeChain(scopeDescriptor), "snippets")
-    unless unparsedSnippetsByPrefix?
-      legacyScopeDescriptor = atom.config.getLegacyScopeDescriptorForNewScopeDescriptor?(scopeDescriptor)
-      if legacyScopeDescriptor?
-        unparsedSnippetsByPrefix = @scopedPropertyStore.getPropertyValue(@getScopeChain(legacyScopeDescriptor), "snippets")
-    unparsedSnippetsByPrefix ?= {}
+    unparsedSnippetsByPrefix = @scopedPropertyStore.getPropertyValue(
+      @getScopeChain(scopeDescriptor),
+      "snippets"
+    )
+
+    legacyScopeDescriptor = atom.config.getLegacyScopeDescriptorForNewScopeDescriptor?(scopeDescriptor)
+    if legacyScopeDescriptor?
+      unparsedLegacySnippetsByPrefix = @scopedPropertyStore.getPropertyValue(
+        @getScopeChain(legacyScopeDescriptor),
+        "snippets"
+      )
+
     snippets = {}
-    for prefix, attributes of unparsedSnippetsByPrefix
-      continue if typeof attributes?.body isnt 'string'
 
-      {id, name, body, bodyTree, description, descriptionMoreURL, rightLabelHTML, leftLabel, leftLabelHTML} = attributes
+    if unparsedSnippetsByPrefix?
+      for prefix, attributes of unparsedSnippetsByPrefix
+        continue if typeof attributes?.body isnt 'string'
+        snippets[prefix] = @getParsedSnippet(attributes)
 
-      unless @parsedSnippetsById.has(id)
-        bodyTree ?= @getBodyParser().parse(body)
-        snippet = new Snippet({id, name, prefix, bodyTree, description, descriptionMoreURL, rightLabelHTML, leftLabel, leftLabelHTML, bodyText: body})
-        @parsedSnippetsById.set(id, snippet)
+    if unparsedLegacySnippetsByPrefix?
+      for prefix, attributes of unparsedLegacySnippetsByPrefix
+        continue if snippets[prefix]?
+        continue if typeof attributes?.body isnt 'string'
+        snippets[prefix] = @getParsedSnippet(attributes)
 
-      snippets[prefix] = @parsedSnippetsById.get(id)
     snippets
+
+  getParsedSnippet: (attributes) ->
+    snippet = @parsedSnippetsById.get(attributes.id)
+    unless snippet?
+      {id, prefix, name, body, bodyTree, description, descriptionMoreURL, rightLabelHTML, leftLabel, leftLabelHTML} = attributes
+      bodyTree ?= @getBodyParser().parse(body)
+      snippet = new Snippet({id, name, prefix, bodyTree, description, descriptionMoreURL, rightLabelHTML, leftLabel, leftLabelHTML, bodyText: body})
+      @parsedSnippetsById.set(attributes.id, snippet)
+    snippet
 
   priorityForSource: (source) ->
     if source is @getUserSnippetsPath()
