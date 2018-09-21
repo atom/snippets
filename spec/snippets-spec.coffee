@@ -239,6 +239,9 @@ describe "Snippets extension", ->
           "has a placeholder that mirrors another tab stop's content":
             prefix: 't17'
             body: "$4console.${3:log}('${2:uh $1}', $1);$0"
+          "has a transformed tab stop such that it is possible to move the cursor between the ordinary tab stop and its transformed version without an intermediate step":
+            prefix: 't18'
+            body: '// $1\n// ${1/./=/}'
 
     it "parses snippets once, reusing cached ones on subsequent queries", ->
       spyOn(Snippets, "getBodyParser").andCallThrough()
@@ -743,6 +746,24 @@ describe "Snippets extension", ->
         expect(editor.getText()).toBe """
           placeholder PLACEHOLDER  FOO foo FOO
         """
+
+    describe "when the snippet has a transformed tab stop such that it is possible to move the cursor between the ordinary tab stop and its transformed version without an intermediate step", ->
+      it "terminates the snippet upon such a cursor move", ->
+        editor.setText('t18')
+        editor.setCursorScreenPosition([0, 3])
+        simulateTabKeyEvent()
+        expect(editor.getText()).toBe("// \n// ")
+        expect(editor.getCursorBufferPosition()).toEqual [0, 3]
+        editor.insertText('wat')
+        expect(editor.getText()).toBe("// wat\n// ===")
+        # Move the cursor down one line, then up one line. This puts the cursor
+        # back in its previous position, but the snippet should no longer be
+        # active, so when we type more text, it should not be mirrored.
+        editor.setCursorScreenPosition([1, 6])
+        editor.setCursorScreenPosition([0, 6])
+        editor.insertText('wat')
+        expect(editor.getText()).toBe("// watwat\n// ===")
+
 
     describe "when the snippet contains tab stops with an index >= 10", ->
       it "parses and orders the indices correctly", ->

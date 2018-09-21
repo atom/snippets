@@ -38,8 +38,10 @@ class SnippetExpansion
 
   cursorMoved: ({oldBufferPosition, newBufferPosition, textChanged}) ->
     return if @settingTabStop or textChanged
-    @destroy() unless @tabStopMarkers[@tabStopIndex].some (item) ->
+    itemWithCursor = @tabStopMarkers[@tabStopIndex].find (item) ->
       item.marker.getBufferRange().containsPoint(newBufferPosition)
+
+    @destroy() unless itemWithCursor and !itemWithCursor.insertion.isTransformation()
 
   cursorDestroyed: -> @destroy() unless @settingTabStop
 
