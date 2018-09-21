@@ -41,7 +41,7 @@ class SnippetExpansion
     itemWithCursor = @tabStopMarkers[@tabStopIndex].find (item) ->
       item.marker.getBufferRange().containsPoint(newBufferPosition)
 
-    @destroy() unless itemWithCursor and !itemWithCursor.insertion.isTransformation()
+    @destroy() unless itemWithCursor and not itemWithCursor.insertion.isTransformation()
 
   cursorDestroyed: -> @destroy() unless @settingTabStop
 
