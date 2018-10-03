@@ -17,6 +17,11 @@
     leftLabelHTML: "<span style=\"color:red\">Label</span>"
     rightLabelHTML: "<span style=\"color:white\">Label</span>"
 
+".package-with-snippets-unique-scope":
+  "Test Snippet":
+    prefix: "test"
+    body: "testing 123"  
+
 ".source.js":
   "Overrides a core package's snippet":
     prefix: "log"
