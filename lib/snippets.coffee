@@ -30,6 +30,14 @@ module.exports =
 
     snippets = this
 
+    # when snippets package settings changes, reload all package snippets
+    atom.config.onDidChange('snippets', =>
+      if @loaded
+        @unloadPackageSnippets()
+        @loadAll()
+        @getEmitter().emit 'did-reload-snippets'
+    )
+
     @subscriptions.add atom.commands.add 'atom-text-editor',
       'snippets:expand': (event) ->
         editor = @getModel()
@@ -128,11 +136,43 @@ module.exports =
         @add(userSnippetsPath, result)
 
   loadPackageSnippets: (callback) ->
-    packages = atom.packages.getLoadedPackages()
-    snippetsDirPaths = (path.join(pack.path, 'snippets') for pack in packages).sort (a, b) ->
-      if /\/app\.asar\/node_modules\//.test(a) then -1 else 1
-    async.map snippetsDirPaths, @loadSnippetsDirectory.bind(this), (error, results) ->
-      callback(_.extend({}, results...))
+    # Sort it *before* mapping it
+    packages = atom.packages.getLoadedPackages().sort (pack, b) ->
+      if /\/app\.asar\/node_modules\//.test(pack.path) then -1 else 1
+
+    # So the derived array has the same order
+    snippetsDirPaths = (path.join(pack.path, 'snippets') for pack in packages)
+    async.map snippetsDirPaths, @loadSnippetsDirectory.bind(this), (error, results) =>
+      # Zip it so we can iterate over it and get the package and result
+      zipped = ({result: result, pack: packages[key]} for key, result of results)
+
+      # Only keep the ones that actually have snippets in them
+      packagesWithSnippets = zipped.filter (o) -> Object.keys(o.result).length isnt 0
+
+      packagesConfig = {}
+      # Add a config entry for every package with snippets
+      for o in packagesWithSnippets
+        {pack} = o
+        packagesConfig[pack.name] =
+          title: pack.name
+          description: "Enable snippets for #{pack.name}"
+          type: "boolean"
+          default: true
+
+      # Update the config schema so you see it in the settings tab
+      atom.config.setSchema('snippets',
+        type: 'object',
+        properties: packagesConfig
+      )
+
+      enabledPackages = packagesWithSnippets
+        # Filter out packages disabled by the user
+        .filter (o) -> atom.config.get("snippets.#{o.pack.name}")
+        # And map it back to just the results (unzip)
+        .map (o) -> o.result
+
+      # Pass the enabled packages with snippets forward
+      callback(_.extend({}, enabledPackages...))
 
   doneLoading: ->
     @loaded = true
@@ -140,6 +180,9 @@ module.exports =
 
   onDidLoadSnippets: (callback) ->
     @getEmitter().on 'did-load-snippets', callback
+
+  onDidReloadSnippets: (callback) ->
+    @getEmitter().on 'did-reload-snippets', callback
 
   getEmitter: ->
     @emitter ?= new Emitter
@@ -202,6 +245,16 @@ module.exports =
     unparsedSnippets = {}
     unparsedSnippets[selector] = {"snippets": value}
     @scopedPropertyStore.addProperties(path, unparsedSnippets, priority: @priorityForSource(path))
+
+  unloadPackageSnippets: (callback) ->
+    packages = atom.packages.getLoadedPackages()
+    snippetsDirPaths = (path.join(pack.path, 'snippets') for pack in packages).sort (a, b) ->
+      if /\/app\.asar\/node_modules\//.test(a) then -1 else 1
+    async.map snippetsDirPaths, @loadSnippetsDirectory.bind(this), (error, results) =>
+      for snippetSet in results
+        for filepath, _snippetsBySelector of snippetSet
+          @clearSnippetsForPath(filepath)
+
 
   clearSnippetsForPath: (path) ->
     for scopeSelector of @scopedPropertyStore.propertiesForSource(path)
