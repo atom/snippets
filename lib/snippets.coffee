@@ -38,7 +38,7 @@ module.exports =
     @watchUserSnippets (watchDisposable) =>
       @subscriptions.add(watchDisposable)
 
-    @subscriptions.add atom.config.onDidChange 'core.packagesWithSnippetsDisabled', ({ newValue, oldValue }) =>
+    @subscriptions.add atom.config.onDidChange 'core.packagesWithSnippetsDisabled', ({newValue, oldValue}) =>
       @handleDisabledPackagesDidChange(newValue, oldValue)
 
     snippets = this
@@ -170,7 +170,7 @@ module.exports =
       @clearSnippetsForPath(filePath)
 
   loadPackageSnippets: (callback) ->
-    disabledPackageNames = atom.config.get('core.packagesWithSnippetsDisabled') || []
+    disabledPackageNames = atom.config.get('core.packagesWithSnippetsDisabled') or []
     packages = atom.packages.getLoadedPackages().sort (pack, b) ->
       if /\/app\.asar\/node_modules\//.test(pack.path) then -1 else 1
 
