@@ -166,6 +166,10 @@ module.exports =
 
   removeSnippetsForPackage: (packageName) ->
     snippetSet = @snippetsByPackage.get(packageName)
+    # Copy these snippets to the "quarantined" ScopedPropertyStore so that they
+    # remain present in the list of unparsed snippets reported to the settings
+    # view.
+    @addSnippetsInDisabledPackage(snippetSet)
     for filePath, snippetsBySelector of snippetSet
       @clearSnippetsForPath(filePath)
 
