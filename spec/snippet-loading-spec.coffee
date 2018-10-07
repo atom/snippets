@@ -223,6 +223,18 @@ describe "Snippet Loading", ->
         expect(Object.keys(snippets).length).toBe 1
         atom.config.set('core.packagesWithSnippetsDisabled', originalConfig)
 
+    it "still includes a disabled package's snippets in the list of unparsed snippets", ->
+      originalConfig = atom.config.get('core.packagesWithSnippetsDisabled')
+      atom.config.set('core.packagesWithSnippetsDisabled', [])
+
+      activateSnippetsPackage()
+      runs ->
+        atom.config.set('core.packagesWithSnippetsDisabled', ['package-with-snippets'])
+        allSnippets = snippetsService.getUnparsedSnippets()
+        scopedSnippet = allSnippets.find (s) ->
+          s.selectorString is '.package-with-snippets-unique-scope'
+        expect(scopedSnippet).toNotBe undefined
+
     it "never loads a package's snippets when that package is disabled in config", ->
       originalConfig = atom.config.get('core.packagesWithSnippetsDisabled')
       atom.config.set('core.packagesWithSnippetsDisabled', ['package-with-snippets'])
