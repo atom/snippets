@@ -126,9 +126,15 @@ class SnippetExpansion
       else
         @goToNextTabStop()
     else
-      succeeded = @goToEndOfLastTabStop()
-      @destroy()
-      succeeded
+      # The user has tabbed past the last tab stop. If the last tab stop is a
+      # $0, we shouldn't move the cursor any further.
+      if @snippet.tabStopList.hasEndStop
+        @destroy()
+        false
+      else
+        succeeded = @goToEndOfLastTabStop()
+        @destroy()
+        succeeded
 
   goToPreviousTabStop: ->
     @setTabStopIndex(@tabStopIndex - 1) if @tabStopIndex > 0
@@ -168,6 +174,7 @@ class SnippetExpansion
     # If this snippet has at least one transform, we need to observe changes
     # made to the editor so that we can update the transformed tab stops.
     @snippets.observeEditor(@editor) if @hasTransforms
+
     markerSelected
 
   goToEndOfLastTabStop: ->
