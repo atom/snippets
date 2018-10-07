@@ -233,7 +233,8 @@ describe "Snippet Loading", ->
         allSnippets = snippetsService.getUnparsedSnippets()
         scopedSnippet = allSnippets.find (s) ->
           s.selectorString is '.package-with-snippets-unique-scope'
-        expect(scopedSnippet).toNotBe undefined
+        expect(scopedSnippet).not.toBe undefined
+        originalConfig = atom.config.get('core.packagesWithSnippetsDisabled')
 
     it "never loads a package's snippets when that package is disabled in config", ->
       originalConfig = atom.config.get('core.packagesWithSnippetsDisabled')
