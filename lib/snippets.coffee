@@ -514,6 +514,7 @@ module.exports =
     insertSnippet: @insert.bind(this)
     snippetsForScopes: @parsedSnippetsForScopes.bind(this)
     getUnparsedSnippets: @getUnparsedSnippets.bind(this)
+    getUserSnippetsPath: @getUserSnippetsPath.bind(this)
 
   onUndoOrRedo: (editor, isUndo) ->
     activeExpansions = @getExpansions(editor)
