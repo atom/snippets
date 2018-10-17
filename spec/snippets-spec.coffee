@@ -111,6 +111,10 @@ describe "Snippets extension", ->
             prefix: "t1"
             body: "this is a test"
 
+          "with only an end tab stop":
+            prefix: "t1a"
+            body: "something $0 strange"
+
           "overlapping prefix":
             prefix: "tt1"
             body: "this is another test"
@@ -341,7 +345,7 @@ describe "Snippets extension", ->
           simulateTabKeyEvent()
           simulateTabKeyEvent()
           simulateTabKeyEvent()
-          expect(editor.lineTextForBufferRow(2)).toBe "go here next:(abc) and finally go here:()"
+          expect(editor.lineTextForBufferRow(2)).toBe "go here next:(abc) and finally go here:(  )"
           expect(editor.getMarkerCount()).toBe markerCountBefore
 
         describe "when tab stops are nested", ->
@@ -354,6 +358,19 @@ describe "Snippets extension", ->
             editor.insertText("foo")
             simulateTabKeyEvent()
             expect(editor.getSelectedBufferRange()).toEqual [[0, 5], [0, 10]]
+
+        describe "when the only tab stop is an end stop", ->
+          it "terminates the snippet immediately after moving the cursor to the end stop", ->
+            editor.setText('')
+            editor.insertText 't1a'
+            simulateTabKeyEvent()
+
+            expect(editor.lineTextForBufferRow(0)).toBe "something  strange"
+            expect(editor.getCursorBufferPosition()).toEqual [0, 10]
+
+            simulateTabKeyEvent()
+            expect(editor.lineTextForBufferRow(0)).toBe "something    strange"
+            expect(editor.getCursorBufferPosition()).toEqual [0, 12]
 
         describe "when tab stops are separated by blank lines", ->
           it "correctly places the tab stops (regression)", ->
