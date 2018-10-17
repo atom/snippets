@@ -16,9 +16,19 @@ module.exports =
     @loaded = false
     @userSnippetsPath = null
     @snippetIdCounter = 0
+    @snippetsByPackage = new Map
     @parsedSnippetsById = new Map
     @editorMarkerLayers = new WeakMap
+
     @scopedPropertyStore = new ScopedPropertyStore
+    # The above ScopedPropertyStore will store the main registry of snippets.
+    # But we need a separate ScopedPropertyStore for the snippets that come
+    # from disabled packages. They're isolated so that they're not considered
+    # as candidates when the user expands a prefix, but we still need the data
+    # around so that the snippets provided by those packages can be shown in
+    # the settings view.
+    @disabledSnippetsScopedPropertyStore = new ScopedPropertyStore
+
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.workspace.addOpener (uri) =>
       if uri is 'atom://.atom/snippets'
@@ -27,6 +37,9 @@ module.exports =
     @loadAll()
     @watchUserSnippets (watchDisposable) =>
       @subscriptions.add(watchDisposable)
+
+    @subscriptions.add atom.config.onDidChange 'core.packagesWithSnippetsDisabled', ({newValue, oldValue}) =>
+      @handleDisabledPackagesDidChange(newValue, oldValue)
 
     snippets = this
 
@@ -120,6 +133,8 @@ module.exports =
       else
         callback(new Disposable -> )
 
+  # Called when a user's snippets file is changed, deleted, or moved so that we
+  # can immediately re-process the snippets it contains.
   handleUserSnippetsDidChange: ->
     userSnippetsPath = @getUserSnippetsPath()
     atom.config.transact =>
@@ -127,12 +142,65 @@ module.exports =
       @loadSnippetsFile userSnippetsPath, (result) =>
         @add(userSnippetsPath, result)
 
+  # Called when the "Enable" checkbox is checked/unchecked in the Snippets
+  # section of a package's settings view.
+  handleDisabledPackagesDidChange: (newDisabledPackages, oldDisabledPackages) ->
+    packagesToAdd = []
+    packagesToRemove = []
+    oldDisabledPackages ?= []
+    newDisabledPackages ?= []
+    for p in oldDisabledPackages
+      packagesToAdd.push(p) unless newDisabledPackages.includes(p)
+
+    for p in newDisabledPackages
+      packagesToRemove.push(p) unless oldDisabledPackages.includes(p)
+
+    atom.config.transact =>
+      @removeSnippetsForPackage(p) for p in packagesToRemove
+      @addSnippetsForPackage(p) for p in packagesToAdd
+
+  addSnippetsForPackage: (packageName) ->
+    snippetSet = @snippetsByPackage.get(packageName)
+    for filePath, snippetsBySelector of snippetSet
+      @add(filePath, snippetsBySelector)
+
+  removeSnippetsForPackage: (packageName) ->
+    snippetSet = @snippetsByPackage.get(packageName)
+    # Copy these snippets to the "quarantined" ScopedPropertyStore so that they
+    # remain present in the list of unparsed snippets reported to the settings
+    # view.
+    @addSnippetsInDisabledPackage(snippetSet)
+    for filePath, snippetsBySelector of snippetSet
+      @clearSnippetsForPath(filePath)
+
   loadPackageSnippets: (callback) ->
-    packages = atom.packages.getLoadedPackages()
-    snippetsDirPaths = (path.join(pack.path, 'snippets') for pack in packages).sort (a, b) ->
-      if /\/app\.asar\/node_modules\//.test(a) then -1 else 1
-    async.map snippetsDirPaths, @loadSnippetsDirectory.bind(this), (error, results) ->
-      callback(_.extend({}, results...))
+    disabledPackageNames = atom.config.get('core.packagesWithSnippetsDisabled') or []
+    packages = atom.packages.getLoadedPackages().sort (pack, b) ->
+      if /\/app\.asar\/node_modules\//.test(pack.path) then -1 else 1
+
+    snippetsDirPaths = (path.join(pack.path, 'snippets') for pack in packages)
+
+    async.map snippetsDirPaths, @loadSnippetsDirectory.bind(this), (error, results) =>
+      zipped = ({result: result, pack: packages[key]} for key, result of results)
+      enabledPackages = []
+      for o in zipped
+        # Skip packages that contain no snippets.
+        continue if Object.keys(o.result).length is 0
+        # Keep track of which snippets come from which packages so we can
+        # unload them selectively later. All packages get put into this map,
+        # even disabled packages, because we need to know which snippets to add
+        # if those packages are enabled again.
+        @snippetsByPackage.set(o.pack.name, o.result)
+        if disabledPackageNames.includes(o.pack.name)
+          # Since disabled packages' snippets won't get added to the main
+          # ScopedPropertyStore, we'll keep track of them in a separate
+          # ScopedPropertyStore so that they can still be represented in the
+          # settings view.
+          @addSnippetsInDisabledPackage(o.result)
+        else
+          enabledPackages.push(o.result)
+
+      callback(_.extend({}, enabledPackages...))
 
   doneLoading: ->
     @loaded = true
@@ -174,7 +242,7 @@ module.exports =
         atom.notifications.addError("Failed to load snippets from '#{filePath}'", {detail: error.message, dismissable: true})
       callback(object)
 
-  add: (filePath, snippetsBySelector) ->
+  add: (filePath, snippetsBySelector, isDisabled = false) ->
     for selector, snippetsByName of snippetsBySelector
       unparsedSnippetsByPrefix = {}
       for name, attributes of snippetsByName
@@ -186,8 +254,12 @@ module.exports =
         else if not body?
           unparsedSnippetsByPrefix[prefix] = null
 
-      @storeUnparsedSnippets(unparsedSnippetsByPrefix, filePath, selector)
+      @storeUnparsedSnippets(unparsedSnippetsByPrefix, filePath, selector, isDisabled)
     return
+
+  addSnippetsInDisabledPackage: (bundle) ->
+    for filePath, snippetsBySelector of bundle
+      @add(filePath, snippetsBySelector, true)
 
   getScopeChain: (object) ->
     scopesArray = object?.getScopesArray?()
@@ -198,10 +270,16 @@ module.exports =
         scope
       .join(' ')
 
-  storeUnparsedSnippets: (value, path, selector) ->
+  storeUnparsedSnippets: (value, path, selector, isDisabled = false) ->
+    # The `isDisabled` flag determines which scoped property store we'll use.
+    # Active snippets get put into one and inactive snippets get put into
+    # another. Only the first one gets consulted when we look up a snippet
+    # prefix for expansion, but both stores have their contents exported when
+    # the settings view asks for all available snippets.
     unparsedSnippets = {}
     unparsedSnippets[selector] = {"snippets": value}
-    @scopedPropertyStore.addProperties(path, unparsedSnippets, priority: @priorityForSource(path))
+    store = if isDisabled then @disabledSnippetsScopedPropertyStore else @scopedPropertyStore
+    store.addProperties(path, unparsedSnippets, priority: @priorityForSource(path))
 
   clearSnippetsForPath: (path) ->
     for scopeSelector of @scopedPropertyStore.propertiesForSource(path)
@@ -415,13 +493,28 @@ module.exports =
     new SnippetExpansion(snippet, editor, cursor, this)
 
   getUnparsedSnippets: ->
-    _.deepClone(@scopedPropertyStore.propertySets)
+    results = []
+    iterate = (sets) ->
+      for item in sets
+        newItem = _.deepClone(item)
+        # The atom-slick library has already parsed the `selector` property, so
+        # it's an AST here instead of a string. The object has a `toString`
+        # method that turns it back into a string. That custom behavior won't
+        # be preserved in the deep clone of the object, so we have to handle it
+        # separately.
+        newItem.selectorString = item.selector.toString()
+        results.push(newItem)
+
+    iterate(@scopedPropertyStore.propertySets)
+    iterate(@disabledSnippetsScopedPropertyStore.propertySets)
+    results
 
   provideSnippets: ->
     bundledSnippetsLoaded: => @loaded
     insertSnippet: @insert.bind(this)
     snippetsForScopes: @parsedSnippetsForScopes.bind(this)
     getUnparsedSnippets: @getUnparsedSnippets.bind(this)
+    getUserSnippetsPath: @getUserSnippetsPath.bind(this)
 
   onUndoOrRedo: (editor, isUndo) ->
     activeExpansions = @getExpansions(editor)

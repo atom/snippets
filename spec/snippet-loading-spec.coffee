@@ -211,3 +211,58 @@ describe "Snippet Loading", ->
     runs ->
       expect(console.warn).toHaveBeenCalled()
       expect(atom.notifications.addError).toHaveBeenCalled() if atom.notifications?
+
+  describe "packages-with-snippets-disabled feature", ->
+    it "disables no snippets if the config option is empty", ->
+      originalConfig = atom.config.get('core.packagesWithSnippetsDisabled')
+      atom.config.set('core.packagesWithSnippetsDisabled', [])
+
+      activateSnippetsPackage()
+      runs ->
+        snippets = snippetsService.snippetsForScopes(['.package-with-snippets-unique-scope'])
+        expect(Object.keys(snippets).length).toBe 1
+        atom.config.set('core.packagesWithSnippetsDisabled', originalConfig)
+
+    it "still includes a disabled package's snippets in the list of unparsed snippets", ->
+      originalConfig = atom.config.get('core.packagesWithSnippetsDisabled')
+      atom.config.set('core.packagesWithSnippetsDisabled', [])
+
+      activateSnippetsPackage()
+      runs ->
+        atom.config.set('core.packagesWithSnippetsDisabled', ['package-with-snippets'])
+        allSnippets = snippetsService.getUnparsedSnippets()
+        scopedSnippet = allSnippets.find (s) ->
+          s.selectorString is '.package-with-snippets-unique-scope'
+        expect(scopedSnippet).not.toBe undefined
+        originalConfig = atom.config.get('core.packagesWithSnippetsDisabled')
+
+    it "never loads a package's snippets when that package is disabled in config", ->
+      originalConfig = atom.config.get('core.packagesWithSnippetsDisabled')
+      atom.config.set('core.packagesWithSnippetsDisabled', ['package-with-snippets'])
+
+      activateSnippetsPackage()
+      runs ->
+        snippets = snippetsService.snippetsForScopes(['.package-with-snippets-unique-scope'])
+        expect(Object.keys(snippets).length).toBe 0
+        atom.config.set('core.packagesWithSnippetsDisabled', originalConfig)
+
+    it "unloads and/or reloads snippets from a package if the config option is changed after activation", ->
+      originalConfig = atom.config.get('core.packagesWithSnippetsDisabled')
+      atom.config.set('core.packagesWithSnippetsDisabled', [])
+
+      activateSnippetsPackage()
+      runs ->
+        snippets = snippetsService.snippetsForScopes(['.package-with-snippets-unique-scope'])
+        expect(Object.keys(snippets).length).toBe 1
+
+        # Disable it.
+        atom.config.set('core.packagesWithSnippetsDisabled', ['package-with-snippets'])
+        snippets = snippetsService.snippetsForScopes(['.package-with-snippets-unique-scope'])
+        expect(Object.keys(snippets).length).toBe 0
+
+        # Re-enable it.
+        atom.config.set('core.packagesWithSnippetsDisabled', [])
+        snippets = snippetsService.snippetsForScopes(['.package-with-snippets-unique-scope'])
+        expect(Object.keys(snippets).length).toBe 1
+
+        atom.config.set('core.packagesWithSnippetsDisabled', originalConfig)
