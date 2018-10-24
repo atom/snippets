@@ -153,7 +153,7 @@ class SnippetExpansion
         marker = @getMarkerLayer(@editor).markBufferRange([
           startPosition.traverse(start),
           startPosition.traverse(end)
-        ], {exclusive: !shouldBeInclusive})
+        ], {exclusive: not shouldBeInclusive})
 
         @markersForInsertions.set(insertion, marker)
         if references?
