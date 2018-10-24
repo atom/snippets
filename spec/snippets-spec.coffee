@@ -251,6 +251,11 @@ describe "Snippets extension", ->
             body: """
             ${2:bar}${3:baz}
             """
+          "has several adjacent tab stops, one of which has a placeholder with a reference to another tab stop at its edge":
+            prefix: 't20'
+            body: """
+             ${1:foo}${2:bar}${3:baz $1}$4
+            """
 
     it "parses snippets once, reusing cached ones on subsequent queries", ->
       spyOn(Snippets, "getBodyParser").andCallThrough()
@@ -801,6 +806,24 @@ describe "Snippets extension", ->
         expect(editor.getSelectedBufferRange()).toEqual [[0, 3], [0, 6]]
         editor.insertText('foo')
         expect(editor.getText()).toBe('watfoo')
+
+    describe "when the snippet has a placeholder with a tabstop mirror at its edge", ->
+      it "allows the associated marker to include the inserted text", ->
+        editor.setText('t20')
+        editor.setCursorScreenPosition([0, 3])
+        simulateTabKeyEvent()
+        expect(editor.getText()).toBe("foobarbaz ")
+        expect(editor.getCursors().length).toBe(2)
+        selections = editor.getSelections()
+        expect(selections[0].getBufferRange()).toEqual [[0, 0], [0, 3]]
+        expect(selections[1].getBufferRange()).toEqual [[0, 10], [0, 10]]
+        editor.insertText('nah')
+        expect(editor.getText()).toBe('nahbarbaz nah')
+        simulateTabKeyEvent()
+        editor.insertText('meh')
+        simulateTabKeyEvent()
+        editor.insertText('yea')
+        expect(editor.getText()).toBe('nahmehyea')
 
 
     describe "when the snippet contains tab stops with an index >= 10", ->
