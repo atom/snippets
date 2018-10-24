@@ -1,6 +1,16 @@
 {Range} = require 'atom'
 TabStopList = require './tab-stop-list'
 
+# Given a snippet of a parse tree, returns a Set of all the indices of other
+# tab stops referenced within, if any.
+tabStopsReferencedWithinTabStopContent = (segment) ->
+  results = []
+  for item in segment
+    if item.index?
+      results.push item.index, tabStopsReferencedWithinTabStopContent(item.content)...
+
+  new Set(results)
+
 module.exports =
 class Snippet
   constructor: ({@name, @prefix, @bodyText, @description, @descriptionMoreURL, @rightLabelHTML, @leftLabel, @leftLabelHTML, bodyTree}) ->
@@ -20,6 +30,7 @@ class Snippet
           index = Infinity if index is 0
           start = [row, column]
           extractTabStops(content)
+          referencedTabStops = tabStopsReferencedWithinTabStopContent(content)
           range = new Range(start, [row, column])
           tabStop = @tabStopList.findOrCreate({
             index: index,
@@ -27,7 +38,8 @@ class Snippet
           })
           tabStop.addInsertion({
             range: range,
-            substitution: substitution
+            substitution: substitution,
+            references: Array.from(referencedTabStops)
           })
         else if typeof segment is 'string'
           bodyText.push(segment)

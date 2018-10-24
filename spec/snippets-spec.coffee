@@ -246,6 +246,11 @@ describe "Snippets extension", ->
           "has a transformed tab stop such that it is possible to move the cursor between the ordinary tab stop and its transformed version without an intermediate step":
             prefix: 't18'
             body: '// $1\n// ${1/./=/}'
+          "has two tab stops adjacent to one another":
+            prefix: 't19'
+            body: """
+            ${2:bar}${3:baz}
+            """
 
     it "parses snippets once, reusing cached ones on subsequent queries", ->
       spyOn(Snippets, "getBodyParser").andCallThrough()
@@ -780,6 +785,22 @@ describe "Snippets extension", ->
         editor.setCursorScreenPosition([0, 6])
         editor.insertText('wat')
         expect(editor.getText()).toBe("// watwat\n// ===")
+
+    describe "when the snippet has two adjacent tab stops", ->
+      it "ensures insertions are treated as part of the active tab stop", ->
+        editor.setText('t19')
+        editor.setCursorScreenPosition([0, 3])
+        simulateTabKeyEvent()
+        expect(editor.getText()).toBe("barbaz")
+        expect(editor.getSelectedBufferRange()).toEqual [[0, 0], [0, 3]]
+        editor.insertText('w')
+        expect(editor.getText()).toBe('wbaz')
+        editor.insertText('at')
+        expect(editor.getText()).toBe('watbaz')
+        simulateTabKeyEvent()
+        expect(editor.getSelectedBufferRange()).toEqual [[0, 3], [0, 6]]
+        editor.insertText('foo')
+        expect(editor.getText()).toBe('watfoo')
 
 
     describe "when the snippet contains tab stops with an index >= 10", ->
