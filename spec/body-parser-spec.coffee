@@ -33,7 +33,25 @@ describe "Snippet Body Parser", ->
       "module ",
       {
         "index": 1,
-        "content": ["ActiveRecord::", ""]
+        "content": [
+          "ActiveRecord::",
+          {
+            "variable": "TM_FILENAME",
+            "substitution": {
+              "find": /(?:\A|_)([A-Za-z0-9]+)(?:\.rb)?/g,
+              "replace": [
+                "(?2::",
+                {
+                  "escape": 'u'
+                },
+                {
+                   "backreference": 1
+                },
+                ")"
+              ]
+            }
+         }
+        ]
       }
     ]
 
@@ -78,7 +96,7 @@ describe "Snippet Body Parser", ->
       '>',
       {index: 0, content: []},
       '</',
-      {index: 1, content: [], substitution: {find: /f/g, replace: ['F']}},
+      {index: 1, content: [], substitution: {find: /f/, replace: ['F']}},
       '>'
     ]
 
@@ -94,7 +112,7 @@ describe "Snippet Body Parser", ->
         index: 1,
         content: [],
         substitution: {
-          find: /(.)/g,
+          find: /(.)/,
           replace: [
             {escape: 'u'},
             {backreference: 1}
@@ -110,7 +128,7 @@ describe "Snippet Body Parser", ->
         index: 2,
         content: [],
         substitution: {
-          find: /^(.*)$/g,
+          find: /^(.*)$/,
           replace: [
             {escape: 'L'},
             {backreference: 1}
@@ -134,7 +152,7 @@ describe "Snippet Body Parser", ->
         index: 1,
         content: [],
         substitution: {
-          find: /(.)/g,
+          find: /(.)/,
           replace: [
             {escape: 'u'},
             {backreference: 1}
@@ -160,7 +178,7 @@ describe "Snippet Body Parser", ->
         index: 1,
         content: [],
         substitution: {
-          find: /(.)(.*)/g,
+          find: /(.)(.*)/,
           replace: [
             {escape: 'u'},
             {backreference: 1},
@@ -188,7 +206,7 @@ describe "Snippet Body Parser", ->
         index: 1,
         content: [],
         substitution: {
-          find: /(.)\/(.*)/g,
+          find: /(.)\/(.*)/,
           replace: [
             {escape: 'u'},
             {backreference: 1},

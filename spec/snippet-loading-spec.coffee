@@ -39,16 +39,16 @@ describe "Snippet Loading", ->
       jsonSnippet = snippetsService.snippetsForScopes(['.source.json'])['snip']
       expect(jsonSnippet.name).toBe 'Atom Snippet'
       expect(jsonSnippet.prefix).toBe 'snip'
-      expect(jsonSnippet.body).toContain '"prefix":'
-      expect(jsonSnippet.body).toContain '"body":'
-      expect(jsonSnippet.tabStopList.length).toBeGreaterThan(0)
+      expect(jsonSnippet.toString().body).toContain '"prefix":'
+      expect(jsonSnippet.toString().body).toContain '"body":'
+      expect(jsonSnippet.toString().tabStopList.length).toBeGreaterThan(0)
 
       csonSnippet = snippetsService.snippetsForScopes(['.source.coffee'])['snip']
       expect(csonSnippet.name).toBe 'Atom Snippet'
       expect(csonSnippet.prefix).toBe 'snip'
-      expect(csonSnippet.body).toContain "'prefix':"
-      expect(csonSnippet.body).toContain "'body':"
-      expect(csonSnippet.tabStopList.length).toBeGreaterThan(0)
+      expect(csonSnippet.toString().body).toContain "'prefix':"
+      expect(csonSnippet.toString().body).toContain "'body':"
+      expect(csonSnippet.toString().tabStopList.length).toBeGreaterThan(0)
 
   it "loads non-hidden snippet files from atom packages with snippets directories", ->
     activateSnippetsPackage()
@@ -56,22 +56,22 @@ describe "Snippet Loading", ->
     runs ->
       snippet = snippetsService.snippetsForScopes(['.test'])['test']
       expect(snippet.prefix).toBe 'test'
-      expect(snippet.body).toBe 'testing 123'
+      expect(snippet.toString().body).toBe 'testing 123'
 
       snippet = snippetsService.snippetsForScopes(['.test'])['testd']
       expect(snippet.prefix).toBe 'testd'
-      expect(snippet.body).toBe 'testing 456'
+      expect(snippet.toString().body).toBe 'testing 456'
       expect(snippet.description).toBe 'a description'
       expect(snippet.descriptionMoreURL).toBe 'http://google.com'
 
       snippet = snippetsService.snippetsForScopes(['.test'])['testlabelleft']
       expect(snippet.prefix).toBe 'testlabelleft'
-      expect(snippet.body).toBe 'testing 456'
+      expect(snippet.toString().body).toBe 'testing 456'
       expect(snippet.leftLabel).toBe 'a label'
 
       snippet = snippetsService.snippetsForScopes(['.test'])['testhtmllabels']
       expect(snippet.prefix).toBe 'testhtmllabels'
-      expect(snippet.body).toBe 'testing 456'
+      expect(snippet.toString().body).toBe 'testing 456'
       expect(snippet.leftLabelHTML).toBe '<span style=\"color:red\">Label</span>'
       expect(snippet.rightLabelHTML).toBe '<span style=\"color:white\">Label</span>'
 
@@ -99,7 +99,7 @@ describe "Snippet Loading", ->
 
       runs ->
         snippet = snippetsService.snippetsForScopes(['.source.js'])['log']
-        expect(snippet.body).toBe "from-a-community-package"
+        expect(snippet.toString().body).toBe "from-a-community-package"
 
   describe "::onDidLoadSnippets(callback)", ->
     it "invokes listeners when all snippets are loaded", ->
@@ -135,7 +135,7 @@ describe "Snippet Loading", ->
       runs ->
         expect(snippet.name).toBe 'foo snippet'
         expect(snippet.prefix).toBe "foo"
-        expect(snippet.body).toBe "bar1"
+        expect(snippet.toString().body).toBe "bar1"
 
     describe "when that file changes", ->
       it "reloads the snippets", ->
@@ -152,7 +152,7 @@ describe "Snippet Loading", ->
 
         waitsFor "snippets to be changed", ->
           snippet = snippetsService.snippetsForScopes(['.foo'])['foo']
-          snippet?.body is 'bar2'
+          snippet?.toString().body is 'bar2'
 
         runs ->
           fs.writeFileSync path.join(configDirPath, 'snippets.json'), ""
@@ -179,7 +179,7 @@ describe "Snippet Loading", ->
       runs ->
         expect(snippet.name).toBe 'foo snippet'
         expect(snippet.prefix).toBe "foo"
-        expect(snippet.body).toBe "bar1"
+        expect(snippet.toString().body).toBe "bar1"
 
     describe "when that file changes", ->
       it "reloads the snippets", ->
@@ -192,7 +192,7 @@ describe "Snippet Loading", ->
 
         waitsFor "snippets to be changed", ->
           snippet = snippetsService.snippetsForScopes(['.foo'])['foo']
-          snippet?.body is 'bar2'
+          snippet?.toString().body is 'bar2'
 
         runs ->
           fs.writeFileSync path.join(configDirPath, 'snippets.cson'), ""
