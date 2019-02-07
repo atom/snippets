@@ -25,6 +25,12 @@
       "versions": {
         "0.1.0": "provideSnippets"
       }
+    },
+    "snippetsVariableResolver": {
+      "description": "Provide custom functions to resolve snippet variables.",
+      "versions": {
+        "0.0.0": "provideVariableResolver"
+      }
     }
   },
   "devDependencies": {
