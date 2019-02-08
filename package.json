@@ -26,10 +26,17 @@
         "0.1.0": "provideSnippets"
       }
     },
+    "autocomplete.provider": {
+      "versions": {
+        "4.0.0": "provideAutocomplete"
+      }
+    }
+  },
+  "consumedServices": {
     "snippetsVariableResolver": {
       "description": "Provide custom functions to resolve snippet variables.",
       "versions": {
-        "0.0.0": "provideVariableResolver"
+        "0.0.0": "consumeVariableResolver"
       }
     }
   },
