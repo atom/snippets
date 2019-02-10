@@ -26,7 +26,7 @@
         "0.1.0": "provideSnippets"
       }
     },
-    "autocomplete.provider": {
+    "autocomplete.provider.driver": {
       "versions": {
         "4.0.0": "provideAutocomplete"
       }
