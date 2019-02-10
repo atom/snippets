@@ -42,5 +42,12 @@
   },
   "devDependencies": {
     "coffeelint": "^1.9.7"
+  },
+  "configSchema": {
+    "implicitEndTabstop": {
+      "description": "Add a final tabstop at the end of the snippet when the $0 stop is not set",
+      "type": "boolean",
+      "default": true
+    }
   }
 }
