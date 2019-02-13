@@ -707,7 +707,7 @@ describe "Snippets extension", ->
         expect(editor.getText()).toBe("[img src][/img]")
 
         editor.undo()
-        expect(editor.getText()).toBe("[i][/i]")
+        expect(editor.getText()).toBe("[i][/i]") # Would actually expect text to be empty, because undo intervals are time based
 
         editor.redo()
         expect(editor.getText()).toBe("[img src][/img]")
