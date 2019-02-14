@@ -33,10 +33,10 @@
     }
   },
   "consumedServices": {
-    "snippetsVariableResolver": {
-      "description": "Provide custom functions to resolve snippet variables.",
+    "snippetsResolver": {
+      "description": "Provide custom functions to resolve snippet variables and transforms.",
       "versions": {
-        "0.0.0": "consumeVariableResolver"
+        "0.0.0": "consumeResolver"
       }
     }
   },
