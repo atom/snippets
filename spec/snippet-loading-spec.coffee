@@ -116,10 +116,10 @@ describe 'Snippet Loading', ->
     beforeEach ->
       fs.writeFileSync path.join(configDirPath, 'snippets.json'), '''
         {
-          '.foo': {
-            'foo snippet': {
-              'prefix': 'foo',
-              'body': 'bar1'
+          ".foo": {
+            "foo snippet": {
+              "prefix": "foo",
+              "body": "bar1"
             }
           }
         }
@@ -141,10 +141,10 @@ describe 'Snippet Loading', ->
       it 'reloads the snippets', ->
         fs.writeFileSync path.join(configDirPath, 'snippets.json'), '''
           {
-            '.foo': {
-              'foo snippet': {
-                'prefix': 'foo',
-                'body': 'bar2'
+            ".foo": {
+              "foo snippet": {
+                "prefix": "foo",
+                "body": "bar2"
               }
             }
           }
