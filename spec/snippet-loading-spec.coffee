@@ -2,7 +2,7 @@ path = require 'path'
 fs = require 'fs-plus'
 temp = require('temp').track()
 
-describe "Snippet Loading", ->
+describe 'Snippet Loading', ->
   [configDirPath, snippetsService] = []
 
   beforeEach ->
@@ -25,14 +25,14 @@ describe "Snippet Loading", ->
 
   activateSnippetsPackage = ->
     waitsForPromise ->
-      atom.packages.activatePackage("snippets").then ({mainModule}) ->
+      atom.packages.activatePackage('snippets').then ({mainModule}) ->
         snippetsService = mainModule.provideSnippets()
         mainModule.loaded = false
 
-    waitsFor "all snippets to load", 3000, ->
+    waitsFor 'all snippets to load', 3000, ->
       snippetsService.bundledSnippetsLoaded()
 
-  it "loads the bundled snippet template snippets", ->
+  it 'loads the bundled snippet template snippets', ->
     activateSnippetsPackage()
 
     runs ->
@@ -50,7 +50,7 @@ describe "Snippet Loading", ->
       expect(csonSnippet.toString().body).toContain "'body':"
       expect(csonSnippet.toString().tabStopList.length).toBeGreaterThan(0)
 
-  it "loads non-hidden snippet files from atom packages with snippets directories", ->
+  it 'loads non-hidden snippet files from atom packages with snippets directories', ->
     activateSnippetsPackage()
 
     runs ->
@@ -72,10 +72,10 @@ describe "Snippet Loading", ->
       snippet = snippetsService.snippetsForScopes(['.test'])['testhtmllabels']
       expect(snippet.prefix).toBe 'testhtmllabels'
       expect(snippet.toString().body).toBe 'testing 456'
-      expect(snippet.leftLabelHTML).toBe '<span style=\"color:red\">Label</span>'
-      expect(snippet.rightLabelHTML).toBe '<span style=\"color:white\">Label</span>'
+      expect(snippet.leftLabelHTML).toBe '<span style="color:red">Label</span>'
+      expect(snippet.rightLabelHTML).toBe '<span style="color:white">Label</span>'
 
-  it "logs a warning if package snippets files cannot be parsed", ->
+  it 'logs a warning if package snippets files cannot be parsed', ->
     activateSnippetsPackage()
 
     runs ->
@@ -83,7 +83,7 @@ describe "Snippet Loading", ->
       expect(console.warn.calls.length).toBeGreaterThan 0
       expect(console.warn.mostRecentCall.args[0]).toMatch(/Error reading.*package-with-broken-snippets/)
 
-  describe "::loadPackageSnippets(callback)", ->
+  describe '::loadPackageSnippets(callback)', ->
     beforeEach ->
       # simulate a list of packages where the javascript core package is returned at the end
       atom.packages.getLoadedPackages.andReturn [
@@ -93,40 +93,40 @@ describe "Snippet Loading", ->
 
     it "allows other packages to override core packages' snippets", ->
       waitsForPromise ->
-        atom.packages.activatePackage("language-javascript")
+        atom.packages.activatePackage('language-javascript')
 
       activateSnippetsPackage()
 
       runs ->
         snippet = snippetsService.snippetsForScopes(['.source.js'])['log']
-        expect(snippet.toString().body).toBe "from-a-community-package"
+        expect(snippet.toString().body).toBe 'from-a-community-package'
 
-  describe "::onDidLoadSnippets(callback)", ->
-    it "invokes listeners when all snippets are loaded", ->
+  describe '::onDidLoadSnippets(callback)', ->
+    it 'invokes listeners when all snippets are loaded', ->
       loadedCallback = null
 
-      waitsFor "package to activate", (done) ->
-        atom.packages.activatePackage("snippets").then ({mainModule}) ->
+      waitsFor 'package to activate', (done) ->
+        atom.packages.activatePackage('snippets').then ({mainModule}) ->
           mainModule.onDidLoadSnippets(loadedCallback = jasmine.createSpy('onDidLoadSnippets callback'))
           done()
 
-      waitsFor "onDidLoad callback to be called", -> loadedCallback.callCount > 0
+      waitsFor 'onDidLoad callback to be called', -> loadedCallback.callCount > 0
 
-  describe "when ~/.atom/snippets.json exists", ->
+  describe 'when ~/.atom/snippets.json exists', ->
     beforeEach ->
-      fs.writeFileSync path.join(configDirPath, 'snippets.json'), """
+      fs.writeFileSync path.join(configDirPath, 'snippets.json'), '''
         {
-          ".foo": {
-            "foo snippet": {
-              "prefix": "foo",
-              "body": "bar1"
+          '.foo': {
+            'foo snippet': {
+              'prefix': 'foo',
+              'body': 'bar1'
             }
           }
         }
-      """
+      '''
       activateSnippetsPackage()
 
-    it "loads the snippets from that file", ->
+    it 'loads the snippets from that file', ->
       snippet = null
 
       waitsFor ->
@@ -134,43 +134,43 @@ describe "Snippet Loading", ->
 
       runs ->
         expect(snippet.name).toBe 'foo snippet'
-        expect(snippet.prefix).toBe "foo"
-        expect(snippet.toString().body).toBe "bar1"
+        expect(snippet.prefix).toBe 'foo'
+        expect(snippet.toString().body).toBe 'bar1'
 
-    describe "when that file changes", ->
-      it "reloads the snippets", ->
-        fs.writeFileSync path.join(configDirPath, 'snippets.json'), """
+    describe 'when that file changes', ->
+      it 'reloads the snippets', ->
+        fs.writeFileSync path.join(configDirPath, 'snippets.json'), '''
           {
-            ".foo": {
-              "foo snippet": {
-                "prefix": "foo",
-                "body": "bar2"
+            '.foo': {
+              'foo snippet': {
+                'prefix': 'foo',
+                'body': 'bar2'
               }
             }
           }
-        """
+        '''
 
-        waitsFor "snippets to be changed", ->
+        waitsFor 'snippets to be changed', ->
           snippet = snippetsService.snippetsForScopes(['.foo'])['foo']
           snippet?.toString().body is 'bar2'
 
         runs ->
-          fs.writeFileSync path.join(configDirPath, 'snippets.json'), ""
+          fs.writeFileSync path.join(configDirPath, 'snippets.json'), ''
 
-        waitsFor "snippets to be removed", ->
+        waitsFor 'snippets to be removed', ->
           not snippetsService.snippetsForScopes(['.foo'])['foo']
 
-  describe "when ~/.atom/snippets.cson exists", ->
+  describe 'when ~/.atom/snippets.cson exists', ->
     beforeEach ->
-      fs.writeFileSync path.join(configDirPath, 'snippets.cson'), """
-        ".foo":
-          "foo snippet":
-            "prefix": "foo"
-            "body": "bar1"
-      """
+      fs.writeFileSync path.join(configDirPath, 'snippets.cson'), '''
+        '.foo':
+          'foo snippet':
+            'prefix': 'foo'
+            'body': 'bar1'
+      '''
       activateSnippetsPackage()
 
-    it "loads the snippets from that file", ->
+    it 'loads the snippets from that file', ->
       snippet = null
 
       waitsFor ->
@@ -178,33 +178,33 @@ describe "Snippet Loading", ->
 
       runs ->
         expect(snippet.name).toBe 'foo snippet'
-        expect(snippet.prefix).toBe "foo"
-        expect(snippet.toString().body).toBe "bar1"
+        expect(snippet.prefix).toBe 'foo'
+        expect(snippet.toString().body).toBe 'bar1'
 
-    describe "when that file changes", ->
-      it "reloads the snippets", ->
-        fs.writeFileSync path.join(configDirPath, 'snippets.cson'), """
-          ".foo":
-            "foo snippet":
-              "prefix": "foo"
-              "body": "bar2"
-        """
+    describe 'when that file changes', ->
+      it 'reloads the snippets', ->
+        fs.writeFileSync path.join(configDirPath, 'snippets.cson'), '''
+          '.foo':
+            'foo snippet':
+              'prefix': 'foo'
+              'body': 'bar2'
+        '''
 
-        waitsFor "snippets to be changed", ->
+        waitsFor 'snippets to be changed', ->
           snippet = snippetsService.snippetsForScopes(['.foo'])['foo']
           snippet?.toString().body is 'bar2'
 
         runs ->
-          fs.writeFileSync path.join(configDirPath, 'snippets.cson'), ""
+          fs.writeFileSync path.join(configDirPath, 'snippets.cson'), ''
 
-        waitsFor "snippets to be removed", ->
+        waitsFor 'snippets to be removed', ->
           snippet = snippetsService.snippetsForScopes(['.foo'])['foo']
           not snippet?
 
-  it "notifies the user when the user snippets file cannot be loaded", ->
-    fs.writeFileSync path.join(configDirPath, 'snippets.cson'), """
-      ".junk":::
-    """
+  it 'notifies the user when the user snippets file cannot be loaded', ->
+    fs.writeFileSync path.join(configDirPath, 'snippets.cson'), '''
+      '.junk':::
+    '''
 
     activateSnippetsPackage()
 
@@ -212,8 +212,8 @@ describe "Snippet Loading", ->
       expect(console.warn).toHaveBeenCalled()
       expect(atom.notifications.addError).toHaveBeenCalled() if atom.notifications?
 
-  describe "packages-with-snippets-disabled feature", ->
-    it "disables no snippets if the config option is empty", ->
+  describe 'packages-with-snippets-disabled feature', ->
+    it 'disables no snippets if the config option is empty', ->
       originalConfig = atom.config.get('core.packagesWithSnippetsDisabled')
       atom.config.set('core.packagesWithSnippetsDisabled', [])
 
@@ -246,7 +246,7 @@ describe "Snippet Loading", ->
         expect(Object.keys(snippets).length).toBe 0
         atom.config.set('core.packagesWithSnippetsDisabled', originalConfig)
 
-    it "unloads and/or reloads snippets from a package if the config option is changed after activation", ->
+    it 'unloads and/or reloads snippets from a package if the config option is changed after activation', ->
       originalConfig = atom.config.get('core.packagesWithSnippetsDisabled')
       atom.config.set('core.packagesWithSnippetsDisabled', [])
 
