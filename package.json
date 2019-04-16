@@ -25,11 +25,6 @@
       "versions": {
         "0.1.0": "provideSnippets"
       }
-    },
-    "autocomplete.driver": {
-      "versions": {
-        "4.0.0": "provideAutocomplete"
-      }
     }
   },
   "consumedServices": {
