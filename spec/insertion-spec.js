@@ -1,5 +1,5 @@
 const Insertion = require('../lib/insertion')
-const { Range } = require('atom')
+const {Range} = require('atom')
 
 const range = new Range(0, 0)
 
