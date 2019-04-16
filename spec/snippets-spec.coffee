@@ -481,6 +481,10 @@ describe "Snippets extension", ->
       describe "when the snippet spans multiple lines", ->
         beforeEach ->
           editor.update({autoIndent: true})
+          # editor.update() returns a Promise that never gets resolved, so we
+          # need to return undefined to avoid a timeout in the spec.
+          # TODO: Figure out why `editor.update({autoIndent: true})` never gets resolved.
+          return
 
         it "places tab stops correctly", ->
           expect(editor.getSoftTabs()).toBeTruthy()
