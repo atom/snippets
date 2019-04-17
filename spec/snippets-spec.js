@@ -30,8 +30,7 @@ describe('Snippets extension', () => {
     spyOn(Snippets, 'loadAll')
     spyOn(Snippets, 'getUserSnippetsPath').andReturn('')
 
-    waitsForPromise(() => atom.workspace.open()) // NOTE: Loading `sample.js` was a large time sink
-    waitsForPromise(() => atom.packages.activatePackage('language-javascript'))
+    waitsForPromise(() => atom.workspace.open())
     waitsForPromise(() => atom.packages.activatePackage('snippets'))
 
     runs(() => {
@@ -926,14 +925,14 @@ describe('Snippets extension', () => {
 
     beforeEach(() => {
       Snippets.add(__filename, {
-        "*": {
-          "test": {
-            prefix: "test",
-            body: "${1:Test pass you will}, young "
+        '*': {
+          'test': {
+            prefix: 'test',
+            body: '${1:Test pass you will}, young '
           },
-          "challenge": {
-            prefix: "chal",
-            body: "$1: ${2:To pass this challenge}"
+          'challenge': {
+            prefix: 'chal',
+            body: '$1: ${2:To pass this challenge}'
           }
         }
       })
