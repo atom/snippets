@@ -1,0 +1,145 @@
+'*':
+  'without tab stops':
+    prefix: 't1'
+    body: 'this is a test'
+
+  'with only an end tab stop':
+    prefix: 't1a'
+    body: 'something $0 strange'
+
+  'overlapping prefix':
+    prefix: 'tt1'
+    body: 'this is another test'
+
+  'special chars':
+    prefix: '!@#$%^&*()-_=+[]{}54|\\;:?.,unique'
+    body: '@unique see'
+
+  'tab stops':
+    prefix: 't2'
+    body: '''
+      go here next:($2) and finally go here:($0)
+      go here first:($1)
+    '''
+
+  'indented second line':
+    prefix: 't3'
+    body: '''
+      line 1
+      \tline 2$1
+      $2
+    '''
+
+  'multiline with indented placeholder tabstop':
+    prefix: 't4'
+    body: '''
+      line ${1:1}
+        ${2:body...}
+    '''
+
+  'multiline starting with tabstop':
+    prefix: 't4b'
+    body: '''
+      $1 = line 1 {
+        line 2
+      }
+    '''
+
+  'nested tab stops':
+    prefix: 't5'
+    body: "${1:'${2:key}'}: ${3:value}"
+
+  'caused problems with undo':
+    prefix: 't6'
+    body: '''
+      first line$1
+        ${2:placeholder ending second line}
+    '''
+
+  'contains empty lines':
+    prefix: 't7'
+    body: '''
+      first line $1
+
+
+      fourth line after blanks $2
+    '''
+  'with/without placeholder':
+    prefix: 't8'
+    body: '''
+      with placeholder ${1:test}
+      without placeholder ${2}
+    '''
+
+  'multi-caret':
+    prefix: 't9'
+    body: '''
+      with placeholder ${1:test}
+      without placeholder $1
+    '''
+
+  'multi-caret-multi-tabstop':
+    prefix: 't9b'
+    body: '''
+      with placeholder ${1:test}
+      without placeholder $1
+      second tabstop $2
+      third tabstop $3
+    '''
+
+  'large indices':
+    prefix: 't10'
+    body: '''
+      hello${10} ${11:large} indices${1}
+    '''
+
+  'no body':
+    prefix: 'bad1'
+
+  'number body':
+    prefix: 'bad2'
+    body: 100
+
+  'many tabstops':
+    prefix: 't11'
+    body: '''
+      $0one${1} ${2:two} three${3}
+    '''
+
+  'simple transform':
+    prefix: 't12'
+    body: '''
+      [${1:b}][/${1/[ ]+.*$//}]
+    '''
+
+  'transform with non-transforming mirrors':
+    prefix: 't13'
+    body: '''
+      ${1:placeholder}\n${1/(.)/\\u$1/g}\n$1
+    '''
+
+  'multiple tab stops, some with transforms and some without':
+    prefix: 't14'
+    body: '''
+      ${1:placeholder} ${1/(.)/\\u$1/g} $1 ${2:ANOTHER} ${2/^(.*)$/\\L$1/} $2
+    '''
+
+  'has a transformed tab stop without a corresponding ordinary tab stop':
+    prefix: 't15'
+    body: '''
+    ${1/(.)/\\u$1/g} & $2
+    '''
+
+  'has a transformed tab stop that occurs before the corresponding ordinary tab stop':
+    prefix: 't16'
+    body: '''
+    & ${1/(.)/\\u$1/g} & ${1:q}
+    '''
+
+  "has a placeholder that mirrors another tab stop's content":
+    prefix: 't17'
+    body: "$4console.${3:log}('${2:uh $1}', $1);$0"
+
+  'has a transformed tab stop such that it is possible to move the cursor between the ordinary tab stop and its transformed version without an intermediate step':
+    prefix: 't18'
+    body: '// $1\n// ${1/./=/g}'
