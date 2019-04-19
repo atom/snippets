@@ -99,8 +99,8 @@ describe('Snippet Body Parser', () => {
 
   describe('for snippets with variables', () => {
     it('parses simple variables', () => {
-      expectMatch('$foo', [{variable: 'foo'}])
-      expectMatch('$FOO', [{variable: 'FOO'}])
+      expectMatch('$f_o_0', [{variable: 'f_o_0'}])
+      expectMatch('$_FOO', [{variable: '_FOO'}])
     })
 
     it('parses verbose variables', () => {
@@ -268,7 +268,7 @@ describe('Snippet Body Parser', () => {
       ])
     })
 
-    it('supports if replacements', () => {
+    it('supports if-else replacements', () => {
       // NOTE: the '+' cannot be escaped. If you want it to be part of
       // a placeholder (else only), use ':-'
       expectMatch('${a/./${1:+foo$0bar\\}baz}/}', [
@@ -333,6 +333,116 @@ describe('Snippet Body Parser', () => {
           }
         }
       ])
+    })
+  })
+
+  describe('on miscellaneous examples', () => {
+    it('handles a simple snippet', () => {
+      expectMatch(
+        'the quick brown $1fox ${2:jumped ${3:over}\n}the ${4:lazy} dog',
+        [
+          'the quick brown ',
+          {index: 1, content: []},
+          'fox ',
+          {
+            index: 2,
+            content: [
+              'jumped ',
+              {index: 3, content: ['over']},
+              '\n'
+            ]
+          },
+          'the ',
+          {index: 4, content: ['lazy']},
+          ' dog'
+        ]
+      )
+    })
+
+    it('handles a snippet with a transformed variable', () => {
+      expectMatch(
+        'module ${1:ActiveRecord::${TM_FILENAME/(?:\\A|_)([A-Za-z0-9]+)(?:\\.rb)?/(?2::\\u$1)/g}}',
+        [
+          'module ',
+          {
+            index: 1,
+            content: [
+              'ActiveRecord::',
+              {
+                variable: 'TM_FILENAME',
+                substitution: {
+                  find: /(?:\A|_)([A-Za-z0-9]+)(?:\.rb)?/g,
+                  replace: [
+                    '(?2::',
+                    {escape: 'u'},
+                    {backreference: 1},
+                    ')'
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      )
+    })
+
+    it('handles a snippet with multiple tab stops with transformations', () => {
+      expectMatch(
+        '${1:placeholder} ${1/(.)/\\u$1/} $1 ${2:ANOTHER} ${2/^(.*)$/\\L$1/} $2',
+        [
+          {index: 1, content: ['placeholder']},
+          ' ',
+          {
+            index: 1,
+            content: [],
+            substitution: {
+              find: /(.)/,
+              replace: [
+                {escape: 'u'},
+                {backreference: 1}
+              ]
+            }
+          },
+          ' ',
+          {index: 1, content: []},
+          ' ',
+          {index: 2, content: ['ANOTHER']},
+          ' ',
+          {
+            index: 2,
+            content: [],
+            substitution: {
+              find: /^(.*)$/,
+              replace: [
+                {escape: 'L'},
+                {backreference: 1}
+              ]
+            }
+          },
+          ' ',
+          {index: 2, content: []}
+        ]
+      )
+    })
+
+    it('handles a snippet with a placeholder that mirrors another tab stops content', () => {
+      expectMatch(
+        '$4console.${3:log}(\'${2:$1}\', $1);$0',
+        [
+          {index: 4, content: []},
+          'console.',
+          {index: 3, content: ['log']},
+          '(\'',
+          {
+            index: 2,
+            content: [{index: 1, content: []}]
+          },
+          '\', ',
+          {index: 1, content: []},
+          ');',
+          {index: 0, content: []}
+        ]
+      )
     })
   })
 })
