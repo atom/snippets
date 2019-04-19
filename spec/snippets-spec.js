@@ -641,7 +641,6 @@ describe('Snippets extension', () => {
         //
         // editor.insertText('mg src')
         // expect(editor.getText()).toBe("[img src][/img]")
-        // debugger
         // editor.undo()
         //
         // expect(editor.getText()).toBe("[b][/b]")
