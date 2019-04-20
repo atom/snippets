@@ -43,6 +43,11 @@
       "description": "Add a final tabstop at the end of the snippet when the $0 stop is not set",
       "type": "boolean",
       "default": true
+    },
+    "disableTabDedentInSnippet": {
+      "description": "When pressing shift-tab on the first placeholder, prevent the line from being dedented",
+      "type": "boolean",
+      "default": false
     }
   }
 }
