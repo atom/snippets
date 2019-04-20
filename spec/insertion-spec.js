@@ -1,8 +1,3 @@
-const Insertion = require('../lib/insertion')
-const {Range, TextEditor} = require('atom')
-
-const range = new Range(0, 0)
-
 const Snippets = require('../lib/snippets')
 
 describe('Insertion', () => {
@@ -22,6 +17,10 @@ describe('Insertion', () => {
     })
   })
 
+  afterEach(() => {
+    waitsForPromise(() => atom.packages.deactivatePackage('snippets'))
+  })
+
   function resolve (snippet) {
     Snippets.add(__filename, {
       '*': {
@@ -35,7 +34,12 @@ describe('Insertion', () => {
     editor.setText('a')
     editor.setCursorBufferPosition([0, 1])
     atom.commands.dispatch(editorElement, 'snippets:expand')
+    Snippets.clearExpansions(editor)
     return editor.getText()
+  }
+
+  function transform (input, transform, replacement, flags = '') {
+    return resolve(`\${1:${input}}\${1/${transform}/${replacement}/${flags}}`).slice(input.length)
   }
 
   it('resolves a plain snippet', () => {
@@ -49,12 +53,20 @@ describe('Insertion', () => {
 
   it('resolves snippets with placeholders', () => {
     expect(resolve('${1:hello} world')).toEqual('hello world')
-    expect(resolve('${1:one${2:tw${3:othre}e}}')).toEqual('onetwothree')
+    expect(resolve('${1:one${2:two${3:thr}e}e}')).toEqual('onetwothree')
   })
 
-  it('uses the first choice as a placeholder', () => {
-    expect(resolve('${1|one,two,three|}')).toEqual('one')
+  describe('when resolving choices', () => {
+    it('uses the first choice as a placeholder', () => {
+      expect(resolve('${1|one,two,three|}')).toEqual('one')
+    })
+
+    it('uses the first non transforming placeholder for transformations', () => {
+      expect(resolve('${1:foo} ${1|one,two,three|} ${1/.*/$0/}')).toEqual('foo one foo')
+      expect(resolve('${1|one,two,three|} ${1:foo} ${1/.*/$0/}')).toEqual('one foo one')
+    })
   })
+
 
   describe('when resolving variables', () => {
     it('resolves base variables', () => {
@@ -66,10 +78,6 @@ describe('Insertion', () => {
       expect(resolve('$CLIPBOARD')).toEqual('foo')
     })
 
-    it('uses unknown variables as placeholders', () => {
-      expect(resolve('$GaRBag3')).toEqual('GaRBag3')
-    })
-
     it('allows more resolvers to be provided', () => {
       Snippets.consumeResolver({
         variableResolvers: {
@@ -79,7 +87,43 @@ describe('Insertion', () => {
       })
 
       expect(resolve('$EXTENDED')).toEqual('calculated resolution')
-      expect(resolve('foo\n$POSITION')).toEqual('foo\n1')
+      expect(resolve('$POSITION\n$POSITION')).toEqual('0\n1')
+    })
+
+    describe('when a variable is unknown', () => {
+      it('uses uses the variable name as a placeholder', () => {
+        expect(resolve('$GaRBag3')).toEqual('GaRBag3')
+      })
+
+      it('will not try to transform an unknown variable', () => {
+        expect(resolve('${GaRBag3/.*/foo/}')).toEqual('GaRBag3')
+      })
+    })
+
+    describe('when a variable is known but not set', () => {
+      beforeEach(() => {
+        Snippets.consumeResolver({
+          variableResolvers: {
+            'UNDEFINED': () => undefined,
+            'NULL': () => null,
+            'EMPTY': () => ''
+          }
+        })
+      })
+
+      it('uses the placeholder value if possible', () => {
+        expect(resolve('${UNDEFINED:placeholder}')).toEqual('placeholder')
+        expect(resolve('${NULL:placeholder}')).toEqual('placeholder')
+        expect(resolve('${EMPTY:placeholder}')).toEqual('') // empty string is a valid resolution
+      })
+
+      it('will transform an unset variable as if it was the empty string', () => {
+        expect(resolve('${UNDEFINED/^$/foo/}')).toEqual('foo')
+      })
+
+      it('can resolve variables in placeholders', () => {
+        expect(resolve('${UNDEFINED:$TM_LINE_INDEX}')).toEqual('0')
+      })
     })
 
     it('allows provided resolvers to override builtins', () => {
@@ -100,12 +144,17 @@ describe('Insertion', () => {
           'A': () => 'hello world',
           'B': () => 'foo\nbar\nbaz',
           'C': () => '😄foo',
-          'D': () => 'baz foo'
+          'D': () => 'baz foo',
+          'E': () => 'foo baz foo'
         }
       })
     })
 
-    it('respects the provided flags', () => {
+    it('leaves the existing value when the transform is empty', () => {
+      expect(resolve('${A///}')).toEqual('hello world')
+    })
+
+    it('respects the provided regex flags', () => {
       expect(resolve('${A/.//}')).toEqual('ello world')
       expect(resolve('${A/.//g}')).toEqual('')
 
@@ -120,134 +169,46 @@ describe('Insertion', () => {
 
       expect(resolve('${D/foo/bar/}')).toEqual('baz bar')
       expect(resolve('${D/foo/bar/y}')).toEqual('baz foo') // with /y, the search is only from index 0 and fails
+      expect(resolve('${E/foo/bar/g}')).toEqual('bar baz bar')
+      expect(resolve('${E/foo/bar/gy}')).toEqual('bar baz foo')
     })
   })
 
-  it('returns what it was given when it has no substitution', () => {
-    let insertion = new Insertion({
-      range,
-      substitution: undefined
-    })
-    let transformed = insertion.transform('foo!')
+  describe('when there are case flags', () => {
+    it('transforms the case of the next character when encountering a \\u or \\l flag', () => {
+      let find = '(.)(.)(.*)'
+      let replace = '$1\\u$2$3'
+      expect(transform('foo!', find, replace, 'g')).toEqual('fOo!')
+      expect(transform('fOo!', find, replace, 'g')).toEqual('fOo!')
+      expect(transform('FOO!', find, replace, 'g')).toEqual('FOO!')
 
-    expect(transformed).toEqual('foo!')
-  })
-
-  it('transforms what it was given when it has a regex transformation', () => {
-    let insertion = new Insertion({
-      range,
-      substitution: {
-        find: /foo/g,
-        replace: ['bar']
-      }
-    })
-    let transformed = insertion.transform('foo!')
-
-    expect(transformed).toEqual('bar!')
-  })
-
-  it('transforms the case of the next character when encountering a \\u or \\l flag', () => {
-    let uInsertion = new Insertion({
-      range,
-      substitution: {
-        find: /(.)(.)(.*)/g,
-        replace: [
-          { backreference: 1 },
-          { escape: 'u' },
-          { backreference: 2 },
-          { backreference: 3 }
-        ]
-      }
+      find = '(.{2})(.)(.*)'
+      replace = '$1\\l$2$3'
+      expect(transform('FOO!', find, replace, 'g')).toEqual('FOo!')
+      expect(transform('FOo!', find, replace, 'g')).toEqual('FOo!')
+      expect(transform('FoO!', find, replace, 'g')).toEqual('Foo!')
+      expect(transform('foo!', find, replace, 'g')).toEqual('foo!')
     })
 
-    expect(uInsertion.transform('foo!')).toEqual('fOo!')
-    expect(uInsertion.transform('fOo!')).toEqual('fOo!')
-    expect(uInsertion.transform('FOO!')).toEqual('FOO!')
+    it('transforms the case of all remaining characters when encountering a \\U or \\L flag, up until it sees a \\E flag', () => {
+      let find = '(.)(.*)'
+      let replace = '$1\\U$2'
+      expect(transform('lorem ipsum!', find, replace)).toEqual('lOREM IPSUM!')
+      expect(transform('lOREM IPSUM!', find, replace)).toEqual('lOREM IPSUM!')
+      expect(transform('LOREM IPSUM!', find, replace)).toEqual('LOREM IPSUM!')
 
-    let lInsertion = new Insertion({
-      range,
-      substitution: {
-        find: /(.{2})(.)(.*)/g,
-        replace: [
-          { backreference: 1 },
-          { escape: 'l' },
-          { backreference: 2 },
-          { backreference: 3 }
-        ]
-      }
+      find = '(.)(.{3})(.*)'
+      replace = '$1\\U$2\\E$3'
+      expect(transform('lorem ipsum!', find, replace)).toEqual('lOREm ipsum!')
+      expect(transform('lOREm ipsum!', find, replace)).toEqual('lOREm ipsum!')
+      expect(transform('LOREM IPSUM!', find, replace)).toEqual('LOREM IPSUM!')
+
+      expect(transform('LOREM IPSUM!', '(.{4})(.)(.*)', '$1\\L$2WHAT')).toEqual('LOREmwhat')
+
+      find = '^([A-Fa-f])(.*)(.)$'
+      replace = '$1\\L$2\\E$3'
+      expect(transform('LOREM IPSUM!', find, replace)).toEqual('LOREM IPSUM!')
+      expect(transform('CONSECUETUR', find, replace)).toEqual('ConsecuetuR')
     })
-
-    expect(lInsertion.transform('FOO!')).toEqual('FOo!')
-    expect(lInsertion.transform('FOo!')).toEqual('FOo!')
-    expect(lInsertion.transform('FoO!')).toEqual('Foo!')
-    expect(lInsertion.transform('foo!')).toEqual('foo!')
-  })
-
-  it('transforms the case of all remaining characters when encountering a \\U or \\L flag, up until it sees a \\E flag', () => {
-    let uInsertion = new Insertion({
-      range,
-      substitution: {
-        find: /(.)(.*)/,
-        replace: [
-          { backreference: 1 },
-          { escape: 'U' },
-          { backreference: 2 }
-        ]
-      }
-    })
-
-    expect(uInsertion.transform('lorem ipsum!')).toEqual('lOREM IPSUM!')
-    expect(uInsertion.transform('lOREM IPSUM!')).toEqual('lOREM IPSUM!')
-    expect(uInsertion.transform('LOREM IPSUM!')).toEqual('LOREM IPSUM!')
-
-    let ueInsertion = new Insertion({
-      range,
-      substitution: {
-        find: /(.)(.{3})(.*)/,
-        replace: [
-          { backreference: 1 },
-          { escape: 'U' },
-          { backreference: 2 },
-          { escape: 'E' },
-          { backreference: 3 }
-        ]
-      }
-    })
-
-    expect(ueInsertion.transform('lorem ipsum!')).toEqual('lOREm ipsum!')
-    expect(ueInsertion.transform('lOREm ipsum!')).toEqual('lOREm ipsum!')
-    expect(ueInsertion.transform('LOREM IPSUM!')).toEqual('LOREM IPSUM!')
-
-    let lInsertion = new Insertion({
-      range,
-      substitution: {
-        find: /(.{4})(.)(.*)/,
-        replace: [
-          { backreference: 1 },
-          { escape: 'L' },
-          { backreference: 2 },
-          'WHAT'
-        ]
-      }
-    })
-
-    expect(lInsertion.transform('LOREM IPSUM!')).toEqual('LOREmwhat')
-
-    let leInsertion = new Insertion({
-      range,
-      substitution: {
-        find: /^([A-Fa-f])(.*)(.)$/,
-        replace: [
-          { backreference: 1 },
-          { escape: 'L' },
-          { backreference: 2 },
-          { escape: 'E' },
-          { backreference: 3 }
-        ]
-      }
-    })
-
-    expect(leInsertion.transform('LOREM IPSUM!')).toEqual('LOREM IPSUM!')
-    expect(leInsertion.transform('CONSECUETUR')).toEqual('ConsecuetuR')
   })
 })
