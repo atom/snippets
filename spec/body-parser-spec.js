@@ -271,6 +271,9 @@ describe('Snippet Body Parser', () => {
     it('supports if-else replacements', () => {
       // NOTE: the '+' cannot be escaped. If you want it to be part of
       // a placeholder (else only), use ':-'
+      // NOTE 2: the ${n:<else>} syntax should really be deprecated,
+      // as it's very easy to accidentally use; e.g., when you have an invalid
+      // transformation like `${1:/foo3}` (has number)
       expectMatch('${a/./${1:+foo$0bar\\}baz}/}', [
         {
           variable: 'a',

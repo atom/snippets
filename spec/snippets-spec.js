@@ -873,10 +873,7 @@ describe('Snippets extension', () => {
 
     describe('when the editor is not a pane item (regression)', () => {
       it('handles tab stops correctly', () => {
-        editor = new TextEditor()
-        editorElement = editor.getElement()
-
-        editor.insertText('t2')
+        editor.setText('t2')
         simulateTabKeyEvent()
         editor.insertText('ABC')
         expect(editor.lineTextForBufferRow(1)).toEqual('go here first:(ABC)')
