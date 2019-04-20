@@ -304,9 +304,6 @@ describe('Snippets extension', () => {
 
             expect(editor.lineTextForBufferRow(0)).toBe('go here next:(\t) and finally go here:()')
             expect(editor.getCursorBufferPosition()).toEqual([0, 15])
-
-            // test we can terminate with shift-tab
-            // TODO: Not sure what this was doing / is for
           })
         })
 
@@ -632,24 +629,27 @@ describe('Snippets extension', () => {
         expect(editor.getText()).toBe('[img src][/img]')
       })
 
-      it('bundles the transform mutations along with the original manual mutation for the purposes of undo and redo', async () => {
-        // TODO
-        // editor.setText('t12')
-        // simulateTabKeyEvent()
-        // editor.insertText('i')
-        // expect(editor.getText()).toBe("[i][/i]")
-        //
-        // editor.insertText('mg src')
-        // expect(editor.getText()).toBe("[img src][/img]")
-        // editor.undo()
-        //
-        // expect(editor.getText()).toBe("[b][/b]")
-        // // let now = 500
-        // // while (now) { now--; console.log(now) }
-        // // expect(editor.getText()).toBe("[i][/i]") // Would actually expect text to be empty, because undo intervals are time based
-        // //
-        // // editor.redo()
-        // // expect(editor.getText()).toBe("[img src][/img]")
+      it('bundles the transform mutations along with the original manual mutation for the purposes of undo and redo', () => {
+        // NOTE: Most likely spec here to fail on CI, as it is time based
+        const transactionDuration = 300
+
+        editor.setText('t12')
+        simulateTabKeyEvent()
+        editor.transact(transactionDuration, () => {
+          editor.insertText('i')
+        })
+        expect(editor.getText()).toBe("[i][/i]")
+
+        editor.transact(transactionDuration, () => {
+          editor.insertText('mg src')
+        })
+        expect(editor.getText()).toBe("[img src][/img]")
+
+        editor.undo()
+        expect(editor.getText()).toBe("[b][/b]")
+
+        editor.redo()
+        expect(editor.getText()).toBe("[img src][/img]")
       })
 
       it('can pick the right insertion to use as the primary even if a transformed insertion occurs first in the snippet', () => {
@@ -772,30 +772,37 @@ describe('Snippets extension', () => {
         })
 
         it('bundles transform-induced mutations into a single history entry along with their triggering edit, even across multiple snippets', () => {
+          // NOTE: Another likely spec to fail on CI, as it is time based
+          const transactionDuration = 300
+
           editor.setText('t14\nt14')
           editor.setCursorBufferPosition([1, 3])
           editor.addCursorAtBufferPosition([0, 3])
           simulateTabKeyEvent()
-          editor.insertText('testing')
+          editor.transact(transactionDuration, () => {
+            editor.insertText('testing')
+          })
           simulateTabKeyEvent()
-          editor.insertText('AGAIN')
 
-          // TODO
-          // editor.undo()
-          // expect(editor.lineTextForBufferRow(0)).toBe('testing TESTING testing ANOTHER another ')
-          // expect(editor.lineTextForBufferRow(1)).toBe('testing TESTING testing ANOTHER another ')
-          //
-          // editor.undo()
-          // expect(editor.lineTextForBufferRow(0)).toBe('placeholder PLACEHOLDER  ANOTHER another ')
-          // expect(editor.lineTextForBufferRow(1)).toBe('placeholder PLACEHOLDER  ANOTHER another ')
-          //
-          // editor.redo()
-          // expect(editor.lineTextForBufferRow(0)).toBe('testing TESTING testing ANOTHER another ')
-          // expect(editor.lineTextForBufferRow(1)).toBe('testing TESTING testing ANOTHER another ')
-          //
-          // editor.redo()
-          // expect(editor.lineTextForBufferRow(0)).toBe('testing TESTING testing AGAIN again AGAIN')
-          // expect(editor.lineTextForBufferRow(1)).toBe('testing TESTING testing AGAIN again AGAIN')
+          editor.transact(transactionDuration, () => {
+            editor.insertText('AGAIN')
+          })
+
+          editor.undo()
+          expect(editor.lineTextForBufferRow(0)).toBe('testing TESTING testing ANOTHER another ')
+          expect(editor.lineTextForBufferRow(1)).toBe('testing TESTING testing ANOTHER another ')
+
+          editor.undo()
+          expect(editor.lineTextForBufferRow(0)).toBe('placeholder PLACEHOLDER  ANOTHER another ')
+          expect(editor.lineTextForBufferRow(1)).toBe('placeholder PLACEHOLDER  ANOTHER another ')
+
+          editor.redo()
+          expect(editor.lineTextForBufferRow(0)).toBe('testing TESTING testing ANOTHER another ')
+          expect(editor.lineTextForBufferRow(1)).toBe('testing TESTING testing ANOTHER another ')
+
+          editor.redo()
+          expect(editor.lineTextForBufferRow(0)).toBe('testing TESTING testing AGAIN again AGAIN')
+          expect(editor.lineTextForBufferRow(1)).toBe('testing TESTING testing AGAIN again AGAIN')
         })
       })
 
@@ -829,14 +836,13 @@ describe('Snippets extension', () => {
           expect(cursors[1].selection.isEmpty()).toBe(true)
           expect(cursors[2].selection.isEmpty()).toBe(true)
 
-          // TODO
-          // simulateTabKeyEvent()
-          // expect(cursors[0].getBufferPosition()).toEqual([0, 0])
-          // expect(cursors[1].getBufferPosition()).toEqual([1, 0])
-          // expect(cursors[2].getBufferPosition()).toEqual([2, 0])
-          // expect(cursors[0].selection.isEmpty()).toBe(true)
-          // expect(cursors[1].selection.isEmpty()).toBe(true)
-          // expect(cursors[2].selection.isEmpty()).toBe(true)
+          simulateTabKeyEvent()
+          expect(cursors[0].getBufferPosition()).toEqual([0, 0])
+          expect(cursors[1].getBufferPosition()).toEqual([1, 0])
+          expect(cursors[2].getBufferPosition()).toEqual([2, 0])
+          expect(cursors[0].selection.isEmpty()).toBe(true)
+          expect(cursors[1].selection.isEmpty()).toBe(true)
+          expect(cursors[2].selection.isEmpty()).toBe(true)
         })
       })
 
@@ -873,18 +879,23 @@ describe('Snippets extension', () => {
 
     describe('when the editor is not a pane item (regression)', () => {
       it('handles tab stops correctly', () => {
+        // NOTE: Possibly flaky test
+        const transactionDuration = 300
         editor.setText('t2')
         simulateTabKeyEvent()
-        editor.insertText('ABC')
+        editor.transact(transactionDuration, () => {
+          editor.insertText('ABC')
+        })
         expect(editor.lineTextForBufferRow(1)).toEqual('go here first:(ABC)')
 
-        // TODO
-        // editor.undo()
-        // editor.undo()
-        // expect(editor.getText()).toBe('t2')
-        // simulateTabKeyEvent()
-        // editor.insertText('ABC')
-        // expect(editor.getText()).toContain('go here first:(ABC)')
+        editor.undo()
+        editor.undo()
+        expect(editor.getText()).toBe('t2')
+        simulateTabKeyEvent()
+        editor.transact(transactionDuration, () => {
+          editor.insertText('ABC')
+        })
+        expect(editor.getText()).toContain('go here first:(ABC)')
       })
     })
   })
