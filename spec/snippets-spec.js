@@ -26,6 +26,16 @@ describe('Snippets extension', () => {
     atom.commands.dispatch(editorElement, 'snippets:previous-tab-stop')
   }
 
+  // NOTE: Required for undo behaviour to work as if text was
+  // typed. Time based, so possibly flaky in CI. Increase
+  // the grouping interval (ms) to be more lenient with the
+  // grouping.
+  function editorTransact (input) {
+    editor.transact(300, () => {
+      editor.insertText(input)
+    })
+  }
+
   beforeEach(() => {
     spyOn(Snippets, 'loadAll')
     spyOn(Snippets, 'getUserSnippetsPath').andReturn('')
@@ -630,19 +640,12 @@ describe('Snippets extension', () => {
       })
 
       it('bundles the transform mutations along with the original manual mutation for the purposes of undo and redo', () => {
-        // NOTE: Most likely spec here to fail on CI, as it is time based
-        const transactionDuration = 300
-
         editor.setText('t12')
         simulateTabKeyEvent()
-        editor.transact(transactionDuration, () => {
-          editor.insertText('i')
-        })
+        editorTransact('i')
         expect(editor.getText()).toBe("[i][/i]")
 
-        editor.transact(transactionDuration, () => {
-          editor.insertText('mg src')
-        })
+        editorTransact('mg src')
         expect(editor.getText()).toBe("[img src][/img]")
 
         editor.undo()
@@ -772,21 +775,14 @@ describe('Snippets extension', () => {
         })
 
         it('bundles transform-induced mutations into a single history entry along with their triggering edit, even across multiple snippets', () => {
-          // NOTE: Another likely spec to fail on CI, as it is time based
-          const transactionDuration = 300
-
           editor.setText('t14\nt14')
           editor.setCursorBufferPosition([1, 3])
           editor.addCursorAtBufferPosition([0, 3])
           simulateTabKeyEvent()
-          editor.transact(transactionDuration, () => {
-            editor.insertText('testing')
-          })
+          editorTransact('testing')
           simulateTabKeyEvent()
 
-          editor.transact(transactionDuration, () => {
-            editor.insertText('AGAIN')
-          })
+          editorTransact('AGAIN')
 
           editor.undo()
           expect(editor.lineTextForBufferRow(0)).toBe('testing TESTING testing ANOTHER another ')
@@ -879,22 +875,16 @@ describe('Snippets extension', () => {
 
     describe('when the editor is not a pane item (regression)', () => {
       it('handles tab stops correctly', () => {
-        // NOTE: Possibly flaky test
-        const transactionDuration = 300
         editor.setText('t2')
         simulateTabKeyEvent()
-        editor.transact(transactionDuration, () => {
-          editor.insertText('ABC')
-        })
+        editorTransact('ABC')
         expect(editor.lineTextForBufferRow(1)).toEqual('go here first:(ABC)')
 
         editor.undo()
         editor.undo()
         expect(editor.getText()).toBe('t2')
         simulateTabKeyEvent()
-        editor.transact(transactionDuration, () => {
-          editor.insertText('ABC')
-        })
+        editorTransact('ABC')
         expect(editor.getText()).toContain('go here first:(ABC)')
       })
     })
