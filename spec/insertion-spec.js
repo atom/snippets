@@ -67,7 +67,6 @@ describe('Insertion', () => {
     })
   })
 
-
   describe('when resolving variables', () => {
     it('resolves base variables', () => {
       expect(resolve('$TM_LINE_INDEX')).toEqual('0')
@@ -209,6 +208,45 @@ describe('Insertion', () => {
       replace = '$1\\L$2\\E$3'
       expect(transform('LOREM IPSUM!', find, replace)).toEqual('LOREM IPSUM!')
       expect(transform('CONSECUETUR', find, replace)).toEqual('ConsecuetuR')
+    })
+  })
+
+  describe('when there are replacement transformations', () => {
+    it('knows some basic transformations', () => {
+      expect(transform('foo', '.*', '${0:/upcase}')).toEqual('FOO')
+      expect(transform('FOO', '.*', '${0:/downcase}')).toEqual('foo')
+      expect(transform('foo bar', '.*', '${0:/capitalize}')).toEqual('Foo bar')
+    })
+
+    it('uses the empty string for an unknown transformation', () => {
+      expect(transform('foo', '.*', '${0:/GaRBagE}')).toEqual('')
+    })
+
+    it('allows more transformations to be provided', () => {
+      expect(transform('foo', '.*', '${0:/extension}')).toEqual('')
+      Snippets.consumeResolver({
+        transformResolvers: {
+          'extension': () => 'extended',
+          'echo': ({input}) => input + '... ' + input
+        }
+      })
+      expect(transform('foo', '.*', '${0:/extension}')).toEqual('extended')
+      expect(transform('foo', '.*', '${0:/echo}')).toEqual('foo... foo')
+    })
+
+    it('allows provided transformations to override builtins', () => {
+      expect(transform('foo', '.*', '${0:/capitalize}')).toEqual('Foo')
+      Snippets.consumeResolver({
+        transformResolvers: {
+          'capitalize': () => 'different'
+        }
+      })
+      expect(transform('foo', '.*', '${0:/capitalize}')).toEqual('different')
+    })
+
+    it('lets verbose transforms take priority over case flags', () => {
+      expect(transform('foo bar baz', '(foo) (bar) (baz)', '$1 \\U$2 $3')).toEqual('foo BAR BAZ')
+      expect(transform('foo bar baz', '(foo) (bar) (baz)', '$1 \\U${2:/downcase} $3')).toEqual('foo bar BAZ')
     })
   })
 })
