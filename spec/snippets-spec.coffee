@@ -165,11 +165,11 @@ describe "Snippets extension", ->
                 ${2:placeholder ending second line}
             """
 
-          "tab stops at the ends of snippets":
+          "tab stops at beginning and then end of snippet":
             prefix: "t6b"
             body: "$1expanded$0"
 
-          "tab stops at the ends of snippets - alternative":
+          "tab stops at end and then beginning of snippet":
             prefix: "t6c"
             body: "$0expanded$1"
 
