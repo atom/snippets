@@ -165,6 +165,14 @@ describe "Snippets extension", ->
                 ${2:placeholder ending second line}
             """
 
+          "tab stops at beginning and then end of snippet":
+            prefix: "t6b"
+            body: "$1expanded$0"
+
+          "tab stops at end and then beginning of snippet":
+            prefix: "t6c"
+            body: "$0expanded$1"
+
           "contains empty lines":
             prefix: "t7"
             body: """
@@ -585,15 +593,40 @@ describe "Snippets extension", ->
         expect(editor.getSelectedBufferRange()).toEqual [[0, 0], [0, 4]]
 
     describe "when a previous snippet expansion has just been undone", ->
-      it "expands the snippet based on the current prefix rather than jumping to the old snippet's tab stop", ->
-        editor.insertText 't6\n'
-        editor.setCursorBufferPosition [0, 2]
-        simulateTabKeyEvent()
-        expect(editor.lineTextForBufferRow(0)).toBe "first line"
-        editor.undo()
-        expect(editor.lineTextForBufferRow(0)).toBe "t6"
-        simulateTabKeyEvent()
-        expect(editor.lineTextForBufferRow(0)).toBe "first line"
+      describe "when the tab stops appear in the middle of the snippet", ->
+        it "expands the snippet based on the current prefix rather than jumping to the old snippet's tab stop", ->
+          editor.insertText 't6\n'
+          editor.setCursorBufferPosition [0, 2]
+          simulateTabKeyEvent()
+          expect(editor.lineTextForBufferRow(0)).toBe "first line"
+          editor.undo()
+          expect(editor.lineTextForBufferRow(0)).toBe "t6"
+          simulateTabKeyEvent()
+          expect(editor.lineTextForBufferRow(0)).toBe "first line"
+
+      describe "when the tab stops appear at the beginning and then the end of snippet", ->
+        it "expands the snippet based on the current prefix rather than jumping to the old snippet's tab stop", ->
+          editor.insertText 't6b\n'
+          editor.setCursorBufferPosition [0, 3]
+          simulateTabKeyEvent()
+          expect(editor.lineTextForBufferRow(0)).toBe "expanded"
+          editor.undo()
+          expect(editor.lineTextForBufferRow(0)).toBe "t6b"
+          simulateTabKeyEvent()
+          expect(editor.lineTextForBufferRow(0)).toBe "expanded"
+          expect(editor.getCursorBufferPosition()).toEqual([0, 0])
+
+      describe "when the tab stops appear at the end and then the beginning of snippet", ->
+        it "expands the snippet based on the current prefix rather than jumping to the old snippet's tab stop", ->
+          editor.insertText 't6c\n'
+          editor.setCursorBufferPosition [0, 3]
+          simulateTabKeyEvent()
+          expect(editor.lineTextForBufferRow(0)).toBe "expanded"
+          editor.undo()
+          expect(editor.lineTextForBufferRow(0)).toBe "t6c"
+          simulateTabKeyEvent()
+          expect(editor.lineTextForBufferRow(0)).toBe "expanded"
+          expect(editor.getCursorBufferPosition()).toEqual([0, 8])
 
     describe "when the prefix contains non-word characters", ->
       it "selects the non-word characters as part of the prefix", ->
