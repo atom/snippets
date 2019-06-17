@@ -143,3 +143,13 @@
   'has a transformed tab stop such that it is possible to move the cursor between the ordinary tab stop and its transformed version without an intermediate step':
     prefix: 't18'
     body: '// $1\n// ${1/./=/g}'
+  "has two tab stops adjacent to one another":
+    prefix: 't19'
+    body: """
+    ${2:bar}${3:baz}
+    """
+  "has several adjacent tab stops, one of which has a placeholder with a reference to another tab stop at its edge":
+    prefix: 't20'
+    body: """
+    ${1:foo}${2:bar}${3:baz $1}$4
+    """
