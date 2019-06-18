@@ -1,9 +1,7 @@
 const path = require('path')
-const fs = require('fs')
 const temp = require('temp').track()
 const CSON = require('season')
 const Snippets = require('../lib/snippets')
-const {TextEditor} = require('atom')
 
 describe('Snippets extension', () => {
   let editorElement
