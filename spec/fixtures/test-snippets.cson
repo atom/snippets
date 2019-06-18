@@ -56,6 +56,14 @@
         ${2:placeholder ending second line}
     '''
 
+  'tab stops at beginning and then end of snippet':
+    prefix: 't6b'
+    body: '$1expanded$0'
+
+  'tab stops at end and then beginning of snippet':
+    prefix: 't6c'
+    body: '$0expanded$1'
+
   'contains empty lines':
     prefix: 't7'
     body: '''
