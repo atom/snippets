@@ -364,7 +364,7 @@ describe('Snippet Body Parser', () => {
 
     it('handles a snippet with a transformed variable', () => {
       expectMatch(
-        'module ${1:ActiveRecord::${TM_FILENAME/(?:\\A|_)([A-Za-z0-9]+)(?:\\.rb)?/(?2::\\u$1)/g}}',
+        'module ${1:ActiveRecord::${TM_FILENAME/(?:\\A|_)([A-Za-z0-9]+)(?:\\.rb)?/\\u$1/g}}',
         [
           'module ',
           {
@@ -376,10 +376,8 @@ describe('Snippet Body Parser', () => {
                 substitution: {
                   find: /(?:\A|_)([A-Za-z0-9]+)(?:\.rb)?/g,
                   replace: [
-                    '(?2::',
                     {escape: 'u'},
-                    {backreference: 1},
-                    ')'
+                    {backreference: 1}
                   ]
                 }
               }
