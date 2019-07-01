@@ -1,9 +1,7 @@
 const path = require('path')
-const fs = require('fs')
 const temp = require('temp').track()
 const CSON = require('season')
 const Snippets = require('../lib/snippets')
-const {TextEditor} = require('atom')
 
 describe('Snippets extension', () => {
   let editorElement
@@ -515,20 +513,54 @@ describe('Snippets extension', () => {
     })
 
     describe('when a previous snippet expansion has just been undone', () => {
-      it("expands the snippet based on the current prefix rather than jumping to the old snippet's tab stop", () => {
-        editor.setText('t6\n')
-        editor.setCursorBufferPosition([0, 2])
-        simulateTabKeyEvent()
-        expect(editor.lineTextForBufferRow(0)).toBe('first line')
-        expect(editor.lineTextForBufferRow(1)).toBe('  placeholder ending second line')
+      describe('when the tab stops appear in the middle of the snippet', () => {
+        it("expands the snippet based on the current prefix rather than jumping to the old snippet's tab stop", () => {
+          editor.setText('t6\n')
+          editor.setCursorBufferPosition([0, 2])
+          simulateTabKeyEvent()
+          expect(editor.lineTextForBufferRow(0)).toBe('first line')
+          expect(editor.lineTextForBufferRow(1)).toBe('  placeholder ending second line')
 
-        editor.undo()
-        expect(editor.lineTextForBufferRow(0)).toBe('t6')
-        expect(editor.lineTextForBufferRow(1)).toBe('')
+          editor.undo()
+          expect(editor.lineTextForBufferRow(0)).toBe('t6')
+          expect(editor.lineTextForBufferRow(1)).toBe('')
 
-        simulateTabKeyEvent()
-        expect(editor.lineTextForBufferRow(0)).toBe('first line')
-        expect(editor.lineTextForBufferRow(1)).toBe('  placeholder ending second line')
+          simulateTabKeyEvent()
+          expect(editor.lineTextForBufferRow(0)).toBe('first line')
+          expect(editor.lineTextForBufferRow(1)).toBe('  placeholder ending second line')
+        })
+      })
+
+      describe('when the tab stops appear at the beginning and then the end of snippet', () => {
+        it("expands the snippet based on the current prefix rather than jumping to the old snippet's tab stop", () => {
+          editor.insertText('t6b\n')
+          editor.setCursorBufferPosition([0, 3])
+          simulateTabKeyEvent()
+          expect(editor.lineTextForBufferRow(0)).toBe('expanded')
+
+          editor.undo()
+          expect(editor.lineTextForBufferRow(0)).toBe('t6b')
+
+          simulateTabKeyEvent()
+          expect(editor.lineTextForBufferRow(0)).toBe('expanded')
+          expect(editor.getCursorBufferPosition()).toEqual([0, 0])
+        })
+      })
+
+      describe('when the tab stops appear at the end and then the beginning of snippet', () => {
+        it("expands the snippet based on the current prefix rather than jumping to the old snippet's tab stop", () => {
+          editor.insertText('t6c\n')
+          editor.setCursorBufferPosition ([0, 3])
+          simulateTabKeyEvent()
+          expect(editor.lineTextForBufferRow(0)).toBe('expanded')
+
+          editor.undo()
+          expect(editor.lineTextForBufferRow(0)).toBe('t6c')
+
+          simulateTabKeyEvent()
+          expect(editor.lineTextForBufferRow(0)).toBe('expanded')
+          expect(editor.getCursorBufferPosition()).toEqual([0, 8])
+        })
       })
     })
 
@@ -734,6 +766,44 @@ describe('Snippets extension', () => {
 
         simulateTabKeyEvent()
         expect(editor.getSelectedBufferRange()).toEqual([[0, 6], [0, 11]])
+      })
+    })
+
+    describe('when the snippet has two adjacent tab stops', () => {
+      it('ensures insertions are treated as part of the active tab stop', () => {
+        editor.setText('t19')
+        editor.setCursorScreenPosition([0, 3])
+        simulateTabKeyEvent()
+        expect(editor.getText()).toBe('barbaz')
+        expect(editor.getSelectedBufferRange()).toEqual([[0, 0], [0, 3]])
+        editor.insertText('w')
+        expect(editor.getText()).toBe('wbaz')
+        editor.insertText('at')
+        expect(editor.getText()).toBe('watbaz')
+        simulateTabKeyEvent()
+        expect(editor.getSelectedBufferRange()).toEqual([[0, 3], [0, 6]])
+        editor.insertText('foo')
+        expect(editor.getText()).toBe('watfoo')
+      })
+    })
+
+    describe('when the snippet has a placeholder with a tabstop mirror at its edge', () => {
+      it('allows the associated marker to include the inserted text', () => {
+        editor.setText('t20')
+        editor.setCursorScreenPosition([0, 3])
+        simulateTabKeyEvent()
+        expect(editor.getText()).toBe('foobarbaz ')
+        expect(editor.getCursors().length).toBe(2)
+        let selections = editor.getSelections()
+        expect(selections[0].getBufferRange()).toEqual([[0, 0], [0, 3]])
+        expect(selections[1].getBufferRange()).toEqual([[0, 10], [0, 10]])
+        editor.insertText('nah')
+        expect(editor.getText()).toBe('nahbarbaz nah')
+        simulateTabKeyEvent()
+        editor.insertText('meh')
+        simulateTabKeyEvent()
+        editor.insertText('yea')
+        expect(editor.getText()).toBe('nahmehyea')
       })
     })
 

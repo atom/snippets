@@ -56,6 +56,14 @@
         ${2:placeholder ending second line}
     '''
 
+  'tab stops at beginning and then end of snippet':
+    prefix: 't6b'
+    body: '$1expanded$0'
+
+  'tab stops at end and then beginning of snippet':
+    prefix: 't6c'
+    body: '$0expanded$1'
+
   'contains empty lines':
     prefix: 't7'
     body: '''
@@ -143,3 +151,13 @@
   'has a transformed tab stop such that it is possible to move the cursor between the ordinary tab stop and its transformed version without an intermediate step':
     prefix: 't18'
     body: '// $1\n// ${1/./=/g}'
+  "has two tab stops adjacent to one another":
+    prefix: 't19'
+    body: """
+    ${2:bar}${3:baz}
+    """
+  "has several adjacent tab stops, one of which has a placeholder with a reference to another tab stop at its edge":
+    prefix: 't20'
+    body: """
+    ${1:foo}${2:bar}${3:baz $1}$4
+    """
