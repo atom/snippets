@@ -583,14 +583,16 @@ describe "Snippets extension", ->
         expect(editor.lineTextForBufferRow(0)).toBe "xxte  var quicksort = function () {"
         expect(editor.getCursorScreenPosition()).toEqual [0, 6]
 
-    describe "when text is selected", ->
-      it "inserts a tab as normal", ->
+    describe "when a snippet matching prefix is selected", ->
+      it "does not expand the snippet", ->
         editor.insertText("t1")
         editor.setSelectedBufferRange([[0, 0], [0, 2]])
+        originalLine = editor.lineTextForBufferRow(0)
 
         simulateTabKeyEvent()
-        expect(editor.lineTextForBufferRow(0)).toBe "  t1var quicksort = function () {"
-        expect(editor.getSelectedBufferRange()).toEqual [[0, 0], [0, 4]]
+        expect(editor.lineTextForBufferRow(0)).not.toEqual originalLine
+        expect(editor.lineTextForBufferRow(0)).toContain "var quicksort = function () {"
+        expect(editor.lineTextForBufferRow(0)).not.toContain "this is a test"
 
     describe "when a previous snippet expansion has just been undone", ->
       describe "when the tab stops appear in the middle of the snippet", ->
