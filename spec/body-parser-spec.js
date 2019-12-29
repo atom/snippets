@@ -116,7 +116,7 @@ the quick brown $1fox \${2:jumped \${3:over}
 
 
   it("parses a snippet with transformations and mirrors", () => {
-    const bodyTree = BodyParser.parse("${1:placeholder}\n\${1/(.)/\\u$1/}\n$1");
+    const bodyTree = BodyParser.parse("${1:placeholder}\n${1/(.)/\\u$1/}\n$1");
     expect(bodyTree).toEqual([
       {index: 1, content: ['placeholder']},
       '\n',
@@ -137,7 +137,7 @@ the quick brown $1fox \${2:jumped \${3:over}
   });
 
   it("parses a snippet with a format string and case-control flags", () => {
-    const bodyTree = BodyParser.parse("<\${1:p}>$0</\${1/(.)(.*)/\\u$1$2/}>");
+    const bodyTree = BodyParser.parse("<${1:p}>$0</${1/(.)(.*)/\\u$1$2/}>");
     expect(bodyTree).toEqual([
       '<',
       {index: 1, content: ['p']},
@@ -187,7 +187,7 @@ the quick brown $1fox \${2:jumped \${3:over}
   });
 
   it("parses a snippet with a placeholder that mirrors another tab stop's content", () => {
-    const bodyTree = BodyParser.parse("$4console.\${3:log}('\${2:$1}', $1);$0");
+    const bodyTree = BodyParser.parse("$4console.${3:log}('${2:$1}', $1);$0");
     expect(bodyTree).toEqual([
       {index: 4, content: []},
       'console.',
