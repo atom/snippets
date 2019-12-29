@@ -20,7 +20,9 @@ describe("Snippet Loading", () => {
 
   afterEach(() => {
     waitsForPromise(() => Promise.resolve(atom.packages.deactivatePackages('snippets')));
-    runs(() => jasmine.unspy(atom.packages, 'getLoadedPackages'));
+    runs(() => {
+      jasmine.unspy(atom.packages, 'getLoadedPackages');
+    });
   });
 
   const activateSnippetsPackage = () => {
@@ -169,7 +171,9 @@ describe("Snippet Loading", () => {
           return snippet && snippet.body === 'bar2';
         });
 
-        runs(() => fs.writeFileSync(path.join(configDirPath, 'snippets.json'), ""));
+        runs(() => {
+          fs.writeFileSync(path.join(configDirPath, 'snippets.json'), "");
+        });
 
         waitsFor("snippets to be removed", () => !snippetsService.snippetsForScopes(['.foo'])['foo']);
       });
