@@ -267,9 +267,7 @@ describe("Snippet Loading", () => {
         const allSnippets = snippetsService.getUnparsedSnippets();
         const scopedSnippet = allSnippets.find(s => s.selectorString === '.package-with-snippets-unique-scope');
         expect(scopedSnippet).not.toBe(undefined);
-
-        //TODO: This doesn't look right. originalConfig should be restored
-        originalConfig = atom.config.get('core.packagesWithSnippetsDisabled');
+        atom.config.set('core.packagesWithSnippetsDisabled', originalConfig);
       });
     });
 
