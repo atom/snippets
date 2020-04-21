@@ -284,6 +284,10 @@ third tabstop $3\
           "has a transformed tab stop such that it is possible to move the cursor between the ordinary tab stop and its transformed version without an intermediate step": {
             prefix: 't18',
             body: '// $1\n// ${1/./=/}'
+          },
+          "has a tab stop from end of first line till the beginning of last line": {
+            prefix: 't19',
+            body: '<tag>${1:\n\t$0\n}</tag>'
           }
         }
       });
@@ -581,6 +585,15 @@ third tabstop $3\
           expect(editor.lineTextForBufferRow(4)).toBe("      line 2");
           expect(editor.lineTextForBufferRow(5)).toBe("    }");
           expect(editor.getCursorBufferPosition()).toEqual([3, 4]);
+        });
+
+        it("indents the ending tab stop if it starts from the first line (regression)", () => {
+          editor.setCursorScreenPosition([2, Infinity]);
+          editor.insertNewline();
+          editor.insertText('t19');
+          atom.commands.dispatch(editorElement, 'snippets:expand');
+
+          expect(editor.getSelectedBufferRange()).toEqual([[3, 9], [5, 4]]);
         });
 
         it("does not change the relative positioning of the tab stops when inserted multiple times", () => {
