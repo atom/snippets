@@ -3,7 +3,7 @@ const fs = require('fs-plus');
 const temp = require('temp').track();
 
 describe("Snippet Loading", () => {
-  let configDirPath, snippetsService;
+  let configDirPath, snippetsService, defaultContext;
 
   beforeEach(() => {
     configDirPath = temp.mkdirSync('atom-config-dir-');
@@ -39,18 +39,20 @@ describe("Snippet Loading", () => {
 
     runs(() => {
       const jsonSnippet = snippetsService.snippetsForScopes(['.source.json'])['snip'];
+      let instance = jsonSnippet.generateInstance();
       expect(jsonSnippet.name).toBe('Atom Snippet');
       expect(jsonSnippet.prefix).toBe('snip');
-      expect(jsonSnippet.body).toContain('"prefix":');
-      expect(jsonSnippet.body).toContain('"body":');
-      expect(jsonSnippet.tabStopList.length).toBeGreaterThan(0);
+      expect(instance.bodyText).toContain('"prefix":');
+      expect(instance.bodyText).toContain('"body":');
+      expect(instance.tabStopList.length).toBeGreaterThan(0);
 
       const csonSnippet = snippetsService.snippetsForScopes(['.source.coffee'])['snip'];
+      instance = csonSnippet.generateInstance();
       expect(csonSnippet.name).toBe('Atom Snippet');
       expect(csonSnippet.prefix).toBe('snip');
-      expect(csonSnippet.body).toContain("'prefix':");
-      expect(csonSnippet.body).toContain("'body':");
-      expect(csonSnippet.tabStopList.length).toBeGreaterThan(0);
+      expect(instance.bodyText).toContain("'prefix':");
+      expect(instance.bodyText).toContain("'body':");
+      expect(instance.tabStopList.length).toBeGreaterThan(0);
     });
   });
 
@@ -59,25 +61,30 @@ describe("Snippet Loading", () => {
 
     runs(() => {
       let snippet = snippetsService.snippetsForScopes(['.test'])['test'];
+      let instance = snippet.generateInstance();
       expect(snippet.prefix).toBe('test');
-      expect(snippet.body).toBe('testing 123');
+      expect(instance.bodyText).toBe('testing 123');
 
       snippet = snippetsService.snippetsForScopes(['.test'])['testd'];
+      instance = snippet.generateInstance();
       expect(snippet.prefix).toBe('testd');
-      expect(snippet.body).toBe('testing 456');
       expect(snippet.description).toBe('a description');
       expect(snippet.descriptionMoreURL).toBe('http://google.com');
+      expect(instance.bodyText).toBe('testing 456');
 
       snippet = snippetsService.snippetsForScopes(['.test'])['testlabelleft'];
+      instance = snippet.generateInstance();
       expect(snippet.prefix).toBe('testlabelleft');
-      expect(snippet.body).toBe('testing 456');
       expect(snippet.leftLabel).toBe('a label');
+      expect(instance.bodyText).toBe('testing 456');
+
 
       snippet = snippetsService.snippetsForScopes(['.test'])['testhtmllabels'];
+      instance = snippet.generateInstance();
       expect(snippet.prefix).toBe('testhtmllabels');
-      expect(snippet.body).toBe('testing 456');
       expect(snippet.leftLabelHTML).toBe('<span style=\"color:red\">Label</span>');
       expect(snippet.rightLabelHTML).toBe('<span style=\"color:white\">Label</span>');
+      expect(instance.bodyText).toBe('testing 456');
     });
   });
 
@@ -106,7 +113,7 @@ describe("Snippet Loading", () => {
 
       runs(() => {
         const snippet = snippetsService.snippetsForScopes(['.source.js'])['log'];
-        expect(snippet.body).toBe("from-a-community-package");
+        expect(snippet.generateInstance().bodyText).toBe("from-a-community-package");
       });
     });
   });
@@ -148,7 +155,7 @@ describe("Snippet Loading", () => {
       runs(() => {
         expect(snippet.name).toBe('foo snippet');
         expect(snippet.prefix).toBe("foo");
-        expect(snippet.body).toBe("bar1");
+        expect(snippet.generateInstance().bodyText).toBe("bar1");
       });
     });
 
@@ -168,7 +175,7 @@ describe("Snippet Loading", () => {
 
         waitsFor("snippets to be changed", () => {
           const snippet = snippetsService.snippetsForScopes(['.foo'])['foo'];
-          return snippet && snippet.body === 'bar2';
+          return snippet && snippet.generateInstance().bodyText === 'bar2';
         });
 
         runs(() => {
@@ -200,7 +207,7 @@ describe("Snippet Loading", () => {
       runs(() => {
         expect(snippet.name).toBe('foo snippet');
         expect(snippet.prefix).toBe("foo");
-        expect(snippet.body).toBe("bar1");
+        expect(snippet.generateInstance().bodyText).toBe("bar1");
       });
     });
 
@@ -216,7 +223,7 @@ describe("Snippet Loading", () => {
 
         waitsFor("snippets to be changed", () => {
           const snippet = snippetsService.snippetsForScopes(['.foo'])['foo'];
-          return snippet && snippet.body === 'bar2';
+          return snippet && snippet.generateInstance().bodyText === 'bar2';
         });
 
         runs(() => {
