@@ -32,8 +32,8 @@
   },
   "configSchema": {
     "snippetSyntax": {
-      "type": "enum",
-      "description": "Configures the syntax used for snippets. LSP is mostly a superset of original, with support for more features.",
+      "type": "string",
+      "description": "Configures the syntax used for snippets. LSP is mostly a superset of original, with support for more features (but not all features may be implemented yet).",
       "default": "LSP",
       "enum": [
         "LSP",

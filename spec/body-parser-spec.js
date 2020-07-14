@@ -1,6 +1,10 @@
 const BodyParser = require('../lib/snippet-body-parser');
 
 describe("Snippet Body Parser", () => {
+  function t(snippetBody) {
+    return BodyParser.parse(snippetBody);
+  }
+
   it("breaks a snippet body into lines, with each line containing tab stops at the appropriate position", () => {
     const bodyTree = BodyParser.parse(`\
 the quick brown $1fox \${2:jumped \${3:over}
