@@ -112,7 +112,11 @@ describe("Snippet Loading", () => {
       activateSnippetsPackage();
 
       runs(() => {
-        const snippet = snippetsService.snippetsForScopes(['.source.js'])['log'];
+        expect(atom.packages.getLoadedPackages().length).toBe(2);
+        expect(atom.packages.isPackageLoaded("package-with-snippets")).toBe(true);
+        expect(atom.packages.isPackageLoaded("language-javascript")).toBe(true);
+
+        const snippet = snippetsService.snippetsForScopes([".source.js"])["log"];
         expect(snippet.generateInstance().bodyText).toBe("from-a-community-package");
       });
     });
