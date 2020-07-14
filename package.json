@@ -29,5 +29,16 @@
   },
   "devDependencies": {
     "coffeelint": "^1.9.7"
+  },
+  "configSchema": {
+    "snippetSyntax": {
+      "type": "enum",
+      "description": "Configures the syntax used for snippets. LSP is mostly a superset of original, with support for more features.",
+      "default": "LSP",
+      "enum": [
+        "LSP",
+        "original"
+      ]
+    }
   }
 }
