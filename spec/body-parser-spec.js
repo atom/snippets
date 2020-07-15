@@ -1,10 +1,13 @@
 /* eslint no-template-curly-in-string: 0 */
+const fs = require('fs-plus')
+const peg = require('pegjs')
 
-const BodyParser = require('../lib/snippet-body-parser')
+const grammar = fs.readFileSync(require.resolve('../lib/snippet-body-parser.pegjs'), 'utf8')
+const bodyParser = peg.generate(grammar)
 
 describe('Snippet Body Parser', () => {
   it('breaks a snippet body into lines, with each line containing tab stops at the appropriate position', () => {
-    const bodyTree = BodyParser.parse(`\
+    const bodyTree = bodyParser.parse(`\
 the quick brown $1fox \${2:jumped \${3:over}
 }the \${4:lazy} dog\
 `
@@ -29,7 +32,7 @@ the quick brown $1fox \${2:jumped \${3:over}
   })
 
   it("removes interpolated variables in placeholder text (we don't currently support it)", () => {
-    const bodyTree = BodyParser.parse('module ${1:ActiveRecord::${TM_FILENAME/(?:\\A|_)([A-Za-z0-9]+)(?:\\.rb)?/(?2::\\u$1)/g}}')
+    const bodyTree = bodyParser.parse('module ${1:ActiveRecord::${TM_FILENAME/(?:\\A|_)([A-Za-z0-9]+)(?:\\.rb)?/(?2::\\u$1)/g}}')
     expect(bodyTree).toEqual([
       'module ',
       {
@@ -40,7 +43,7 @@ the quick brown $1fox \${2:jumped \${3:over}
   })
 
   it('skips escaped tabstops', () => {
-    const bodyTree = BodyParser.parse('snippet $1 escaped \\$2 \\\\$3')
+    const bodyTree = bodyParser.parse('snippet $1 escaped \\$2 \\\\$3')
     expect(bodyTree).toEqual([
       'snippet ',
       {
@@ -56,7 +59,7 @@ the quick brown $1fox \${2:jumped \${3:over}
   })
 
   it('includes escaped right-braces', () => {
-    const bodyTree = BodyParser.parse('snippet ${1:{\\}}')
+    const bodyTree = bodyParser.parse('snippet ${1:{\\}}')
     expect(bodyTree).toEqual([
       'snippet ',
       {
@@ -67,7 +70,7 @@ the quick brown $1fox \${2:jumped \${3:over}
   })
 
   it('parses a snippet with transformations', () => {
-    const bodyTree = BodyParser.parse('<${1:p}>$0</${1/f/F/}>')
+    const bodyTree = bodyParser.parse('<${1:p}>$0</${1/f/F/}>')
     expect(bodyTree).toEqual([
       '<',
       { index: 1, content: ['p'] },
@@ -80,7 +83,7 @@ the quick brown $1fox \${2:jumped \${3:over}
   })
 
   it('parses a snippet with multiple tab stops with transformations', () => {
-    const bodyTree = BodyParser.parse('${1:placeholder} ${1/(.)/\\u$1/} $1 ${2:ANOTHER} ${2/^(.*)$/\\L$1/} $2')
+    const bodyTree = bodyParser.parse('${1:placeholder} ${1/(.)/\\u$1/} $1 ${2:ANOTHER} ${2/^(.*)$/\\L$1/} $2')
     expect(bodyTree).toEqual([
       { index: 1, content: ['placeholder'] },
       ' ',
@@ -117,7 +120,7 @@ the quick brown $1fox \${2:jumped \${3:over}
   })
 
   it('parses a snippet with transformations and mirrors', () => {
-    const bodyTree = BodyParser.parse('${1:placeholder}\n${1/(.)/\\u$1/}\n$1')
+    const bodyTree = bodyParser.parse('${1:placeholder}\n${1/(.)/\\u$1/}\n$1')
     expect(bodyTree).toEqual([
       { index: 1, content: ['placeholder'] },
       '\n',
@@ -138,7 +141,7 @@ the quick brown $1fox \${2:jumped \${3:over}
   })
 
   it('parses a snippet with a format string and case-control flags', () => {
-    const bodyTree = BodyParser.parse('<${1:p}>$0</${1/(.)(.*)/\\u$1$2/}>')
+    const bodyTree = bodyParser.parse('<${1:p}>$0</${1/(.)(.*)/\\u$1$2/}>')
     expect(bodyTree).toEqual([
       '<',
       { index: 1, content: ['p'] },
@@ -164,7 +167,7 @@ the quick brown $1fox \${2:jumped \${3:over}
   it('parses a snippet with an escaped forward slash in a transform', () => {
     // Annoyingly, a forward slash needs to be double-backslashed just like the
     // other escapes.
-    const bodyTree = BodyParser.parse('<${1:p}>$0</${1/(.)\\/(.*)/\\u$1$2/}>')
+    const bodyTree = bodyParser.parse('<${1:p}>$0</${1/(.)\\/(.*)/\\u$1$2/}>')
     expect(bodyTree).toEqual([
       '<',
       { index: 1, content: ['p'] },
@@ -188,7 +191,7 @@ the quick brown $1fox \${2:jumped \${3:over}
   })
 
   it("parses a snippet with a placeholder that mirrors another tab stop's content", () => {
-    const bodyTree = BodyParser.parse("$4console.${3:log}('${2:$1}', $1);$0")
+    const bodyTree = bodyParser.parse("$4console.${3:log}('${2:$1}', $1);$0")
     expect(bodyTree).toEqual([
       { index: 4, content: [] },
       'console.',
@@ -208,7 +211,7 @@ the quick brown $1fox \${2:jumped \${3:over}
   })
 
   it('parses a snippet with a placeholder that mixes text and tab stop references', () => {
-    const bodyTree = BodyParser.parse("$4console.${3:log}('${2:uh $1}', $1);$0")
+    const bodyTree = bodyParser.parse("$4console.${3:log}('${2:uh $1}', $1);$0")
     expect(bodyTree).toEqual([
       { index: 4, content: [] },
       'console.',
