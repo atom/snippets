@@ -8,7 +8,7 @@ describe("Snippet Body Parser", () => {
     expect(SnippetParser.parse(input)).toEqual(tree);
   }
 
-  describe("When parsing tab stops", () => {
+  describe("when parsing tab stops", () => {
     it("parses simple tab stops", () => {
       expectMatch("hello$1world${2}", [
         "hello", { index: 1, content: [] }, "world", { index: 2, content: [] },
@@ -115,7 +115,7 @@ describe("Snippet Body Parser", () => {
     });
   });
 
-  describe("When parsing variables", () => {
+  describe("when parsing variables", () => {
     it("parses simple variables", () => {
       expectMatch("hello$foo2__bar&baz${abc}d", [
         "hello",
@@ -187,7 +187,7 @@ describe("Snippet Body Parser", () => {
     });
   });
 
-  describe("When parsing choices", () => {
+  describe("when parsing choices", () => {
     it("parses simple choices", () => {
       expectMatch("${1|a,b,c|}", [{ index: 1, choices: ["a", "b", "c"] }]);
     });
@@ -219,7 +219,7 @@ describe("Snippet Body Parser", () => {
     });
   });
 
-  describe("When parsing transformations", () => {
+  describe("when parsing transformations", () => {
     it("allows an empty transformation", () => {
       expectMatch("${1///}", [{ index: 1, transformation: { find: new RegExp(""), replace: [] } }]);
     });
@@ -263,7 +263,7 @@ describe("Snippet Body Parser", () => {
       ]);
     });
 
-    describe("When parsing the replace section", () => {
+    describe("when parsing the replace section", () => {
       // Helper for testing the relacement part of
       // transformations, which are relatively deep in
       // the tree and have a lot of behaviour to cover
@@ -304,7 +304,7 @@ describe("Snippet Body Parser", () => {
         ]);
       });
 
-      describe("When parsing formats", () => {
+      describe("when parsing formats", () => {
         it("parses simple formats", () => {
           expectReplaceMatch("$1${2}", [
             { backreference: 1 },
@@ -397,7 +397,7 @@ describe("Snippet Body Parser", () => {
     });
   });
 
-  describe("When parsing escaped characters", () => {
+  describe("when parsing escaped characters", () => {
     const escapeTest = "\\$ \\\\ \\} \\% \\* \\, \\| \\{ \\n \\r \\:";
 
     const escapeResolveTop = "$ \\ } \\% \\* \\, \\| \\{ \\n \\r \\:";
@@ -429,7 +429,7 @@ describe("Snippet Body Parser", () => {
     });
   });
 
-  describe("When a potential non-text parse fails", () => {
+  describe("when a potential non-text parse fails", () => {
     it("accepts the first character as text and resumes", () => {
       expectMatch("${1:${2}${3}", [
         "${1:",
