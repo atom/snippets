@@ -1,18 +1,76 @@
 const BodyParser = require('../lib/snippet-body-parser');
 
 describe("Snippet Body Parser", () => {
-  function t(snippetBody) {
-    return BodyParser.parse(snippetBody);
+  function expectMatch(input, tree) {
+    expect(BodyParser.parse(input)).toEqual(tree);
   }
 
-  it("breaks a snippet body into lines, with each line containing tab stops at the appropriate position", () => {
-    const bodyTree = BodyParser.parse(`\
-the quick brown $1fox \${2:jumped \${3:over}
-}the \${4:lazy} dog\
-`
-    );
+  it("parses snippets with no special behaviour as plain text", () => {
+    const plainSnippets = [
+      "foo $ bar",
+      "$% $ 1 ${/upcase} \n ${|world|} ${3foo}",
+    ];
 
-    expect(bodyTree).toEqual([
+    for (const plain of plainSnippets) {
+      expectMatch(plain, [plain]);
+    }
+  });
+
+  it("parses simple tab stops", () => {
+    expectMatch("hello$1world${2}", [
+      "hello", {index: 1, content: []}, "world", {index: 2, content: []},
+    ]);
+  });
+
+  it("doesn't find escaped tab stops", () => {
+    expectMatch("\\$1", ["$1"]);
+  })
+
+  it("parses simple variables", () => {
+    expectMatch("hello$foo2__bar&baz${abc}d", [
+      "hello", {variable: "foo2__bar"}, "&baz", {variable: "abc"}, "d"
+    ]);
+  });
+
+  describe("only escapes a select few characters", () => {
+    const escapeTest = "\\$ \\\\ \\} \\% \\* \\, \\| \\{ \\n \\r \\:";
+
+    const escapeResolveTop = "$ \\ } \\% \\* \\, \\| \\{ \\n \\r \\:";
+
+    const escapeResolveChoice = "\\$ \\ \\} \\% \\* , | \\{ \\n \\r \\:";
+
+    it("only escapes '$', '\\', and '}' in top level text", () => {
+      expectMatch(escapeTest, [
+        escapeResolveTop
+      ]);
+    });
+
+    it("escapes the same characters inside tab stop placeholders as in top level text", () => {
+      expectMatch(`\${1:${escapeTest}}`, [
+        {index: 1, content: [escapeResolveTop]},
+      ]);
+    });
+
+    it("escapes the same characters inside variable placeholders as in top level text", () => {
+      expectMatch(`\${foo:${escapeTest}}`, [
+        {variable: "foo", content: [escapeResolveTop]},
+      ]);
+    });
+
+    it("escapes ',', '|', and '\\' in choice text", () => {
+      expectMatch(`\${1|${escapeTest}|}`, [
+        {index: 1, choices: [escapeResolveChoice]},
+      ]);
+    });
+  });
+
+  it("does not recognise a tab stop with transformation if the transformation is invalid regex", () => {
+    expectMatch("${1/foo/bar/a}", ["${1/foo/bar/a}"]); // invalid flag
+    expectMatch("${1/fo)o/bar/}", ["${1/fo)o/bar/}"]); // invalid body
+  });
+
+  it("breaks a snippet body into lines, with each line containing tab stops at the appropriate position", () => {
+    expectMatch("the quick brown $1fox ${2:jumped ${3:over}\n}the ${4:lazy} dog", [
       "the quick brown ",
       {index: 1, content: []},
       "fox ",
@@ -31,35 +89,29 @@ the quick brown $1fox \${2:jumped \${3:over}
   });
 
   it("removes interpolated variables in placeholder text (we don't currently support it)", () => {
-    const bodyTree = BodyParser.parse("module ${1:ActiveRecord::${TM_FILENAME/(?:\\A|_)([A-Za-z0-9]+)(?:\\.rb)?/(?2::\\u$1)/g}}");
-    expect(bodyTree).toEqual([
+    expect(t("module ${1:ActiveRecord::${TM_FILENAME/(?:\\A|_)([A-Za-z0-9]+)(?:\\.rb)?/(?2::\\u$1)/g}}")).toEqual([
       "module ",
       {
-        "index": 1,
-        "content": ["ActiveRecord::", ""]
+        index: 1,
+        content: ["ActiveRecord::", ""]
       }
     ]);
   });
 
   it("skips escaped tabstops", () => {
-    const bodyTree = BodyParser.parse("snippet $1 escaped \\$2 \\\\$3");
-    expect(bodyTree).toEqual([
-      "snippet ",
-      {
-        index: 1,
-        content: []
-      },
-      " escaped $2 \\",
-      {
-        index: 3,
-        content: []
-      }
+    expectMatch("$1 \\$2 $3 \\\\$4 \\\\\\$5 $6", [
+      {index: 1, content: []},
+      ' $2 ',
+      {index: 3, content: []},
+      ' \\',
+      {index: 4, content: []},
+      ' \\$5 ',
+      {index: 6, content: []}
     ]);
   });
 
   it("includes escaped right-braces", () => {
-    const bodyTree = BodyParser.parse("snippet ${1:{\\}}");
-    expect(bodyTree).toEqual([
+    expectMatch("snippet ${1:{\\}}", [
       "snippet ",
       {
         index: 1,
