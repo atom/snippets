@@ -1,6 +1,9 @@
 const SnippetParser = require('../lib/snippet-body-parser');
 
 describe("Snippet Body Parser", () => {
+  // Helper for testing a snippet parse tree. The `input`
+  // is the snippet string, the `tree` is the expected
+  // parse tree.
   function expectMatch(input, tree) {
     expect(SnippetParser.parse(input)).toEqual(tree);
   }
@@ -30,6 +33,10 @@ describe("Snippet Body Parser", () => {
     });
 
     describe("with placeholders", () => {
+      it("allows placeholders to be empty", () => {
+        expectMatch("${1:}", [{ index: 1, content: [] }]);
+      });
+
       it("allows placeholders to be arbitrary", () => {
         expectMatch("${1:${2}$foo${3|a,b|}}", [
           {
@@ -40,6 +47,37 @@ describe("Snippet Body Parser", () => {
               { index: 3, choices: ["a", "b"] },
             ]
           }
+        ]);
+      });
+
+      it("even lets placeholders contain placeholders", () => {
+        expectMatch("${1:${2:${3:levels}}}", [
+          {
+            index: 1,
+            content: [
+              {
+                index: 2,
+                content: [
+                  {
+                    index: 3,
+                    content: [
+                      "levels"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]);
+      });
+
+      it("ends the placeholder at an unmatched '}'", () => {
+        expectMatch("${1:}}", [
+          {
+            index: 1,
+            content: []
+          },
+          "}"
         ]);
       });
 
@@ -110,6 +148,8 @@ describe("Snippet Body Parser", () => {
       });
     });
 
+    // The placeholder implementation is expected to be the same as for tab stops, so
+    // see the tab stop placeholder section for more thorough tests
     describe("with placeholders", () => {
       it("allows placeholders to be arbitrary", () => {
         expectMatch("${foo:${2}$bar${3|a,b|}}", [
@@ -207,6 +247,153 @@ describe("Snippet Body Parser", () => {
         { variable: "bar" },
         "/}"
       ]);
+    });
+
+    it("allows and preserves all escapes in regex strings", () => {
+      expectMatch("${1/foo\\/\\$\\:\\n\\r/baz/}", [
+        {
+          index: 1,
+          transformation: {
+            find: /foo\/\$\:\n\r/,
+            replace: [
+              "baz"
+            ]
+          }
+        }
+      ]);
+    });
+
+    describe("When parsing the replace section", () => {
+      // Helper for testing the relacement part of
+      // transformations, which are relatively deep in
+      // the tree and have a lot of behaviour to cover
+      // NOTE: Only use when the replace section is expected to
+      // be valid, or else you will be testing against the
+      // boilerplate (which is not a good idea)
+      function expectReplaceMatch(replace, tree) {
+        expectMatch(`\${1/foo/${replace}/}`, [
+          {
+            index: 1,
+            transformation: {
+              find: /foo/,
+              replace: tree,
+            }
+          }
+        ]);
+      }
+
+      it("allows '$' and '}' as plain text if not part of a format", () => {
+        expectReplaceMatch("$}", ["$}"]);
+      });
+
+      it("allows inline 'escaped modifiers'", () => {
+        expectReplaceMatch("foo\\E\\l\\L\\u\\Ubar", [
+          "foo",
+          { modifier: "E" },
+          { modifier: "l" },
+          { modifier: "L" },
+          { modifier: "u" },
+          { modifier: "U" },
+          "bar"
+        ]);
+      });
+
+      it("allows '$', '\\', and '/' to be escaped", () => {
+        expectReplaceMatch("\\$1 \\\\ \\/", [
+          "$1 \\ /"
+        ]);
+      });
+
+      describe("When parsing formats", () => {
+        it("parses simple formats", () => {
+          expectReplaceMatch("$1${2}", [
+            { backreference: 1 },
+            { backreference: 2 }
+          ]);
+        });
+
+        it("parses formats with modifiers", () => {
+          expectReplaceMatch("${1:/upcase}", [
+            {
+              backreference: 1,
+              modifier: "upcase",
+            }
+          ]);
+        });
+
+        it("parses formats with an if branch", () => {
+          expectReplaceMatch("${1:+foo$2$bar}", [
+            {
+              backreference: 1,
+              ifContent: [
+                "foo",
+                { backreference: 2, },
+                "$bar" // no variables inside a replace / format
+              ]
+            }
+          ]);
+        });
+
+        it("parses formats with if and else branches", () => {
+          expectReplaceMatch("${1:?foo\\:stillIf:bar\\}stillElse}", [
+            {
+              backreference: 1,
+              ifContent: [
+                "foo:stillIf"
+              ],
+              elseContent: [
+                "bar}stillElse"
+              ]
+            }
+          ]);
+        });
+
+        it("parses formats with an else branch", () => {
+          expectReplaceMatch("${1:-foo}", [
+            {
+              backreference: 1,
+              elseContent: [
+                "foo"
+              ]
+            }
+          ]);
+        });
+
+        it("parses formats with the old else branch syntax", () => {
+          expectReplaceMatch("${1:foo}", [
+            {
+              backreference: 1,
+              elseContent: [
+                "foo"
+              ]
+            }
+          ]);
+        });
+
+        it("allows nested replacements inside of formats", () => {
+          expectReplaceMatch("${1:+${2:-${3:?a lot of:layers}}}", [
+            {
+              backreference: 1,
+              ifContent: [
+                {
+                  backreference: 2,
+                  elseContent: [
+                    {
+                      backreference: 3,
+                      ifContent: [
+                        "a lot of"
+                      ],
+                      elseContent: [
+                        "layers"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]);
+        });
+      });
     });
   });
 
