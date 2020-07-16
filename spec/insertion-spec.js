@@ -4,10 +4,10 @@ const { Range } = require('atom')
 const range = new Range(0, 0)
 
 describe('Insertion', () => {
-  it('returns what it was given when it has no substitution', () => {
+  it('returns what it was given when it has no transformation', () => {
     let insertion = new Insertion({
       range,
-      substitution: undefined
+      transformation: undefined
     })
     let transformed = insertion.transform('foo!')
 
@@ -17,7 +17,7 @@ describe('Insertion', () => {
   it('transforms what it was given when it has a regex transformation', () => {
     let insertion = new Insertion({
       range,
-      substitution: {
+      transformation: {
         find: /foo/g,
         replace: ['bar']
       }
@@ -30,11 +30,11 @@ describe('Insertion', () => {
   it('transforms the case of the next character when encountering a \\u or \\l flag', () => {
     let uInsertion = new Insertion({
       range,
-      substitution: {
+      transformation: {
         find: /(.)(.)(.*)/g,
         replace: [
           { backreference: 1 },
-          { escape: 'u' },
+          { modifier: 'u' },
           { backreference: 2 },
           { backreference: 3 }
         ]
@@ -47,11 +47,11 @@ describe('Insertion', () => {
 
     let lInsertion = new Insertion({
       range,
-      substitution: {
+      transformation: {
         find: /(.{2})(.)(.*)/g,
         replace: [
           { backreference: 1 },
-          { escape: 'l' },
+          { modifier: 'l' },
           { backreference: 2 },
           { backreference: 3 }
         ]
@@ -67,11 +67,11 @@ describe('Insertion', () => {
   it('transforms the case of all remaining characters when encountering a \\U or \\L flag, up until it sees a \\E flag', () => {
     let uInsertion = new Insertion({
       range,
-      substitution: {
+      transformation: {
         find: /(.)(.*)/,
         replace: [
           { backreference: 1 },
-          { escape: 'U' },
+          { modifier: 'U' },
           { backreference: 2 }
         ]
       }
@@ -83,13 +83,13 @@ describe('Insertion', () => {
 
     let ueInsertion = new Insertion({
       range,
-      substitution: {
+      transformation: {
         find: /(.)(.{3})(.*)/,
         replace: [
           { backreference: 1 },
-          { escape: 'U' },
+          { modifier: 'U' },
           { backreference: 2 },
-          { escape: 'E' },
+          { modifier: 'E' },
           { backreference: 3 }
         ]
       }
@@ -101,11 +101,11 @@ describe('Insertion', () => {
 
     let lInsertion = new Insertion({
       range,
-      substitution: {
+      transformation: {
         find: /(.{4})(.)(.*)/,
         replace: [
           { backreference: 1 },
-          { escape: 'L' },
+          { modifier: 'L' },
           { backreference: 2 },
           'WHAT'
         ]
@@ -116,13 +116,13 @@ describe('Insertion', () => {
 
     let leInsertion = new Insertion({
       range,
-      substitution: {
+      transformation: {
         find: /^([A-Fa-f])(.*)(.)$/,
         replace: [
           { backreference: 1 },
-          { escape: 'L' },
+          { modifier: 'L' },
           { backreference: 2 },
-          { escape: 'E' },
+          { modifier: 'E' },
           { backreference: 3 }
         ]
       }

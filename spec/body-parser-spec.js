@@ -11,24 +11,24 @@ describe("Snippet Body Parser", () => {
   describe("when parsing tab stops", () => {
     it("parses simple tab stops", () => {
       expectMatch("hello$1world${2}", [
-        "hello", { index: 1, content: [] }, "world", { index: 2, content: [] },
+        "hello", { index: 1 }, "world", { index: 2 },
       ]);
     });
 
     it("skips escaped tab stops", () => {
       expectMatch("$1 \\$2 $3", [
-        { index: 1, content: [] },
+        { index: 1 },
         " $2 ",
-        { index: 3, content: [] },
+        { index: 3 },
       ]);
     });
 
     it("only allows non-negative integer stop numbers", () => {
-      expectMatch("$0", [{ index: 0, content: [] }]);
-      expectMatch("$99999", [{ index: 99999, content: [] }]);
+      expectMatch("$0", [{ index: 0 }]);
+      expectMatch("$99999", [{ index: 99999 }]);
       expectMatch("$-1", ["$-1"]);
       expectMatch("${-1}", ["${-1}"]);
-      expectMatch("$1.5", [{ index: 1, content: [] }, ".5"]);
+      expectMatch("$1.5", [{ index: 1 }, ".5"]);
       expectMatch("${1.5}", ["${1.5}"]);
     });
 
@@ -42,7 +42,7 @@ describe("Snippet Body Parser", () => {
           {
             index: 1,
             content: [
-              { index: 2, content: [] },
+              { index: 2 },
               { variable: "foo" },
               { index: 3, choices: ["a", "b"] },
             ]
@@ -144,7 +144,7 @@ describe("Snippet Body Parser", () => {
       });
 
       it("doesn't allow names to start with a number", () => {
-        expectMatch("$1foo", [{ index: 1, content: [] }, "foo"]);
+        expectMatch("$1foo", [{ index: 1 }, "foo"]);
       });
     });
 
@@ -156,7 +156,7 @@ describe("Snippet Body Parser", () => {
           {
             variable: "foo",
             content: [
-              { index: 2, content: [] },
+              { index: 2 },
               { variable: "bar" },
               { index: 3, choices: ["a", "b"] },
             ]
@@ -242,7 +242,7 @@ describe("Snippet Body Parser", () => {
       expectMatch("${1/foo/bar/a}", ["${1/foo/bar/a}"]); // invalid flag
       expectMatch("${1/fo)o$1/$bar/}", [
         "${1/fo)o",
-        { index: 1, content: [] },
+        { index: 1 },
         "/",
         { variable: "bar" },
         "/}"
@@ -433,8 +433,8 @@ describe("Snippet Body Parser", () => {
     it("accepts the first character as text and resumes", () => {
       expectMatch("${1:${2}${3}", [
         "${1:",
-        { index: 2, content: [] },
-        { index: 3, content: [] }
+        { index: 2 },
+        { index: 3 }
       ]);
     });
   });
@@ -443,7 +443,7 @@ describe("Snippet Body Parser", () => {
     it("breaks a snippet body into lines, with each line containing tab stops at the appropriate position", () => {
       expectMatch("the quick brown $1fox ${2:jumped ${3:over}\n}the ${4:lazy} dog", [
         "the quick brown ",
-        { index: 1, content: [] },
+        { index: 1 },
         "fox ",
         {
           index: 2,
@@ -492,7 +492,7 @@ describe("Snippet Body Parser", () => {
         '<',
         { index: 1, content: ['p'] },
         '>',
-        { index: 0, content: [] },
+        { index: 0 },
         '</',
         { index: 1, transformation: { find: /f/, replace: ['F'] } },
         '>',
@@ -514,7 +514,7 @@ describe("Snippet Body Parser", () => {
           },
         },
         ' ',
-        { index: 1, content: [] },
+        { index: 1 },
         ' ',
         { index: 2, content: ['ANOTHER'] },
         ' ',
@@ -529,7 +529,7 @@ describe("Snippet Body Parser", () => {
           },
         },
         ' ',
-        { index: 2, content: [] },
+        { index: 2 },
       ]);
     });
 
@@ -548,7 +548,7 @@ describe("Snippet Body Parser", () => {
           },
         },
         '\n',
-        { index: 1, content: [] },
+        { index: 1 },
       ]);
     });
 
@@ -557,7 +557,7 @@ describe("Snippet Body Parser", () => {
         '<',
         { index: 1, content: ['p'] },
         '>',
-        { index: 0, content: [] },
+        { index: 0 },
         '</',
         {
           index: 1,
@@ -579,7 +579,7 @@ describe("Snippet Body Parser", () => {
         '<',
         { index: 1, content: ['p'] },
         '>',
-        { index: 0, content: [] },
+        { index: 0 },
         '</',
         {
           index: 1,
@@ -598,38 +598,38 @@ describe("Snippet Body Parser", () => {
 
     it("parses a snippet with a placeholder that mirrors another tab stop's content", () => {
       expectMatch("$4console.${3:log}('${2:$1}', $1);$0", [
-        { index: 4, content: [] },
+        { index: 4 },
         'console.',
         { index: 3, content: ['log'] },
         '(\'',
         {
           index: 2, content: [
-            { index: 1, content: [] }
+            { index: 1 }
           ]
         },
         '\', ',
-        { index: 1, content: [] },
+        { index: 1 },
         ');',
-        { index: 0, content: [] }
+        { index: 0 }
       ]);
     });
 
     it("parses a snippet with a placeholder that mixes text and tab stop references", () => {
       expectMatch("$4console.${3:log}('${2:uh $1}', $1);$0", [
-        { index: 4, content: [] },
+        { index: 4 },
         'console.',
         { index: 3, content: ['log'] },
         '(\'',
         {
           index: 2, content: [
             'uh ',
-            { index: 1, content: [] }
+            { index: 1 }
           ]
         },
         '\', ',
-        { index: 1, content: [] },
+        { index: 1 },
         ');',
-        { index: 0, content: [] }
+        { index: 0 }
       ]);
     });
   });

@@ -263,19 +263,19 @@ third tabstop $3\
           },
           "transform with non-transforming mirrors": {
             prefix: "t13",
-            body: "${1:placeholder}\n${1/(.)/\\u$1/}\n$1"
+            body: "${1:placeholder}\n${1/(.)/\\u$1/g}\n$1"
           },
           "multiple tab stops, some with transforms and some without": {
             prefix: "t14",
-            body: "${1:placeholder} ${1/(.)/\\u$1/} $1 ${2:ANOTHER} ${2/^(.*)$/\\L$1/} $2"
+            body: "${1:placeholder} ${1/(.)/\\u$1/g} $1 ${2:ANOTHER} ${2/^(.*)$/\\L$1/} $2"
           },
           "has a transformed tab stop without a corresponding ordinary tab stop": {
             prefix: 't15',
-            body: "${1/(.)/\\u$1/} & $2"
+            body: "${1/(.)/\\u$1/g} & $2"
           },
           "has a transformed tab stop that occurs before the corresponding ordinary tab stop": {
             prefix: 't16',
-            body: "& ${1/(.)/\\u$1/} & ${1:q}"
+            body: "& ${1/(.)/\\u$1/g} & ${1:q}"
           },
           "has a placeholder that mirrors another tab stop's content": {
             prefix: 't17',
@@ -283,7 +283,7 @@ third tabstop $3\
           },
           "has a transformed tab stop such that it is possible to move the cursor between the ordinary tab stop and its transformed version without an intermediate step": {
             prefix: 't18',
-            body: '// $1\n// ${1/./=/}'
+            body: '// $1\n// ${1/./=/g}'
           }
         }
       });
