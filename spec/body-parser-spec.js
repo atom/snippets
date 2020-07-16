@@ -1,8 +1,8 @@
-const BodyParser = require('../lib/snippet-body-parser');
+const SnippetParser = require('../lib/snippet-body-parser');
 
 describe("Snippet Body Parser", () => {
   function expectMatch(input, tree) {
-    expect(BodyParser.parse(input)).toEqual(tree);
+    expect(SnippetParser.parse(input)).toEqual(tree);
   }
 
   describe("tab stops", () => {
@@ -18,6 +18,14 @@ describe("Snippet Body Parser", () => {
         " $2 ",
         { index: 3, content: [] },
       ]);
+    });
+
+    it("only allows non-negative integer stop numbers", () => {
+      expectMatch("$99999", [{ index: 99999, content: [] }]);
+      expectMatch("$-1", ["$-1"]);
+      expectMatch("${-1}", ["${-1}"]);
+      expectMatch("$1.5", [{ index: 1, content: [] }, ".5"]);
+      expectMatch("${1.5}", ["${1.5}"]);
     });
 
     describe("with placeholders", () => {
@@ -46,6 +54,20 @@ describe("Snippet Body Parser", () => {
             index: 1,
             transformation: {
               find: /foo/,
+              replace: [
+                "bar"
+              ]
+            }
+          }
+        ]);
+      });
+
+      it("applies flags to the find regex", () => {
+        expectMatch("${1/foo/bar/gimsuy}", [
+          {
+            index: 1,
+            transformation: {
+              find: /foo/gimsuy,
               replace: [
                 "bar"
               ]
@@ -85,20 +107,90 @@ describe("Snippet Body Parser", () => {
         "\\ar $\\{baz}",
       ]);
     });
+
+    describe("naming", () => {
+      it("only allows ASCII letters, numbers, and underscores in names", () => {
+        expectMatch("$abc_123-not", [{ variable: "abc_123" }, "-not"]);
+      });
+
+      it("allows names to start with underscores", () => {
+        expectMatch("$__properties", [{ variable: "__properties" }]);
+      });
+
+      it("doesn't allow names to start with a number", () => {
+        expectMatch("$1foo", [{ index: 1, content: [] }, "foo"]);
+      });
+    });
+
+    describe("with placeholders", () => {
+      it("allows placeholders to be arbitrary", () => {
+        expectMatch("${foo:${2}$bar${3|a,b|}}", [
+          {
+            variable: "foo",
+            content: [
+              { index: 2, content: [] },
+              { variable: "bar" },
+              { index: 3, choices: ["a", "b"] },
+            ]
+          }
+        ]);
+      });
+
+      it("allows escaping '}' in placeholders", () => {
+        expectMatch("${foo:\\}}", [{ variable: "foo", content: ["}"] }]);
+      });
+    });
+
+    describe("with transformations", () => {
+      it("parses simple transformations", () => {
+        expectMatch("${var/foo/bar/}", [
+          {
+            variable: "var",
+            transformation: {
+              find: /foo/,
+              replace: [
+                "bar"
+              ]
+            }
+          }
+        ]);
+      });
+    });
   });
 
-  it("parses snippets with no special behaviour as plain text", () => {
-    const plainSnippets = [
-      "foo $ bar",
-      "$% $ 1 ${/upcase} \n ${|world|} ${3foo}",
-    ];
+  describe("choices", () => {
+    it("parses choices", () => {
+      expectMatch("${1|a,b,c|}", [{ index: 1, choices: ["a", "b", "c"] }]);
+    });
 
-    for (const plain of plainSnippets) {
-      expectMatch(plain, [plain]);
-    }
+    it("skips empty choices", () => {
+      expectMatch("${1||}", ["${1||}"]);
+    });
+
+    it("skips escaped choices", () => {
+      expectMatch("\\${1|a|}", ["${1|a|}"]);
+    });
+
+    it("treats choice items as plain text", () => {
+      expectMatch("${1|$2,$foo|}", [{ index: 1, choices: ["$2", "$foo"] }]);
+    });
+
+    it("only allows ',' and '|' to be escaped in choice text", () => {
+      expectMatch("${1|a,b\\,c,d\\|},e\\$f|}", [
+        {
+          index: 1,
+          choices: [
+            "a",
+            "b,c",
+            "d|}",
+            "e\\$f"
+          ]
+        }
+      ]);
+    });
   });
 
-  describe("only escapes a select few characters", () => {
+  describe("escaped characters", () => {
     const escapeTest = "\\$ \\\\ \\} \\% \\* \\, \\| \\{ \\n \\r \\:";
 
     const escapeResolveTop = "$ \\ } \\% \\* \\, \\| \\{ \\n \\r \\:";
@@ -178,8 +270,7 @@ describe("Snippet Body Parser", () => {
   });
 
   it("parses a snippet with transformations", () => {
-    const bodyTree = BodyParser.parse("<${1:p}>$0</${1/f/F/}>");
-    expect(bodyTree).toEqual([
+    expectMatch("<${1:p}>$0</${1/f/F/}>", [
       '<',
       { index: 1, content: ['p'] },
       '>',
