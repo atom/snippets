@@ -18,11 +18,11 @@
     "pegjs": "~0.8.0",
     "scoped-property-store": "^0.17.0",
     "season": "^6.0.2",
-    "temp": "^0.9.1",
     "underscore-plus": "^1.7.0"
   },
   "devDependencies": {
-    "standard": "^14.3.4"
+    "standard": "^14.3.4",
+    "temp": "^0.9.1"
   },
   "engines": {
     "atom": "*"
