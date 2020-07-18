@@ -1,31 +1,31 @@
 {
   "name": "snippets",
   "version": "1.6.0",
-  "main": "./lib/snippets",
   "description": "Expand snippets matching the current prefix with `tab`.",
   "repository": "https://github.com/atom/snippets",
   "license": "MIT",
-  "engines": {
-    "atom": "*"
-  },
+  "main": "./lib/snippets",
   "scripts": {
     "lint": "standard",
     "lint:fix": "npm run lint -- --fix",
     "test": "npm run lint:fix && atom --test spec"
   },
   "dependencies": {
-    "async": "~0.2.6",
+    "async": "^3.2.0",
     "atom-select-list": "^0.7.0",
-    "fs-plus": "^3.0.0",
+    "fs-plus": "^3.1.1",
     "loophole": "^1",
     "pegjs": "~0.8.0",
     "scoped-property-store": "^0.17.0",
     "season": "^6.0.2",
-    "temp": "~0.8.0",
-    "underscore-plus": "^1.0.0"
+    "temp": "^0.9.1",
+    "underscore-plus": "^1.7.0"
   },
   "devDependencies": {
     "standard": "^14.3.4"
+  },
+  "engines": {
+    "atom": "*"
   },
   "providedServices": {
     "snippets": {
