@@ -8,6 +8,11 @@
   "engines": {
     "atom": "*"
   },
+  "scripts": {
+    "lint": "standard",
+    "lint:fix": "npm run lint -- --fix",
+    "test": "npm run lint:fix && atom --test spec"
+  },
   "dependencies": {
     "async": "~0.2.6",
     "atom-select-list": "^0.7.0",
@@ -19,6 +24,9 @@
     "temp": "~0.8.0",
     "underscore-plus": "^1.0.0"
   },
+  "devDependencies": {
+    "standard": "^14.3.4"
+  },
   "providedServices": {
     "snippets": {
       "description": "Snippets are text shortcuts that can be expanded to their definition.",
@@ -27,7 +35,17 @@
       }
     }
   },
-  "devDependencies": {
-    "coffeelint": "^1.9.7"
+  "standard": {
+    "env": {
+      "jasmine": true,
+      "node": true
+    },
+    "ignore": [
+      "spec/fixtures/"
+    ],
+    "globals": [
+      "waitsForPromise",
+      "atom"
+    ]
   }
 }
