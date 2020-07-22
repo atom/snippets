@@ -28,7 +28,7 @@
     "atom": "*"
   },
   "providedServices": {
-    "snippets": {
+    "snippets-dev": {
       "description": "Snippets are text shortcuts that can be expanded to their definition.",
       "versions": {
         "0.1.0": "provideSnippets"
