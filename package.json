@@ -1,6 +1,6 @@
 {
-  "name": "snippets",
-  "version": "1.6.0",
+  "name": "snippets-dev",
+  "version": "2.0.0",
   "description": "Expand snippets matching the current prefix with `tab`.",
   "repository": "https://github.com/atom/snippets",
   "license": "MIT",
@@ -11,14 +11,10 @@
     "test": "npm run lint:fix && atom --test spec"
   },
   "dependencies": {
-    "async": "^3.2.0",
     "atom-select-list": "^0.7.0",
-    "fs-plus": "^3.1.1",
-    "loophole": "^1",
     "pegjs": "^0.11.0-master.b7b87ea",
     "scoped-property-store": "^0.17.0",
-    "season": "^6.0.2",
-    "underscore-plus": "^1.7.0"
+    "season": "^6.0.2"
   },
   "devDependencies": {
     "standard": "^14.3.4",
@@ -31,7 +27,7 @@
     "snippets-dev": {
       "description": "Snippets are text shortcuts that can be expanded to their definition.",
       "versions": {
-        "0.1.0": "provideSnippets"
+        "0.2.0": "snippets"
       }
     }
   },
