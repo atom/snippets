@@ -12,7 +12,6 @@
     "generate": "pegjs -c ./lib/parser/config.js"
   },
   "dependencies": {
-    "atom-select-list": "^0.7.0",
     "scoped-property-store": "^0.17.0",
     "season": "^6.0.2"
   },
