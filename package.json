@@ -8,6 +8,10 @@
   "engines": {
     "atom": "*"
   },
+  "scripts": {
+    "lint": "prettier-standard --lint",
+    "test": "npm run lint && atom --test spec"
+  },
   "dependencies": {
     "async": "~0.2.6",
     "atom-select-list": "^0.7.0",
@@ -28,6 +32,6 @@
     }
   },
   "devDependencies": {
-    "coffeelint": "^1.9.7"
+    "prettier-standard": "^16.4.1"
   }
 }
