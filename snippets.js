@@ -1,39 +1,33 @@
-const { Emitter, CompositeDisposable, File } = require('atom')
+const { CompositeDisposable, File } = require('atom')
 
-const CSON = require('season')
+const season = require('season')
 const path = require('path')
 const fs = require('fs')
 
 const ScopedPropertyStore = require('scoped-property-store')
 
+const parser = require('./parser/snippet-body-parser.js')
+
 module.exports = class Snippets {
   static async activate () {
-    this.subscriptions = new CompositeDisposable()
+    this.disposables = new CompositeDisposable()
     this.snippetsByScopes = new ScopedPropertyStore()
     this.packageDisposables = new WeakMap()
 
-    this.loaded = false
-    this.emitter = new Emitter()
-
-    this.subscriptions.add(
+    this.disposables.add(
+      { dispose: () => delete this.loaded },
       atom.workspace.addOpener(uri => uri === 'atom://.atom/snippets'
         ? atom.workspace.openTextFile(this.userSnippetsPath)
         : undefined),
-      atom.commands.add('atom-text-editor', 'snippets:available', () => {
-        const editor = atom.workspace.getActiveTextEditor()
-        this.availableSnippetsView.toggle(editor)
-      }),
+      atom.commands.add('atom-text-editor', 'snippets:available', () =>
+        this.availableSnippetsView.toggle(atom.workspace.getActiveTextEditor())),
       atom.packages.onDidActivatePackage(bundle => this.loadPackage(bundle)),
       atom.packages.onDidDeactivatePackage(bundle => this.unloadPackage(bundle)))
 
-    await Promise.all([
+    await (this.loaded = Promise.all([
       this.loadUserSnippets(),
-      ...atom.packages.getActivePackages()
-        .map(bundle => this.loadPackage(bundle))
-    ])
-
-    this.loaded = true
-    this.emitter.emit('did-load-snippets')
+      ...atom.packages.getActivePackages().map(bundle => this.loadPackage(bundle))
+    ]).then(() => true))
   }
 
   static get availableSnippetsView () {
@@ -43,18 +37,7 @@ module.exports = class Snippets {
     return (this.availableSnippetsView = new SnippetsAvailable(this))
   }
 
-  static deactivate () {
-    this.emitter.dispose()
-    this.subscriptions.dispose()
-  }
-
-  static get parser () {
-    delete this.parser
-
-    return (this.parser = require('./parser/snippet-body-parser.js'))
-  }
-
-  static getUserSnippetsPath () {
+  static get userSnippetsPath () {
     let userSnippetsPath = path.join(atom.getConfigDirPath(), 'snippets.json')
     try {
       fs.accessSync(this.userSnippetsPath)
@@ -64,39 +47,27 @@ module.exports = class Snippets {
     return userSnippetsPath
   }
 
-  static get userSnippetsPath () {
-    delete this.userSnippetsPath
-
-    return (this.userSnippetsPath = this.getUserSnippetsPath())
-  }
-
   static loadSnippetsFile (filepath) {
     const priority = filepath === this.userSnippetsPath ? 1000 : 0
     return new Promise((resolve, reject) =>
-      CSON.readFile(filepath, (error, object) => error == null
+      season.readFile(filepath, (error, object) => error == null
         ? resolve(this.snippetsByScopes.addProperties(filepath, object, { priority }))
         : reject(error)))
   }
 
   static async loadUserSnippets () {
+    const userSnippetsPath = this.userSnippetsPath
     try {
-      const userSnippetsFile = new File(this.userSnippetsPath)
-      if (this.packageDisposables.has(this)) {
-        this.packageDisposables.get(this).dispose()
-      }
+      const userSnippetsFile = new File(userSnippetsPath)
+      // Allow user defined snippets to be reloaded
+      this.unloadPackage(this)
       this.packageDisposables.set(this, new CompositeDisposable(
-        await this.loadSnippetsFile(this.userSnippetsPath),
+        await this.loadSnippetsFile(userSnippetsPath),
         userSnippetsFile.onDidChange(() => this.loadUserSnippets()),
-        userSnippetsFile.onDidDelete(() => {
-          this.packageDisposables.get(this).dispose()
-          this.userSnippetsPath = this.getUserSnippetsPath()
-        }),
-        userSnippetsFile.onDidRename(() => {
-          this.packageDisposables.get(this).dispose()
-          this.userSnippetsPath = this.getUserSnippetsPath()
-        })))
+        userSnippetsFile.onDidDelete(() => this.loadUserSnippets()),
+        userSnippetsFile.onDidRename(() => this.loadUserSnippets())))
     } catch (error) {
-      atom.notifications.addWarning(`Unable to load snippets from: '${this.userSnippetsPath}'`, {
+      atom.notifications.addWarning(`Unable to load snippets from: '${userSnippetsPath}'`, {
         description: 'Make sure you have permissions to access the directory and file.',
         detail: error.toString(),
         dismissable: true
@@ -124,11 +95,15 @@ module.exports = class Snippets {
         }
       })
     } catch (error) {
-      if (error.code === 'ENOTDIR' || error.code === 'ENOENT') {
-        // Path either doesn't exist, or isn't a directory
-        return
+      if (error.code !== 'ENOTDIR' && error.code !== 'ENOENT') {
+        atom.notifications.addError(`Error reading snippets directory ${snippetsDirectory}`, {
+          description: 'Make sure you have permissions to access the directory and file.',
+          detail: error.toString(),
+          stack: error.stack,
+          dismissable: true
+        })
       }
-      console.warn(`Error reading snippets directory ${snippetsDirectory}`, error)
+      // Path either doesn't exist, or isn't a directory
     }
   }
 
@@ -139,16 +114,16 @@ module.exports = class Snippets {
     }
   }
 
-  static onDidLoadSnippets (callback) {
-    this.emitter.on('did-load-snippets', callback)
-  }
-
   static snippets () {
     return {
-      parse: string => this.parser.parse(string),
+      parse: string => parser.parse(string),
       userSnippetsPath: () => this.userSnippetsPath,
       snippetsByScopes: () => this.snippetsByScopes,
-      loaded: () => this.loaded
+      loaded: () => this.loaded || Promise.resolve(false)
     }
+  }
+
+  static get deactivate () {
+    return this.disposables.dispose
   }
 }

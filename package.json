@@ -4,21 +4,22 @@
   "description": "Expand snippets matching the current prefix with `tab`.",
   "repository": "https://github.com/atom/snippets",
   "license": "MIT",
-  "main": "./lib/snippets",
+  "main": "./snippets",
   "scripts": {
+    "generate": "pegjs -c ./lib/parser/config.js",
     "lint": "standard",
     "lint:fix": "npm run lint -- --fix",
-    "test": "npm run lint:fix && atom --test spec",
-    "generate": "pegjs -c ./lib/parser/config.js"
+    "test": "npm run lint:fix && atom --test spec"
   },
   "dependencies": {
+    "atom-select-list": "^0.7.2",
     "scoped-property-store": "^0.17.0",
     "season": "^6.0.2"
   },
   "devDependencies": {
+    "mock-fs": "^4.13.0",
     "pegjs": "^0.11.0-master.b7b87ea",
-    "standard": "^14.3.4",
-    "temp": "^0.9.1"
+    "standard": "^14.3.4"
   },
   "engines": {
     "atom": ">=1.47.0",

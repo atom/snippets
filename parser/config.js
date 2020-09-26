@@ -1,6 +1,6 @@
 module.exports = {
-  input: './lib/parser/snippet-body-parser.pegjs',
-  output: './lib/parser/snippet-body-parser.js',
+  input: './parser/snippet-body-parser.pegjs',
+  output: './parser/snippet-body-parser.js',
   dependencies: {
     Snippet: '../constructs/snippet',
     Tabstop: '../constructs/tabstop',

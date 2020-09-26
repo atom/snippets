@@ -170,9 +170,9 @@ module.exports = class Snippet extends Construct {
 
   // helper cause Snippet isn't really ever available
   expand ({
-    variables = {},
     cursor = atom.workspace.getActiveTextEditor().getLastCursor(),
-    tabstops = cursor.editor.getBuffer().addMarkerLayer({ role: 'tabstops' })
+    tabstops = cursor.editor.addMarkerLayer(),
+    variables = {}
   } = {}) {
     if (this.legacySyntax) {
       atom.notifications.addWarning('Snippets: Snippet uses deprecated syntax.', {
