@@ -5,5 +5,8 @@
   "globals": {
     "waitsForPromise": true,
     "atom": true
+  },
+  "rules": {
+    "no-template-curly-in-string": "off"
   }
 }

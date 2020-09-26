@@ -1,4 +1,5 @@
 # Snippets package
+
 [![macOS Build Status](https://travis-ci.org/atom/snippets.svg?branch=master)](https://travis-ci.org/atom/snippets) [![Windows Build Status](https://ci.appveyor.com/api/projects/status/8hlc0onofkgbxw53/branch/master?svg=true)](https://ci.appveyor.com/project/Atom/snippets/branch/master) [![Dependency Status](https://david-dm.org/atom/snippets.svg)](https://david-dm.org/atom/snippets)
 
 Expand snippets matching the current prefix with <kbd>tab</kbd> in Atom.
@@ -27,23 +28,25 @@ Under each snippet name is a `prefix` that should trigger the snippet and a `bod
 The above example adds a `log` snippet to JavaScript files that would expand to.
 
 ```js
-console.log("crash");
+console.log('crash')
 ```
 
 The string `"crash"` would be initially selected and pressing tab again would place the cursor after the `;`
 
 ### Optional parameters
+
 These parameters are meant to provide extra information about your snippet to [autocomplete-plus](https://github.com/atom/autocomplete-plus/wiki/Provider-API).
 
-* `leftLabel` will add text to the left part of the autocomplete results box.
-* `leftLabelHTML` will overwrite what's in `leftLabel` and allow you to use a bit of CSS such as `color`.
-* `rightLabelHTML`. By default, in the right part of the results box you will see the name of the snippet. When using `rightLabelHTML` the name of the snippet will no longer be displayed, and you will be able to use a bit of CSS.
-* `description` will add text to a description box under the autocomplete results list.
-* `descriptionMoreURL` URL to the documentation of the snippet.
+- `leftLabel` will add text to the left part of the autocomplete results box.
+- `leftLabelHTML` will overwrite what's in `leftLabel` and allow you to use a bit of CSS such as `color`.
+- `rightLabelHTML`. By default, in the right part of the results box you will see the name of the snippet. When using `rightLabelHTML` the name of the snippet will no longer be displayed, and you will be able to use a bit of CSS.
+- `description` will add text to a description box under the autocomplete results list.
+- `descriptionMoreURL` URL to the documentation of the snippet.
 
 ![autocomplete-description](http://i.imgur.com/cvI2lOq.png)
 
 Example:
+
 ```coffee
 '.source.js':
   'console.log':
@@ -55,7 +58,7 @@ Example:
 
 ### Determining the correct scope for a snippet
 
-The outmost key of a snippet is the "scope" that you want the descendent snippets to be available in. The key should be prefixed with a period (`text.html.basic` => `.text.html.basic`). You can find out the correct scope by opening the Settings (<kbd>cmd-,</kbd> on macOS) and selecting the corresponding *Language [xxx]* package, e.g. for *Language Html*:
+The outmost key of a snippet is the "scope" that you want the descendent snippets to be available in. The key should be prefixed with a period (`text.html.basic` => `.text.html.basic`). You can find out the correct scope by opening the Settings (<kbd>cmd-,</kbd> on macOS) and selecting the corresponding _Language [xxx]_ package, e.g. for _Language Html_:
 
 ![Screenshot of Language Html settings](https://cloud.githubusercontent.com/assets/1038121/5137632/126beb66-70f2-11e4-839b-bc7e84103f67.png)
 
@@ -68,9 +71,9 @@ This package supports a subset of the features of TextMate snippets, [documented
 
 The following features are not yet supported:
 
-* Variables
-* Interpolated shell code
-* Conditional insertions in transformations
+- Variables
+- Interpolated shell code
+- Conditional insertions in transformations
 
 ### Multi-line Snippet Body
 
