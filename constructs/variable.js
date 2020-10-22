@@ -1,9 +1,10 @@
 const Construct = require('./construct')
 
 module.exports = class Variable extends Construct {
-  expand (cursor, tabstops, variables) {
+  expand (editor, cursor, tabstops, variables) {
+    const position = cursor.getBufferPosition();
     this.identifier in variables
-      ? this.insert(cursor, variables[this.identifier])
-      : this.mark({ tabstops, ...this.insert(cursor, this.identifier) })
+      ? this.insert(editor, position, variables[this.identifier])
+      : this.mark({ tabstops, ...this.insert(editor, position, this.identifier) })
   }
 }

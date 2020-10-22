@@ -170,8 +170,9 @@ module.exports = class Snippet extends Construct {
 
   // helper cause Snippet isn't really ever available
   expand ({
-    cursor = atom.workspace.getActiveTextEditor().getLastCursor(),
-    tabstops = cursor.editor.addMarkerLayer(),
+    editor = atom.workspace.getActiveTextEditor(),
+    cursor = editor.getLastCursor(),
+    tabstops = editor.addMarkerLayer(),
     variables = {}
   } = {}) {
     if (this.legacySyntax) {
@@ -207,8 +208,8 @@ module.exports = class Snippet extends Construct {
 
     this.body.forEach(value => {
       value instanceof Object
-        ? value.expand(cursor, tabstops, variables)
-        : this.insert(cursor, value)
+        ? value.expand(editor, cursor, tabstops, variables)
+        : this.insert(editor, cursor.getBufferPosition(), value)
     })
 
     // Only create tabstop stuff if we have any
@@ -218,13 +219,10 @@ module.exports = class Snippet extends Construct {
       // The markers aren't guaranteed to be in insertion order, as they're stored in an Object
       // Luckilly the ids used are integers and the values are fetched using 'Object.values'
       const stops = {
-        tabstops: Snippet.getTabstops(tabstops.getMarkers()),
-        get iterator () {
-          delete this.iterator
-          return (this.iterator = this.tabstops.values())
-        },
-        next () {
+        iterator: Snippet.getTabstops(tabstops.getMarkers()).values(),
+        next (event) {
           const { done, value: [stop, ...mirrors] = [] } = this.iterator.next()
+          const editor = event.originalEvent.getModel();
           return done
             ? disposables.dispose()
             // Cheaty way of returning true concisely
@@ -236,7 +234,7 @@ module.exports = class Snippet extends Construct {
       disposables.add(
         { dispose: () => tabstops.destroy() },
         atom.keymaps.add(module.filename, { [target]: { tab: iterate } }),
-        atom.commands.add(target, iterate, event => stops.next() ||
+        atom.commands.add(target, iterate, event => stops.next(event) ||
         event.abortKeyBinding()))
 
       // Go to the first tabstop

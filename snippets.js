@@ -21,12 +21,12 @@ module.exports = class Snippets {
         : undefined),
       atom.commands.add('atom-text-editor', 'snippets:available', () =>
         this.availableSnippetsView.toggle(atom.workspace.getActiveTextEditor())),
-      atom.packages.onDidActivatePackage(bundle => this.loadPackage(bundle)),
-      atom.packages.onDidDeactivatePackage(bundle => this.unloadPackage(bundle)))
+      atom.packages.onDidActivatePackage(pack => this.loadPackage(pack)),
+      atom.packages.onDidDeactivatePackage(pack => this.unloadPackage(pack)))
 
     await (this.loaded = Promise.all([
       this.loadUserSnippets(),
-      ...atom.packages.getActivePackages().map(bundle => this.loadPackage(bundle))
+      ...atom.packages.getActivePackages().map(pack => this.loadPackage(pack))
     ]).then(() => true))
   }
 
@@ -75,17 +75,17 @@ module.exports = class Snippets {
     }
   }
 
-  static async loadPackage (bundle) {
-    const snippetsDirectory = path.join(bundle.path, 'snippets')
+  static async loadPackage (pack) {
+    const snippetsDirectory = path.join(pack.path, 'snippets')
     try {
       const files = await fs.promises.readdir(snippetsDirectory)
       files.forEach(async file => {
         const snippetsFile = path.join(snippetsDirectory, file)
         try {
           const disposable = await this.loadSnippetsFile(snippetsFile)
-          this.packageDisposables.has(bundle)
-            ? this.packageDisposables.get(bundle).add(disposable)
-            : this.packageDisposables.set(bundle, new CompositeDisposable(disposable))
+          this.packageDisposables.has(pack)
+            ? this.packageDisposables.get(pack).add(disposable)
+            : this.packageDisposables.set(pack, new CompositeDisposable(disposable))
         } catch (error) {
           atom.notifications.addWarning(`Unable to load snippets from: '${snippetsFile}'`, {
             description: 'Make sure you have permissions to access the directory and file.',
@@ -107,10 +107,10 @@ module.exports = class Snippets {
     }
   }
 
-  static unloadPackage (bundle) {
-    if (this.packageDisposables.has(bundle)) {
-      this.packageDisposables.get(bundle).dispose()
-      this.packageDisposables.delete(bundle)
+  static unloadPackage (pack) {
+    if (this.packageDisposables.has(pack)) {
+      this.packageDisposables.get(pack).dispose()
+      this.packageDisposables.delete(pack)
     }
   }
 
