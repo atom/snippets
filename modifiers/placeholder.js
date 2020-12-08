@@ -9,19 +9,13 @@ module.exports = class Placeholder extends Modifier {
     this.snippet.legacySyntax = false
   }
 
-  create ([Construct, ...args]) {
-    class Placeholder extends Construct {
-      constructor ({ snippet }, ...args) {
-        super(...args)
-
-        this.snippet = snippet
-      }
-
-      expand (cursor, tabstops, variables) {
+  modify (construct) {
+    class Placeholder extends construct.constructor {
+      expand (editor, cursor, tabstops, variables) {
         if (!(this.identifier in variables)) {
-          this.mark({ tabstops, ...this.snippet.expand({ cursor, tabstops, variables }) })
+          this.mark({ tabstops, ...this.snippet.expand({ editor, cursor, tabstops, variables }) })
         } else {
-          super.expand(cursor, tabstops, variables)
+          super.expand(editor, cursor, tabstops, variables)
         }
       }
 
@@ -30,6 +24,6 @@ module.exports = class Placeholder extends Modifier {
       }
     }
 
-    return new Placeholder(this, ...args)
+    return Object.assign(new Placeholder(construct), this)
   }
 }

@@ -3,27 +3,29 @@ module.exports = class Construct {
     this.identifier = identifier
   }
 
-  insert (cursor, value) {
-    return cursor.editor.getBuffer().insert(cursor.getBufferPosition(), value)
+  expand () {}
+
+  insert (editor, cursor, value) {
+    return editor.getBuffer().insert(cursor.getBufferPosition(), value)
   }
 
-  activate (mirror, cursor, stop) {
+  activate (editor, cursor, stop, mirror) {
     if (mirror === stop) {
-      cursor.selection.setBufferRange(stop.getRange())
+      cursor.selection.setBufferRange(stop.getBufferRange())
       const subscription = cursor.onDidChangePosition(({ newBufferPosition }) => {
-        if (!stop.getRange().containsPoint(newBufferPosition)) {
+        if (!stop.getBufferRange().containsPoint(newBufferPosition)) {
           stop.destroy()
           subscription.dispose()
         }
       })
     } else {
-      cursor.editor.decorateMarker(mirror, { type: 'highlight' })
+      editor.decorateMarker(mirror, { type: 'highlight' })
       stop.onDidDestroy(() => mirror.destroy())
     }
   }
 
   mark ({ tabstops, start, end = start, exclusive = true, construct = this }) {
-    tabstops.markRange({ start, end }, { exclusive }).setProperties({ construct })
+    tabstops.markBufferRange({ start, end }, { exclusive }).setProperties({ construct })
   }
 
   toString () {

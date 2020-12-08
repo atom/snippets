@@ -22,12 +22,12 @@ Test escape sequences ...
 Snippet = body:(Expression / String)+ { return new Snippet(body, legacySyntax) }
 
 Expression
-  = "$" construct:Construct { return new Modifier().create(construct) }
-  / "${" construct:Construct modifier:Modifier "}" { return modifier.create(construct) }
+  = "$" @Construct
+  / "${" construct:Construct modifier:Modifier "}" { return modifier.modify(construct) }
 
 Construct
-  = identifier:Tabstop { return [Tabstop, identifier] }
-  / identifier:Variable { return [Variable, identifier] }
+  = identifier:Tabstop { return new Tabstop(identifier) }
+  / identifier:Variable { return new Variable(identifier) }
 
 Tabstop = Int
 
@@ -39,7 +39,7 @@ Modifier
   / transformation:Transformation { return new Transformation(transformation) }
   / "" { return new Modifier() }
 
-Choice = "|" first:Selection rest:("," @Selection)* "|" { return [first, ...rest] }
+Choice = "|" first:Selection rest:("," @Selection)* "|" { return [...rest, first] }
 
 Selection = & { return escape('$,|') } @Snippet EOL
 

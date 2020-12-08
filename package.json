@@ -1,12 +1,12 @@
 {
-  "name": "snippets-dev",
+  "name": "snippets",
   "version": "2.0.0",
   "description": "Expand snippets matching the current prefix with `tab`.",
   "repository": "https://github.com/atom/snippets",
   "license": "MIT",
-  "main": "./snippets",
+  "main": "./snippets.js",
   "scripts": {
-    "generate": "pegjs -c ./lib/parser/config.js",
+    "generate": "pegjs -c ./parser/config.js",
     "lint": "standard",
     "lint:fix": "npm run lint -- --fix",
     "test": "npm run lint:fix && atom --test spec"
@@ -17,23 +17,28 @@
     "season": "^6.0.2"
   },
   "devDependencies": {
+    "@babel/core": "^7.12.9",
+    "@babel/eslint-parser": "^7.12.1",
+    "@babel/plugin-proposal-class-properties": "^7.12.1",
+    "@babel/plugin-proposal-private-methods": "^7.12.1",
     "mock-fs": "^4.13.0",
     "pegjs": "^0.11.0-master.b7b87ea",
-    "standard": "^14.3.4"
+    "standard": "^16.0.3"
   },
   "engines": {
-    "atom": ">=1.47.0",
-    "node": ">=12.0.0"
+    "atom": ">=1.53.0",
+    "node": ">=12.4.0"
   },
   "providedServices": {
-    "snippets-dev": {
+    "snippets": {
       "description": "Snippets are text shortcuts that can be expanded to their definition.",
       "versions": {
-        "0.2.0": "snippets"
+        "1.0.0": "snippets"
       }
     }
   },
   "standard": {
+    "parser": "@babel/eslint-parser",
     "env": {
       "jasmine": true,
       "node": true

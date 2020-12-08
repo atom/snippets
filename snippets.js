@@ -1,129 +1,144 @@
 const { CompositeDisposable, File } = require('atom')
 
-const season = require('season')
+const CSON = require('season')
 const path = require('path')
-const fs = require('fs')
+const fs = require('fs').promises
 
 const ScopedPropertyStore = require('scoped-property-store')
 
+const AvailableSnippetsView = require('./available-snippets-view')
+
 const parser = require('./parser/snippet-body-parser.js')
 
+// TODO: Convert private arrow functions into methods once atom supports them
 module.exports = class Snippets {
-  static async activate () {
-    this.disposables = new CompositeDisposable()
-    this.snippetsByScopes = new ScopedPropertyStore()
-    this.packageDisposables = new WeakMap()
+  static #disposables = new CompositeDisposable()
+  // This needs to be made available now even if we reconstruct it on activation
+  // as service objects can potentially access it before that happens
+  static #snippetsByScopes = new ScopedPropertyStore()
+  static #snippetsByPackage = new WeakMap()
 
-    this.disposables.add(
-      { dispose: () => delete this.loaded },
-      atom.workspace.addOpener(uri => uri === 'atom://.atom/snippets'
-        ? atom.workspace.openTextFile(this.userSnippetsPath)
-        : undefined),
-      atom.commands.add('atom-text-editor', 'snippets:available', () =>
-        this.availableSnippetsView.toggle(atom.workspace.getActiveTextEditor())),
-      atom.packages.onDidActivatePackage(pack => this.loadPackage(pack)),
-      atom.packages.onDidDeactivatePackage(pack => this.unloadPackage(pack)))
+  static #userSnippetsFile
+  static #userSnippetsBasename = path.join(atom.getConfigDirPath(), 'snippets')
 
-    await (this.loaded = Promise.all([
-      this.loadUserSnippets(),
-      ...atom.packages.getActivePackages().map(pack => this.loadPackage(pack))
-    ]).then(() => true))
-  }
+  static #userSnippetsURI = 'atom://.atom/snippets'
 
-  static get availableSnippetsView () {
-    delete this.availableSnippetsView
+  // TODO: Uncomment once atom supports private methods
+  // static get #userSnippetsPath () {
+  //   // See #loadUserSnippets
+  //   return this.#userSnippetsFile.getPath()
+  // }
 
-    const SnippetsAvailable = require('./snippets-available')
-    return (this.availableSnippetsView = new SnippetsAvailable(this))
-  }
-
-  static get userSnippetsPath () {
-    let userSnippetsPath = path.join(atom.getConfigDirPath(), 'snippets.json')
-    try {
-      fs.accessSync(this.userSnippetsPath)
-    } catch (error) {
-      userSnippetsPath = path.join(userSnippetsPath, '../snippets.cson')
+  static snippets () {
+    // Consider having a static frozen object and not creating a new one each
+    // call, as modifying the service object is often a mistake / bad practice
+    return {
+      parse: string => parser.parse(string),
+      // TODO: Drop 'snippets' prefix 'snippets.snippetsByScopes' is too verbose
+      snippetsByScopes: () => this.#snippetsByScopes,
+      snippetsByPackage: () => this.#snippetsByPackage,
+      // Returns the path _currently in use_
+      userSnippetsPath: () => this.#userSnippetsFile.getPath()
     }
-    return userSnippetsPath
   }
 
-  static loadSnippetsFile (filepath) {
-    const priority = filepath === this.userSnippetsPath ? 1000 : 0
-    return new Promise((resolve, reject) =>
-      season.readFile(filepath, (error, object) => error == null
-        ? resolve(this.snippetsByScopes.addProperties(filepath, object, { priority }))
-        : reject(error)))
+  static async activate () {
+    // As there's no built-in way to be notified when package activation is
+    // complete, the loading of package snippets has to be started synchronously
+    // (before our activationPromise resolves) so that service consumers can
+    // reliably access the generated promises.
+    const promises = atom.packages.getLoadedPackages().map(pack =>
+      this.#snippetsByPackage.set(pack, this.#loadPackage(pack)).get(pack))
+
+    // The above also applies to '#userSnippetsFile' and '#userSnippetsPath'
+    promises.push(this.#loadUserSnippets({ dispose: () => {} }))
+
+    this.#disposables.add(
+      atom.workspace.addOpener(uri => uri === this.#userSnippetsURI &&
+        atom.workspace.open(this.#userSnippetsFile.getPath())),
+      atom.packages.onDidLoadPackage(pack =>
+        this.#snippetsByPackage.set(pack, this.#loadPackage(pack))),
+      atom.config.observe('core.packagesWithSnippetsDisabled', packs =>
+        this.#togglePackages(new Set(packs))),
+      atom.commands.add('atom-text-editor', 'snippets:available', event =>
+        new AvailableSnippetsView(this.snippets(), event.currentTarget.getModel())))
+
+    await Promise.all(promises)
   }
 
-  static async loadUserSnippets () {
-    const userSnippetsPath = this.userSnippetsPath
+  static deactivate () {
+    this.#disposables.dispose()
+  }
+
+  static #readSnippets = async (filepath) => {
     try {
-      const userSnippetsFile = new File(userSnippetsPath)
-      // Allow user defined snippets to be reloaded
-      this.unloadPackage(this)
-      this.packageDisposables.set(this, new CompositeDisposable(
-        await this.loadSnippetsFile(userSnippetsPath),
-        userSnippetsFile.onDidChange(() => this.loadUserSnippets()),
-        userSnippetsFile.onDidDelete(() => this.loadUserSnippets()),
-        userSnippetsFile.onDidRename(() => this.loadUserSnippets())))
+      return await new Promise((resolve, reject) =>
+        CSON.readFile(filepath, (error, object) =>
+          error == null ? resolve(object) : reject(error)))
     } catch (error) {
-      atom.notifications.addWarning(`Unable to load snippets from: '${userSnippetsPath}'`, {
+      atom.notifications.addWarning(`Unable to load snippets from: '${filepath}'`, {
         description: 'Make sure you have permissions to access the directory and file.',
         detail: error.toString(),
+        stack: error.stack,
         dismissable: true
       })
+      return {}
     }
   }
 
-  static async loadPackage (pack) {
-    const snippetsDirectory = path.join(pack.path, 'snippets')
+  // Also updates the user snippets file
+  static #loadUserSnippets = async (oldSnippets, priority = 1) => {
+    // Remove old user defined snippets
+    oldSnippets.dispose()
+
+    this.#userSnippetsFile = new File(`${this.#userSnippetsBasename}.json`)
+    if (!(await this.#userSnippetsFile.exists())) {
+      this.#userSnippetsFile = new File(`${this.#userSnippetsBasename}.cson`)
+    }
+    await this.#userSnippetsFile.create()
+    const snippets = await this.#readSnippets(this.#userSnippetsFile.getPath())
+
+    const disposable = new CompositeDisposable(
+      this.#snippetsByScopes.addProperties(this.#userSnippetsFile.getPath(), snippets, { priority }),
+      this.#userSnippetsFile.onDidChange(() => this.#loadUserSnippets(disposable)),
+      this.#userSnippetsFile.onDidDelete(() => this.#loadUserSnippets(disposable)),
+      this.#userSnippetsFile.onDidRename(() => this.#loadUserSnippets(disposable)),
+      { dispose: () => this.#disposables.remove(disposable) })
+
+    this.#disposables.add(disposable)
+  }
+
+  static #loadPackage = async (pack) => {
+    const directory = path.join(pack.path, 'snippets')
     try {
-      const files = await fs.promises.readdir(snippetsDirectory)
-      files.forEach(async file => {
-        const snippetsFile = path.join(snippetsDirectory, file)
-        try {
-          const disposable = await this.loadSnippetsFile(snippetsFile)
-          this.packageDisposables.has(pack)
-            ? this.packageDisposables.get(pack).add(disposable)
-            : this.packageDisposables.set(pack, new CompositeDisposable(disposable))
-        } catch (error) {
-          atom.notifications.addWarning(`Unable to load snippets from: '${snippetsFile}'`, {
-            description: 'Make sure you have permissions to access the directory and file.',
-            detail: error.toString(),
-            dismissable: true
-          })
-        }
-      })
+      const files = await fs.readdir(directory)
+      const snippets = files.map(file => this.#readSnippets(path.join(directory, file)))
+      // Reduces the snippets into a single object
+      return Object.assign(...await Promise.all(snippets))
     } catch (error) {
       if (error.code !== 'ENOTDIR' && error.code !== 'ENOENT') {
-        atom.notifications.addError(`Error reading snippets directory ${snippetsDirectory}`, {
-          description: 'Make sure you have permissions to access the directory and file.',
+        atom.notifications.addError(`Error reading snippets directory ${directory}`, {
+          description: 'Make sure you have permissions to access the directory.',
           detail: error.toString(),
           stack: error.stack,
           dismissable: true
         })
       }
       // Path either doesn't exist, or isn't a directory
+      return {}
     }
   }
 
-  static unloadPackage (pack) {
-    if (this.packageDisposables.has(pack)) {
-      this.packageDisposables.get(pack).dispose()
-      this.packageDisposables.delete(pack)
-    }
-  }
-
-  static snippets () {
-    return {
-      parse: string => parser.parse(string),
-      userSnippetsPath: () => this.userSnippetsPath,
-      snippetsByScopes: () => this.snippetsByScopes,
-      loaded: () => this.loaded || Promise.resolve(false)
-    }
-  }
-
-  static get deactivate () {
-    return this.disposables.dispose
+  static #togglePackages = (packs) => {
+    // Technically we could compute and toggle only the packages that were
+    // enabled / disabled, but that would result in more complex code and often
+    // be slower because of how many iterations 'ScopedPropertyStore' would make
+    // over its own internal data structures. Thus we just reset
+    this.#snippetsByScopes = new ScopedPropertyStore()
+    // (Eventually) Reconstruct the whole scoped snippet storage
+    atom.packages.getLoadedPackages()
+      .filter(({ name }) => !packs.has(name))
+      .forEach(pack => this.#snippetsByPackage.get(pack).then(snippets =>
+        this.#snippetsByScopes.addProperties(pack.path, snippets)))
   }
 }

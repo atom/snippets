@@ -7,24 +7,21 @@ module.exports = class Choice extends Modifier {
     super()
 
     this.choices = choices
+    // The "first" and therefore default values is last in the list so that
+    // choice cycling starts from the second choice
+    this.default = choices[choices.length - 1]
   }
 
-  create ([Construct, ...args]) {
-    class Choice extends Construct {
-      constructor ({ choices: [first, ...rest] }, ...args) {
-        super(...args)
-
-        this.default = first
-        // Move the default last, so choice cycling works as expected
-        this.choices = [...rest, first]
-      }
-
-      activate (marker, cursor, mirror, target, command) {
+  modify (construct) {
+    class Choice extends construct.constructor {
+      activate (editor, cursor, stop, mirror) {
+        super.activate(editor, cursor, stop, mirror)
         // Don't bother if a mirror, the marker won't get iterated over
-        if (!mirror) {
+        if (mirror === stop) {
           const disposables = new CompositeDisposable()
 
-          const cycle = `snippets:next-choice-${marker.id}`
+          const target = 'atom-text-editor:not([mini])'
+          const cycle = `snippets:next-choice-${stop.id}`
 
           const choices = {
             choices: this.choices,
@@ -34,27 +31,28 @@ module.exports = class Choice extends Modifier {
               const { value } = iteration.done
                 ? (this.iterator = this.choices.values()).next()
                 : iteration
-              cursor.selection.insertText(value, { select: true })
+              editor.getBuffer().setTextInRange(stop.getBufferRange(), value)
+              cursor.selection.setBufferRange(stop.getBufferRange())
             }
           }
 
+          // What happens when the user clicks inside the choice, resulting in it nolonger being selected
           disposables.add(
             atom.keymaps.add(module.filename, { [target]: { 'shift-tab': cycle } }),
             atom.commands.add(target, cycle, event => choices.next()),
             cursor.onDidChangePosition(({ newBufferPosition }) => {
-              if (!marker.getRange().containsPoint(newBufferPosition)) {
+              if (!stop.getBufferRange().containsPoint(newBufferPosition)) {
                 disposables.dispose()
               }
             }))
         }
-        return super.activate(marker, cursor, mirror, target, command)
       }
 
-      expand (cursor, tabstops, variables) {
+      expand (editor, cursor, tabstops, variables) {
         if (!(this.identifier in variables)) {
-          this.mark({ tabstops, ...this.insert(cursor, this.default) })
+          this.mark({ tabstops, ...this.insert(editor, cursor, this.default) })
         } else {
-          super.expand(cursor, tabstops, variables)
+          super.expand(editor, cursor, tabstops, variables)
         }
       }
 
@@ -63,6 +61,6 @@ module.exports = class Choice extends Modifier {
       }
     }
 
-    return new Choice(this, ...args)
+    return Object.assign(new Choice(construct), this)
   }
 }
