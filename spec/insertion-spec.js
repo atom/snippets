@@ -5,30 +5,30 @@ const range = new Range(0, 0)
 
 describe('Insertion', () => {
   it('returns what it was given when it has no substitution', () => {
-    let insertion = new Insertion({
+    const insertion = new Insertion({
       range,
       substitution: undefined
     })
-    let transformed = insertion.transform('foo!')
+    const transformed = insertion.transform('foo!')
 
     expect(transformed).toEqual('foo!')
   })
 
   it('transforms what it was given when it has a regex transformation', () => {
-    let insertion = new Insertion({
+    const insertion = new Insertion({
       range,
       substitution: {
         find: /foo/g,
         replace: ['bar']
       }
     })
-    let transformed = insertion.transform('foo!')
+    const transformed = insertion.transform('foo!')
 
     expect(transformed).toEqual('bar!')
   })
 
   it('transforms the case of the next character when encountering a \\u or \\l flag', () => {
-    let uInsertion = new Insertion({
+    const uInsertion = new Insertion({
       range,
       substitution: {
         find: /(.)(.)(.*)/g,
@@ -45,7 +45,7 @@ describe('Insertion', () => {
     expect(uInsertion.transform('fOo!')).toEqual('fOo!')
     expect(uInsertion.transform('FOO!')).toEqual('FOO!')
 
-    let lInsertion = new Insertion({
+    const lInsertion = new Insertion({
       range,
       substitution: {
         find: /(.{2})(.)(.*)/g,
@@ -65,7 +65,7 @@ describe('Insertion', () => {
   })
 
   it('transforms the case of all remaining characters when encountering a \\U or \\L flag, up until it sees a \\E flag', () => {
-    let uInsertion = new Insertion({
+    const uInsertion = new Insertion({
       range,
       substitution: {
         find: /(.)(.*)/,
@@ -81,7 +81,7 @@ describe('Insertion', () => {
     expect(uInsertion.transform('lOREM IPSUM!')).toEqual('lOREM IPSUM!')
     expect(uInsertion.transform('LOREM IPSUM!')).toEqual('LOREM IPSUM!')
 
-    let ueInsertion = new Insertion({
+    const ueInsertion = new Insertion({
       range,
       substitution: {
         find: /(.)(.{3})(.*)/,
@@ -99,7 +99,7 @@ describe('Insertion', () => {
     expect(ueInsertion.transform('lOREm ipsum!')).toEqual('lOREm ipsum!')
     expect(ueInsertion.transform('LOREM IPSUM!')).toEqual('LOREM IPSUM!')
 
-    let lInsertion = new Insertion({
+    const lInsertion = new Insertion({
       range,
       substitution: {
         find: /(.{4})(.)(.*)/,
@@ -114,7 +114,7 @@ describe('Insertion', () => {
 
     expect(lInsertion.transform('LOREM IPSUM!')).toEqual('LOREmwhat')
 
-    let leInsertion = new Insertion({
+    const leInsertion = new Insertion({
       range,
       substitution: {
         find: /^([A-Fa-f])(.*)(.)$/,
