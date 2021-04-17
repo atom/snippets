@@ -6,19 +6,18 @@ module.exports = class AvailableSnippetsView extends SelectListView {
       items: Object.entries(snippets.snippetsByScopes()
         .getPropertyValue(editor.getRootScopeDescriptor().getScopeChain())),
       filterKeyForItem: ([name, { prefix }]) => prefix + name,
-      elementForItem: ([name, { prefix }]) => {
+      elementForItem: ([name, { prefix, description }]) => {
         const li = document.createElement('li')
         li.classList.add('two-lines')
 
-        const primaryLine = document.createElement('div')
+        const primaryLine = li.appendChild(document.createElement('div'))
         primaryLine.classList.add('primary-line')
         primaryLine.textContent = prefix
-        li.appendChild(primaryLine)
 
-        const secondaryLine = document.createElement('div')
+        const secondaryLine = li.appendChild(document.createElement('div'))
         secondaryLine.classList.add('secondary-line')
-        secondaryLine.textContent = name
-        li.appendChild(secondaryLine)
+        // TODO: Nullish coalescing operator
+        secondaryLine.textContent = description != null ? description : name
 
         return li
       },

@@ -9,25 +9,22 @@
     "generate": "pegjs -c ./parser/config.js",
     "lint": "standard",
     "lint:fix": "npm run lint -- --fix",
-    "test": "npm run lint:fix && atom --test spec"
+    "test": "atom --test specs"
   },
   "dependencies": {
-    "atom-select-list": "^0.7.2",
+    "atom-select-list": "^0.8.0",
     "scoped-property-store": "^0.17.0",
     "season": "^6.0.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.12.9",
-    "@babel/eslint-parser": "^7.12.1",
-    "@babel/plugin-proposal-class-properties": "^7.12.1",
-    "@babel/plugin-proposal-private-methods": "^7.12.1",
+    "@babel/eslint-parser": "^7.13.14",
     "mock-fs": "^4.13.0",
-    "pegjs": "^0.11.0-master.b7b87ea",
+    "pegjs": "0.11.0-master.b7b87ea",
     "standard": "^16.0.3"
   },
   "engines": {
-    "atom": ">=1.53.0",
-    "node": ">=12.4.0"
+    "atom": ">=1.56.0",
+    "node": ">=12.14.1"
   },
   "providedServices": {
     "snippets": {

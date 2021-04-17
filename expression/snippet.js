@@ -1,9 +1,9 @@
 const { CompositeDisposable } = require('atom')
 const path = require('path')
 
-const Construct = require('./construct')
+const Expression = require('./expression')
 
-module.exports = class Snippet extends Construct {
+module.exports = class Snippet extends Expression {
   static VARIABLES = {
     // The currently selected text or the empty string
     TM_SELECTED_TEXT: (editor, cursor) => cursor.selection.getText(),
@@ -61,9 +61,10 @@ module.exports = class Snippet extends Construct {
     // LINE_COMMENT
     //
     // custom = custom variables
+    // TODO: I dont remember what this cache is supposed to do
     PROXY: (editor, cursor, custom) => new Proxy({}, {
       get: (cache, property) => property in this.VARIABLES
-        ? (cache[property] = this.VARIABLES[property]())
+        ? (cache[property] = this.VARIABLES[property](editor, cursor))
         : property in custom
           ? custom[property]
           // We should never see this value used
@@ -77,12 +78,12 @@ module.exports = class Snippet extends Construct {
     const unknowns = []
 
     markers.forEach(marker => {
-      const { construct } = marker.getProperties()
+      const { expression } = marker.getProperties()
 
-      Number.isInteger(construct.identifier)
-        ? Array.isArray(tabstops[construct.identifier])
-            ? tabstops[construct.identifier].push(marker)
-            : tabstops[construct.identifier] = [marker]
+      Number.isInteger(expression.identifier)
+        ? Array.isArray(tabstops[expression.identifier])
+            ? tabstops[expression.identifier].push(marker)
+            : tabstops[expression.identifier] = [marker]
         : unknowns.push([marker])
     })
     // Include all unknown variables at the end
@@ -95,13 +96,11 @@ module.exports = class Snippet extends Construct {
     return tabstops
   }
 
-  constructor (body, legacySyntax) {
+  constructor (body) {
     // This snippet will work as the default ending tabstop
     super(0)
 
     this.body = body
-
-    this.legacySyntax = legacySyntax
   }
 
   // We work as the default ending tabstop, this is a special case
@@ -109,7 +108,6 @@ module.exports = class Snippet extends Construct {
     cursor.setBufferPosition(stop.getBufferRange().end)
   }
 
-  // helper cause Snippet isn't really ever available
   expand ({
     editor = atom.workspace.getActiveTextEditor(),
     cursor = editor.getLastCursor(),
@@ -123,7 +121,7 @@ module.exports = class Snippet extends Construct {
       })
     }
 
-    // Construct a variable proxy to access given and built-in variables
+    // Expression a variable proxy to access given and built-in variables
     variables = Snippet.VARIABLES.PROXY(editor, cursor, variables)
 
     // Define a marker that spans the whole snippet
@@ -160,8 +158,8 @@ module.exports = class Snippet extends Construct {
           const iteration = this.iterator.next()
           if (!iteration.done) {
             const { value: [stop] } = iteration
-            const { construct } = stop.getProperties()
-            iteration.value.forEach(mirror => construct.activate(editor, cursor, stop, mirror))
+            const { expression } = stop.getProperties()
+            iteration.value.forEach(mirror => expression.activate(editor, cursor, stop, mirror))
             return true
           }
           disposables.dispose()

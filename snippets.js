@@ -2,7 +2,8 @@ const { CompositeDisposable, File } = require('atom')
 
 const CSON = require('season')
 const path = require('path')
-const fs = require('fs').promises
+
+const { promises: fs } = require('fs')
 
 const ScopedPropertyStore = require('scoped-property-store')
 
