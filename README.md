@@ -64,7 +64,7 @@ If it's difficult to determine the package handling the file type in question (f
 
 ### Snippet syntax
 
-This package supports a subset of the features of TextMate snippets, [documented here](http://manual.macromates.com/en/snippets#transformations).
+This package supports a subset of the features of TextMate snippets, [documented here](http://manual.macromates.com/en/snippets).
 
 The following features are not yet supported:
 
