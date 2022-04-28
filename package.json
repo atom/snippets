@@ -9,7 +9,7 @@
     "atom": "*"
   },
   "dependencies": {
-    "async": "~0.2.6",
+    "async": "~2.6.4",
     "atom-select-list": "^0.7.0",
     "fs-plus": "^3.0.0",
     "loophole": "^1",
