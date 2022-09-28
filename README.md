@@ -1,4 +1,5 @@
-# Snippets package
+##### Atom and all repositories under Atom will be archived on December 15, 2022. Learn more in our [official announcement](https://github.blog/2022-06-08-sunsetting-atom/)
+ # Snippets package
 [![macOS Build Status](https://travis-ci.org/atom/snippets.svg?branch=master)](https://travis-ci.org/atom/snippets) [![Windows Build Status](https://ci.appveyor.com/api/projects/status/8hlc0onofkgbxw53/branch/master?svg=true)](https://ci.appveyor.com/project/Atom/snippets/branch/master) [![Dependency Status](https://david-dm.org/atom/snippets.svg)](https://david-dm.org/atom/snippets)
 
 Expand snippets matching the current prefix with <kbd>tab</kbd> in Atom.
